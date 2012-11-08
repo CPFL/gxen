@@ -1,0 +1,25 @@
+subdir-y += svm
+subdir-y += vmx
+
+obj-y += asid.o
+obj-y += emulate.o
+obj-y += hpet.o
+obj-y += hvm.o
+obj-y += i8254.o
+obj-y += intercept.o
+obj-y += io.o
+obj-y += irq.o
+obj-y += mtrr.o
+obj-y += nestedhvm.o
+obj-y += pmtimer.o
+obj-y += quirks.o
+obj-y += rtc.o
+obj-y += save.o
+obj-y += stdvga.o
+obj-y += vioapic.o
+obj-y += viridian.o
+obj-y += vlapic.o
+obj-y += vmsi.o
+obj-y += vpic.o
+obj-y += vpt.o
+obj-y += vpmu.o

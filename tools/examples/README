@@ -1,0 +1,52 @@
+Xen Control Tools - Examples
+===================================
+
+This directory contains example scripts and configurations for Xen.
+For many operations you will either be able to use these scripts directly, or
+incorporate code from them into your own scripts.
+
+If you write a useful script and would like to share it, please do
+send it (preferably with a little summary to go in this file) to
+<xen-devel@lists.sourceforge.net> so we can add it to this directory.
+
+block               - called by xen-backend.agent to bind/unbind dev  
+block-common.sh     - sourced by block, block-*
+block-enbd          - binds/unbinds network block devices
+block-nbd           - binds/unbinds network block devices
+cpupool             - example configuration script for 'xm cpupool-create'
+external-device-migrate - called by xend for migrating external devices
+locking.sh          - locking functions to prevent concurrent access to
+                      critical sections inside script files
+logging.sh          - logging function to log output using syslog
+network-bridge      - xen network start/stop script when using bridging
+network-nat         - xen network start/stop script when using NAT
+network-route       - xen network start/stop script when using routing
+vif-bridge          - virtual network start/stop script in bridged mode
+vif-common.sh       - sourced by vif-bridge 
+vif-nat             - xen virtual network start/stop script in NAT mode 
+vif-route           - xen virtual network start/stop script in routed mode
+vtpm                - called by xen-backend.agent to bind/unbind vTPM devices
+vtpm-common.sh      - common code for vTPM handling
+vtpm-delete         - remove an entry from the vTPM table given the
+                      domain's name
+vtpm-hotplug-common.sh - sourced by vtpm
+vtpm-migration.sh   - sourced by external-device-migrate
+xen-backend.agent   - calls block, vif-*, vtpm scripts to add, remove, hotplug
+                      devices  
+xen-backend.rules   - hotplug script rules
+xend-config.sxp     - default xend configuration file
+xen-hotplug-common.sh - sourced by vif-common.sh
+xen-network-common.sh - sourced by vif-common.sh
+xen-script-common.sh  - sourced by network-bridge, xen-hotplug-common.sh
+xmexample1          - example configuration script for 'xm create'
+xmexample2          - a more complex configuration script for 'xm create'
+xmexample3          - an advanced configuration script for 'xm create' 
+                      that utilizes the vmid
+xmexample.nbd       - configuration script that uses NBD filesystems
+xmexample.hvm       - a configuration script for creating a hvm domain with
+                      'xm create'
+xmexample.hvm-stubdom - a configuration script for creating a hvm domain with
+                        'xm create' that utilizes a stubdomain for device model
+xmexample.pv-grub   - a configuration script for creating a domain with 'xm create'
+                      which boots PV-GRUB.
+xmexample.vti       - a configuration script for creating a domain on vti

@@ -1,0 +1,108 @@
+#!/bin/sh
+set -e
+
+qemu_version=`head ${QEMU_ROOT:-.}/VERSION`
+
+target=i386-stubdom
+mkdir -p $target
+ln -sf ${QEMU_ROOT:-..}/Makefile.target $target/Makefile
+
+#----------
+cat <<END >$target/config.mak.new
+QEMU_ROOT ?= ..
+XEN_ROOT ?= \$(QEMU_ROOT)/../xen-unstable.hg
+
+include ../config-host.mak
+
+TARGET_ARCH=i386
+TARGET_PATH:=\$(SRC_PATH)/\$(TARGET_DIRS)
+CONFIG_SOFTMMU=yes
+
+TARGET_CPPFLAGS += $TARGET_CPPFLAGS -DCONFIG_STUBDOM -D__XEN_TOOLS__
+TARGET_CFLAGS= $TARGET_CFLAGS
+TARGET_LDFLAGS= $TARGET_LDFLAGS
+
+bindir = \${LIBEXEC}
+END
+mv -f $target/config.mak.new $target/config.mak
+#----------
+
+test ${QEMU_ROOT:-..} != .. || (cd $target ; ln -sf ../i386-dm/*.[ch] .)
+
+#----------
+cat <<END >config-host.h.new
+#define DEFAULT_NETWORK_SCRIPT "${XEN_SCRIPT_DIR}/qemu-ifup"
+#define DEFAULT_NETWORK_DOWN_SCRIPT "${XEN_SCRIPT_DIR}/qemu-ifdown"
+#define CONFIG_QEMU_SHAREDIR "${SHAREDIR}/xen/qemu"
+#define HOST_I386 1
+#define HOST_LONG_BITS 32
+#define HAVE_BYTESWAP_H 1
+#define AUDIO_DRIVERS /* none */
+#define QEMU_VERSION "$qemu_version"
+#define CONFIG_UNAME_RELEASE ""
+#include "xen-config-host.h"
+END
+mv -f config-host.h.new config-host.h
+#----------
+
+#----------
+cat <<END >config-host.mak.new
+CONFIG_STUBDOM=yes
+prefix=$PREFIX
+bindir=\${prefix}/bin
+mandir=\$(MANDIR)
+datadir=\$(SHAREDIR)/qemu
+docdir=\$(SHAREDIR)/doc/qemu
+MAKE=make
+INSTALL=install
+CC=gcc
+HOST_CC=gcc
+AR=ar
+STRIP=strip -s -R .comment -R .note
+OS_CFLAGS=
+OS_LDFLAGS=
+ARCH_CFLAGS=-m32
+ARCH_LDFLAGS=-m32
+EXESUF=
+AIOLIBS=
+ARCH=i386
+CONFIG_GDBSTUB=
+CONFIG_OSS=
+CONFIG_OSS_LIB=
+VERSION=$qemu_version
+SRC_PATH=${QEMU_ROOT:-`pwd`}
+TARGET_DIRS=$target
+BUILD_DOCS=
+CONFIG_AIO=
+TOOLS=
+QEMU_ROOT ?= `pwd`
+END
+
+if [ "x$XEN_ROOT" != x ]; then
+	echo "XEN_ROOT=$XEN_ROOT" >>config-host.mak.new
+else
+	cat >>config-host.mak.new <<END
+XEN_ROOT ?= \$(QEMU_ROOT)/../xen-unstable.hg
+END
+fi
+
+cat <<END >>config-host.mak.new
+include \$(XEN_ROOT)/tools/Rules.mk
+SUBDIR_RULES=subdir-\$(TARGET_DIRS)
+subdir-\$(TARGET_DIRS): libqemu_common.a
+include \$(QEMU_ROOT)/xen-hooks.mak
+HOST_USB=stub
+
+HOST_LDFLAGS= \$(LDFLAGS) -g -Wl,--warn-common
+HOST_CFLAGS= \$(CFLAGS)
+CPPFLAGS += $TARGET_CPPFLAGS -DCONFIG_STUBDOM -MF .\$(@F).d 
+CFLAGS= $TARGET_CFLAGS
+LDFLAGS= $TARGET_LDFLAGS
+
+SUBDIR_RULES=subdir-\$(TARGET_DIRS)
+subdir-\$(TARGET_DIRS): libqemu_common.a
+include \$(QEMU_ROOT)/xen-hooks.mak
+
+END
+mv -f config-host.mak.new config-host.mak
+#----------

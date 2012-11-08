@@ -1,0 +1,16 @@
+# FLASK
+
+#
+# Define initial security identifiers 
+#
+sid xen
+sid dom0
+sid domio
+sid domxen
+sid unlabeled
+sid security
+sid ioport
+sid iomem
+sid irq
+sid device
+# FLASK

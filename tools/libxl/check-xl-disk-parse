@@ -1,0 +1,185 @@
+#!/bin/bash
+
+set -e
+
+if [ -x ./xl ] ; then
+    export LD_LIBRARY_PATH=.:../libxc:../xenstore:../blktap2/control
+    XL=./xl
+else
+    XL=xl
+fi
+
+fprefix=tmp.check-xl-disk-parse
+
+expected () {
+    cat >$fprefix.expected
+}
+
+failures=0
+
+one () {
+    expected_rc=$1; shift
+    printf "test case %s...\n" "$*"
+    set +e
+    ${XL} -N block-attach 0 "$@" </dev/null >$fprefix.actual 2>/dev/null
+    actual_rc=$?
+    diff -u $fprefix.expected $fprefix.actual
+    diff_rc=$?
+    set -e
+    if [ $actual_rc != $expected_rc ] || [ $diff_rc != 0 ]; then
+        echo >&2 "test case \`$*' failed ($actual_rc $diff_rc)"
+        failures=$(( $failures + 1 ))
+    fi
+}
+
+complete () {
+    if [ "$failures" = 0 ]; then
+        echo all ok.; exit 0
+    else
+        echo "$failures tests failed."; exit 1
+    fi
+}
+
+e=255
+
+
+#---------- test data ----------
+#
+# culled from docs/misc/xl-disk-configuration.txt
+
+expected </dev/null
+one $e foo
+
+expected <<END
+disk: {
+    "backend_domid": 0,
+    "pdev_path": "/dev/vg/guest-volume",
+    "vdev": "hda",
+    "backend": "unknown",
+    "format": "raw",
+    "script": null,
+    "removable": 0,
+    "readwrite": 1,
+    "is_cdrom": 0
+}
+
+END
+one 0 /dev/vg/guest-volume,,hda
+one 0 /dev/vg/guest-volume,raw,hda,rw
+one 0 "format=raw, vdev=hda, access=rw, target=/dev/vg/guest-volume"
+one 0  format=raw  vdev=hda  access=rw  target=/dev/vg/guest-volume
+one 0 raw:/dev/vg/guest-volume,hda,w
+
+expected <<END
+disk: {
+    "backend_domid": 0,
+    "pdev_path": "/root/image.iso",
+    "vdev": "hdc",
+    "backend": "unknown",
+    "format": "raw",
+    "script": null,
+    "removable": 1,
+    "readwrite": 0,
+    "is_cdrom": 1
+}
+
+END
+one 0 /root/image.iso,,hdc,cdrom
+one 0 /root/image.iso,,hdc,,cdrom
+one 0 /root/image.iso,raw,hdc,devtype=cdrom
+one 0 "format=raw, vdev=hdc, access=ro, devtype=cdrom, target=/root/image.iso"
+one 0  format=raw  vdev=hdc  access=ro  devtype=cdrom  target=/root/image.iso
+one 0 raw:/root/image.iso,hdc:cdrom,ro
+
+expected <<EOF
+disk: {
+    "backend_domid": 0,
+    "pdev_path": "/dev/vg/guest-volume",
+    "vdev": "xvdb",
+    "backend": "phy",
+    "format": "raw",
+    "script": null,
+    "removable": 0,
+    "readwrite": 1,
+    "is_cdrom": 0
+}
+
+EOF
+one 0 backendtype=phy,vdev=xvdb,access=w,target=/dev/vg/guest-volume
+
+expected <<EOF
+disk: {
+    "backend_domid": 0,
+    "pdev_path": "",
+    "vdev": "hdc",
+    "backend": "unknown",
+    "format": "empty",
+    "script": null,
+    "removable": 1,
+    "readwrite": 0,
+    "is_cdrom": 1
+}
+
+EOF
+one 0 devtype=cdrom,,,hdc
+one 0 ,,hdc:cdrom,r
+one 0 ,hdc:cdrom,r
+one 0 vdev=hdc,access=r,devtype=cdrom,target=
+one 0 ,empty,hdc:cdrom,r
+
+expected <<EOF
+disk: {
+    "backend_domid": 0,
+    "pdev_path": null,
+    "vdev": "hdc",
+    "backend": "unknown",
+    "format": "empty",
+    "script": null,
+    "removable": 1,
+    "readwrite": 0,
+    "is_cdrom": 1
+}
+
+EOF
+one 0 vdev=hdc,access=r,devtype=cdrom,format=empty
+one 0 vdev=hdc,access=r,devtype=cdrom
+
+expected <<EOF
+disk: {
+    "backend_domid": 0,
+    "pdev_path": "iqn.2001-05.com.equallogic:0-8a0906-23fe93404-c82797962054a96d-examplehost",
+    "vdev": "xvda",
+    "backend": "unknown",
+    "format": "raw",
+    "script": "block-iscsi",
+    "removable": 0,
+    "readwrite": 1,
+    "is_cdrom": 0
+}
+
+EOF
+
+# http://backdrift.org/xen-block-iscsi-script-with-multipath-support
+one 0 iscsi:iqn.2001-05.com.equallogic:0-8a0906-23fe93404-c82797962054a96d-examplehost,xvda,w
+one 0 vdev=xvda,access=w,script=block-iscsi,target=iqn.2001-05.com.equallogic:0-8a0906-23fe93404-c82797962054a96d-examplehost
+
+expected <<EOF
+disk: {
+    "backend_domid": 0,
+    "pdev_path": "app01",
+    "vdev": "hda",
+    "backend": "unknown",
+    "format": "raw",
+    "script": "block-drbd",
+    "removable": 0,
+    "readwrite": 1,
+    "is_cdrom": 0
+}
+
+EOF
+
+# http://lists.linbit.com/pipermail/drbd-user/2008-September/010221.html
+# http://www.drbd.org/users-guide-emb/s-xen-configure-domu.html
+one 0 drbd:app01,hda,w
+
+complete

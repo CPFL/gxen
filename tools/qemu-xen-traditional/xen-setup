@@ -1,0 +1,39 @@
+#!/bin/sh
+set -e
+
+# git-clean -x -d && ./xen-setup && make prefix=/usr CMDLINE_CFLAGS='-O0 -g' -j4 && make install DESTDIR=`pwd`/dist/ prefix=/usr && rsync -a --stats --delete . thule:shadow/qemu-iwj.git/ && rsync -a --stats dist/. root@thule:/
+
+target=i386-dm
+mkdir -p $target
+rm -f $target/Makefile
+rm -f $target/config.mak
+rm -f config-host.mak
+
+if test -f config-host.h; then mv config-host.h config-host.h~; fi
+
+if test -z "${PREFIX}"; then
+	PREFIX="/usr"
+fi
+if test -z "${XEN_SCRIPT_DIR}"; then
+	XEN_SCRIPT_DIR="/etc/xen/scripts"
+fi
+
+${QEMU_ROOT:-.}/configure --disable-gfx-check --disable-curses --disable-slirp "$@" --prefix=${PREFIX}
+
+if [ "x$XEN_ROOT" != x ]; then
+	echo "XEN_ROOT=$XEN_ROOT" >>config-host.mak
+fi
+
+ln -sf ${QEMU_ROOT:-..}/Makefile.target $target/Makefile
+ln -sf ${QEMU_ROOT:-..}/xen-config.mak $target/config.mak
+cat ${QEMU_ROOT:-.}/xen-config-host.mak >>config-host.mak
+
+sed -e 's,qemu,xen/qemu,' config-host.h >config-host.h.new
+echo "#define DEFAULT_NETWORK_SCRIPT      \"${XEN_SCRIPT_DIR}/qemu-ifup\"" >>config-host.h.new
+echo "#define DEFAULT_NETWORK_DOWN_SCRIPT \"${XEN_SCRIPT_DIR}/qemu-ifdown\"" >>config-host.h.new
+echo '#include "xen-config-host.h"' >>config-host.h.new
+
+if test -f config-host.h~; then mv config-host.h~ config-host.h; fi
+cmp -s config-host.h.new config-host.h || mv config-host.h.new config-host.h
+
+echo 'qemu successfuly configured for Xen qemu-dm build'

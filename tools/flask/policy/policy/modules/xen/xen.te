@@ -1,0 +1,200 @@
+################################################################################
+#
+# Attributes for types
+#
+# An attribute may be used in a rule as shorthand for all types with that
+# attribute.
+#
+################################################################################
+attribute xen_type;
+attribute domain_type;
+attribute resource_type;
+attribute event_type;
+attribute mls_priv;
+
+################################################################################
+#
+# Types for the initial SIDs
+#
+# These types are used internally for objects created during Xen startup or for
+# devices that have not yet been labeled
+#
+################################################################################
+
+# The hypervisor itself
+type xen_t, xen_type, mls_priv;
+
+# Domain 0
+declare_domain(dom0_t, mls_priv);
+
+# Untracked I/O memory (pseudo-domain)
+type domio_t, xen_type;
+
+# Xen heap (pseudo-domain)
+type domxen_t, xen_type;
+
+# Unlabeled objects
+type unlabeled_t, xen_type;
+
+# The XSM/FLASK security server
+type security_t, xen_type;
+
+# Unlabeled device resources
+# Note: don't allow access to these types directly; see below for how to label
+#       devices and use that label for allow rules
+type irq_t, resource_type;
+type ioport_t, resource_type;
+type iomem_t, resource_type;
+type device_t, resource_type;
+
+################################################################################
+#
+# Rules required to boot the hypervisor and dom0
+#
+################################################################################
+allow xen_t dom0_t:domain { create };
+
+allow dom0_t xen_t:xen { kexec readapic writeapic mtrr_read mtrr_add mtrr_del
+	scheduler physinfo heap quirk readconsole writeconsole settime getcpuinfo
+	microcode cpupool_op sched_op pm_op };
+allow dom0_t xen_t:mmu { memorymap };
+allow dom0_t security_t:security { check_context compute_av compute_create
+	compute_member load_policy compute_relabel compute_user setenforce
+	setbool setsecparam add_ocontext del_ocontext };
+
+allow dom0_t dom0_t:domain { getdomaininfo getvcpuinfo getvcpuaffinity };
+allow dom0_t dom0_t:resource { add remove };
+
+admin_device(dom0_t, device_t)
+admin_device(dom0_t, irq_t)
+admin_device(dom0_t, ioport_t)
+admin_device(dom0_t, iomem_t)
+allow dom0_t domio_t:mmu { map_read map_write };
+
+domain_self_comms(dom0_t)
+
+auditallow dom0_t security_t:security { load_policy setenforce setbool };
+
+###############################################################################
+#
+# Domain creation
+#
+###############################################################################
+
+declare_domain(domU_t)
+domain_self_comms(domU_t)
+create_domain(dom0_t, domU_t)
+manage_domain(dom0_t, domU_t)
+domain_comms(dom0_t, domU_t)
+
+declare_domain(isolated_domU_t)
+create_domain(dom0_t, isolated_domU_t)
+manage_domain(dom0_t, isolated_domU_t)
+domain_comms(dom0_t, isolated_domU_t)
+
+gen_bool(prot_doms_locked, false)
+declare_domain(prot_domU_t)
+if (!prot_doms_locked) {
+	create_domain(dom0_t, prot_domU_t)
+}
+domain_comms(dom0_t, prot_domU_t)
+domain_comms(domU_t, prot_domU_t)
+
+# domHVM_t is meant to be paired with a qemu-dm stub domain of type dm_dom_t
+declare_domain(domHVM_t)
+create_domain(dom0_t, domHVM_t)
+manage_domain(dom0_t, domHVM_t)
+domain_comms(dom0_t, domHVM_t)
+domain_self_comms(domHVM_t)
+
+declare_domain(dm_dom_t)
+create_domain(dom0_t, dm_dom_t)
+manage_domain(dom0_t, dm_dom_t)
+domain_comms(dom0_t, dm_dom_t)
+device_model(dm_dom_t, domHVM_t)
+
+###############################################################################
+#
+# Device delegation
+#
+###############################################################################
+
+type nic_dev_t, resource_type;
+
+admin_device(dom0_t, nic_dev_t)
+use_device(domU_t, nic_dev_t)
+
+delegate_devices(dom0_t, domU_t)
+
+###############################################################################
+#
+# Label devices for delegation
+#
+# The PCI, IRQ, memory, and I/O port ranges are hardware-specific.
+# You may also use flask-label-pci to dynamically label devices on each boot.
+#
+###############################################################################
+
+# label e1000e nic
+#pirqcon 33 system_u:object_r:nic_dev_t
+#pirqcon 55 system_u:object_r:nic_dev_t
+#iomemcon 0xfebe0-0xfebff system_u:object_r:nic_dev_t
+#iomemcon 0xfebd9 system_u:object_r:nic_dev_t
+#ioportcon 0xecc0-0xecdf system_u:object_r:nic_dev_t
+#pcidevicecon 0xc800 system_u:object_r:nic_dev_t
+
+# label e100 nic
+#pirqcon 16 system_u:object_r:nic_dev_t
+#iomemcon 0xfe5df system_u:object_r:nic_dev_t
+#iomemcon 0xfe5e0-0xfe5ff system_u:object_r:nic_dev_t
+#iomemcon 0xc2000-0xc200f system_u:object_r:nic_dev_t
+#ioportcon 0xccc0-0xcd00 system_u:object_r:nic_dev_t
+
+# label usb 1d.0-2 1d.7
+#pirqcon 23 system_u:object_r:nic_dev_t
+#pirqcon 17 system_u:object_r:nic_dev_t
+#pirqcon 18 system_u:object_r:nic_dev_t
+#ioportcon 0xff80-0xFF9F system_u:object_r:nic_dev_t
+#ioportcon 0xff60-0xff7f system_u:object_r:nic_dev_t
+#ioportcon 0xff40-0xff5f system_u:object_r:nic_dev_t
+#iomemcon 0xff980 system_u:object_r:nic_dev_t
+#ioportcon 0xff00-0xff1f system_u:object_r:nic_dev_t
+
+################################################################################
+#
+# Policy constraints
+#
+# Neverallow rules will cause the policy build to fail if an allow rule exists
+# that violates the expression. This is used to ensure proper labeling of
+# objects.
+#
+################################################################################
+
+# Domains must be declared using domain_type
+neverallow * ~domain_type:domain create;
+
+# Resources must be declared using resource_type
+neverallow * ~resource_type:resource use;
+
+# Events must use event_type (see create_channel for a template)
+neverallow ~event_type *:event bind;
+neverallow * ~event_type:event { create send status };
+
+################################################################################
+#
+# Roles
+#
+################################################################################
+
+# The object role (object_r) is used for devices, resources, and event channels;
+# it does not need to be defined here and should not be used for domains.
+
+# The system role is used for utility domains and pseudo-domains
+role system_r;
+role system_r types { xen_type domain_type };
+# If you want to prevent domUs from being placed in system_r:
+##role system_r types { xen_type dom0_t };
+
+# The vm role is used for customer virtual machines
+role vm_r;
+role vm_r types { domain_type -dom0_t };

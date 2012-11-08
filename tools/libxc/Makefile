@@ -1,0 +1,197 @@
+XEN_ROOT = $(CURDIR)/../..
+include $(XEN_ROOT)/tools/Rules.mk
+
+MAJOR    = 4.2
+MINOR    = 0
+
+CTRL_SRCS-y       :=
+CTRL_SRCS-y       += xc_core.c
+CTRL_SRCS-$(CONFIG_X86) += xc_core_x86.c
+CTRL_SRCS-$(CONFIG_IA64) += xc_core_ia64.c
+CTRL_SRCS-$(CONFIG_ARM) += xc_core_arm.c
+CTRL_SRCS-y       += xc_cpupool.c
+CTRL_SRCS-y       += xc_domain.c
+CTRL_SRCS-y       += xc_evtchn.c
+CTRL_SRCS-y       += xc_gnttab.c
+CTRL_SRCS-y       += xc_misc.c
+CTRL_SRCS-y       += xc_flask.c
+CTRL_SRCS-y       += xc_physdev.c
+CTRL_SRCS-y       += xc_private.c
+CTRL_SRCS-y       += xc_sedf.c
+CTRL_SRCS-y       += xc_csched.c
+CTRL_SRCS-y       += xc_csched2.c
+CTRL_SRCS-y       += xc_arinc653.c
+CTRL_SRCS-y       += xc_tbuf.c
+CTRL_SRCS-y       += xc_pm.c
+CTRL_SRCS-y       += xc_cpu_hotplug.c
+CTRL_SRCS-y       += xc_resume.c
+CTRL_SRCS-y       += xc_tmem.c
+CTRL_SRCS-y       += xc_mem_event.c
+CTRL_SRCS-y       += xc_mem_paging.c
+CTRL_SRCS-y       += xc_mem_access.c
+CTRL_SRCS-y       += xc_memshr.c
+CTRL_SRCS-y       += xc_hcall_buf.c
+CTRL_SRCS-y       += xc_foreign_memory.c
+CTRL_SRCS-y       += xtl_core.c
+CTRL_SRCS-y       += xtl_logger_stdio.c
+CTRL_SRCS-$(CONFIG_X86) += xc_pagetab.c
+CTRL_SRCS-$(CONFIG_Linux) += xc_linux.c xc_linux_osdep.c
+CTRL_SRCS-$(CONFIG_SunOS) += xc_solaris.c
+CTRL_SRCS-$(CONFIG_NetBSD) += xc_netbsd.c
+CTRL_SRCS-$(CONFIG_MiniOS) += xc_minios.c
+
+GUEST_SRCS-y :=
+GUEST_SRCS-y += xg_private.c xc_suspend.c
+ifeq ($(CONFIG_MIGRATE),y)
+GUEST_SRCS-y += xc_domain_restore.c xc_domain_save.c
+GUEST_SRCS-y += xc_offline_page.c xc_compression.c
+else
+GUEST_SRCS-y += xc_nomigrate.c
+endif
+
+vpath %.c ../../xen/common/libelf
+CFLAGS += -I../../xen/common/libelf
+
+GUEST_SRCS-y += libelf-tools.c libelf-loader.c
+GUEST_SRCS-y += libelf-dominfo.c libelf-relocate.c
+
+# new domain builder
+GUEST_SRCS-y                 += xc_dom_core.c xc_dom_boot.c
+GUEST_SRCS-y                 += xc_dom_elfloader.c
+GUEST_SRCS-$(CONFIG_X86)     += xc_dom_bzimageloader.c
+GUEST_SRCS-y                 += xc_dom_binloader.c
+GUEST_SRCS-y                 += xc_dom_compat_linux.c
+
+GUEST_SRCS-$(CONFIG_X86)     += xc_dom_x86.c
+GUEST_SRCS-$(CONFIG_X86)     += xc_cpuid_x86.c
+GUEST_SRCS-$(CONFIG_X86)     += xc_hvm_build_x86.c
+GUEST_SRCS-$(CONFIG_IA64)    += xc_dom_ia64.c
+GUEST_SRCS-$(CONFIG_ARM)     += xc_dom_arm.c
+GUEST_SRCS-$(CONFIG_ARM)     += xc_hvm_build_arm.c
+
+OSDEP_SRCS-y                 += xenctrl_osdep_ENOSYS.c
+
+-include $(XEN_TARGET_ARCH)/Makefile
+
+CFLAGS   += -Werror -Wmissing-prototypes
+CFLAGS   += -I. $(CFLAGS_xeninclude)
+
+# Needed for posix_fadvise64() in xc_linux.c
+CFLAGS-$(CONFIG_Linux) += -D_GNU_SOURCE
+
+CFLAGS	+= $(PTHREAD_CFLAGS)
+
+# Define this to make it possible to run valgrind on code linked with these
+# libraries.
+#CFLAGS   += -DVALGRIND -O0 -ggdb3
+
+CTRL_LIB_OBJS := $(patsubst %.c,%.o,$(CTRL_SRCS-y))
+CTRL_PIC_OBJS := $(patsubst %.c,%.opic,$(CTRL_SRCS-y))
+
+GUEST_LIB_OBJS := $(patsubst %.c,%.o,$(GUEST_SRCS-y))
+GUEST_PIC_OBJS := $(patsubst %.c,%.opic,$(GUEST_SRCS-y))
+
+OSDEP_LIB_OBJS := $(patsubst %.c,%.o,$(OSDEP_SRCS-y))
+OSDEP_PIC_OBJS := $(patsubst %.c,%.opic,$(OSDEP_SRCS-y))
+
+LIB := libxenctrl.a
+ifneq ($(stubdom),y)
+LIB += libxenctrl.so libxenctrl.so.$(MAJOR) libxenctrl.so.$(MAJOR).$(MINOR)
+endif
+
+LIB += libxenguest.a
+ifneq ($(stubdom),y)
+LIB += libxenguest.so libxenguest.so.$(MAJOR) libxenguest.so.$(MAJOR).$(MINOR)
+endif
+
+ifneq ($(stubdom),y)
+LIB += xenctrl_osdep_ENOSYS.so
+endif
+
+.PHONY: all
+all: build
+
+.PHONY: build
+build:
+	$(MAKE) libs
+
+.PHONY: libs
+libs: $(LIB)
+
+.PHONY: install
+install: build
+	$(INSTALL_DIR) $(DESTDIR)$(LIBDIR)
+	$(INSTALL_DIR) $(DESTDIR)$(INCLUDEDIR)
+	$(INSTALL_PROG) libxenctrl.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)
+	$(INSTALL_DATA) libxenctrl.a $(DESTDIR)$(LIBDIR)
+	ln -sf libxenctrl.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)/libxenctrl.so.$(MAJOR)
+	ln -sf libxenctrl.so.$(MAJOR) $(DESTDIR)$(LIBDIR)/libxenctrl.so
+	$(INSTALL_DATA) xenctrl.h xenctrlosdep.h xentoollog.h $(DESTDIR)$(INCLUDEDIR)
+	$(INSTALL_PROG) libxenguest.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)
+	$(INSTALL_DATA) libxenguest.a $(DESTDIR)$(LIBDIR)
+	ln -sf libxenguest.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)/libxenguest.so.$(MAJOR)
+	ln -sf libxenguest.so.$(MAJOR) $(DESTDIR)$(LIBDIR)/libxenguest.so
+	$(INSTALL_DATA) xenguest.h $(DESTDIR)$(INCLUDEDIR)
+
+.PHONY: TAGS
+TAGS:
+	etags -t *.c *.h
+
+.PHONY: clean
+clean:
+	rm -rf *.rpm $(LIB) *~ $(DEPS) \
+            $(CTRL_LIB_OBJS) $(CTRL_PIC_OBJS) \
+            $(GUEST_LIB_OBJS) $(GUEST_PIC_OBJS) \
+            $(OSDEP_LIB_OBJS) $(OSDEP_PIC_OBJS)
+
+.PHONY: rpm
+rpm: build
+	rm -rf staging
+	mkdir staging
+	mkdir staging/i386
+	rpmbuild --define "staging$$PWD/staging" --define '_builddir.' \
+		--define "_rpmdir$$PWD/staging" -bb rpm.spec
+	mv staging/i386/*.rpm .
+	rm -rf staging
+
+# libxenctrl
+
+libxenctrl.a: $(CTRL_LIB_OBJS)
+	$(AR) rc $@ $^
+
+libxenctrl.so: libxenctrl.so.$(MAJOR)
+	ln -sf $< $@
+libxenctrl.so.$(MAJOR): libxenctrl.so.$(MAJOR).$(MINOR)
+	ln -sf $< $@
+
+libxenctrl.so.$(MAJOR).$(MINOR): $(CTRL_PIC_OBJS)
+	$(CC) $(LDFLAGS) $(PTHREAD_LDFLAGS) -Wl,$(SONAME_LDFLAG) -Wl,libxenctrl.so.$(MAJOR) $(SHLIB_LDFLAGS) -o $@ $^ $(DLOPEN_LIBS) $(PTHREAD_LIBS) $(APPEND_LDFLAGS)
+
+# libxenguest
+
+libxenguest.a: $(GUEST_LIB_OBJS)
+	$(AR) rc $@ $^
+
+libxenguest.so: libxenguest.so.$(MAJOR)
+	ln -sf $< $@
+libxenguest.so.$(MAJOR): libxenguest.so.$(MAJOR).$(MINOR)
+	ln -sf $< $@
+
+ifeq ($(CONFIG_MiniOS),y)
+zlib-options =
+else
+zlib-options = $(ZLIB)
+endif
+
+xc_dom_bzimageloader.o: CFLAGS += $(call zlib-options,D)
+xc_dom_bzimageloader.opic: CFLAGS += $(call zlib-options,D)
+
+libxenguest.so.$(MAJOR).$(MINOR): COMPRESSION_LIBS = $(call zlib-options,l)
+libxenguest.so.$(MAJOR).$(MINOR): $(GUEST_PIC_OBJS) libxenctrl.so
+	$(CC) $(LDFLAGS) -Wl,$(SONAME_LDFLAG) -Wl,libxenguest.so.$(MAJOR) $(SHLIB_LDFLAGS) -o $@ $(GUEST_PIC_OBJS) $(COMPRESSION_LIBS) -lz $(LDLIBS_libxenctrl) $(PTHREAD_LIBS) $(APPEND_LDFLAGS)
+
+xenctrl_osdep_ENOSYS.so: $(OSDEP_PIC_OBJS) libxenctrl.so
+	$(CC) -g $(LDFLAGS) $(SHLIB_LDFLAGS) -o $@ $(OSDEP_PIC_OBJS) $(LDLIBS_libxenctrl) $(APPEND_LDFLAGS)
+
+-include $(DEPS)
+

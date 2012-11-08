@@ -1,0 +1,240 @@
+                     -----------------------
+                     XSM/FLASK Configuration
+                     -----------------------
+
+Xen provides a security framework called XSM, and FLASK is an implementation of
+a security model using this framework (at the time of writing, it is the only
+one). FLASK defines a mandatory access control policy providing fine-grained
+controls over Xen domains, allowing the policy writer to define what
+interactions between domains, devices, and the hypervisor are permitted.
+
+Some examples of what FLASK can do:
+ - Prevent two domains from communicating via event channels or grants
+ - Control which domains can use device passthrough (and which devices)
+ - Restrict or audit operations performed by privileged domains
+ - Prevent a privileged domain from arbitrarily mapping pages from other domains
+
+Some of these examples require dom0 disaggregation to be useful, since the
+domain build process requires the ability to write to the new domain's memory.
+
+
+Setting up FLASK
+----------------
+
+Xen must be compiled with XSM and FLASK enabled; by default, the security
+framework is disabled. Edit Config.mk or the .config file to set XSM_ENABLE and
+FLASK_ENABLE to "y"; this change requires a make clean and rebuild.
+
+FLASK uses only one domain configuration parameter (seclabel) defining the
+full security label of the newly created domain. If using the example policy,
+"seclabel='system_u:system_r:domU_t'" is an example of a normal domain. The
+labels are in the same format as SELinux labels; see http://selinuxproject.org
+for more details on the use of the user, role, and optional MLS/MCS labels.
+
+FLASK policy overview
+---------------------
+
+Most of FLASK policy consists of defining the interactions allowed between
+different types (domU_t would be the type in this example). For simple policies,
+only type enforcement is used and the user and role are set to system_u and
+system_r for all domains.
+
+The FLASK security framework is mostly configured using a security policy file.
+This policy file is not normally generated during the Xen build process because
+it relies on the SELinux compiler "checkpolicy"; run
+
+	make -C tools/flask/policy
+
+to compile the example policy included with Xen. The policy is generated from
+definition files under this directory. When creating or modifying security
+policy, most modifications will be made to the xen type enforcement (.te) file
+tools/flask/policy/policy/modules/xen/xen.te or the macro definitions in xen.if.
+The XSM policy file needs to be copied to /boot and loaded as a module by grub.
+The exact position of the module does not matter as long as it is after the Xen
+kernel; it is normally placed either just above the dom0 kernel or at the end.
+Once dom0 is running, the policy can be reloaded using "xl loadpolicy".
+
+The example policy included with Xen demonstrates most of the features of FLASK
+that can be used without dom0 disaggregation. The main types for domUs are:
+
+ - domU_t is a domain that can communicate with any other domU_t
+ - isolated_domU_t can only communicate with dom0
+ - prot_domU_t is a domain type whose creation can be disabled with a boolean
+
+HVM domains with stubdomain device models use two types (one per domain):
+ - domHVM_t is an HVM domain that uses a stubdomain device model
+ - dm_dom_t is the device model for a domain with type domHVM_t
+
+One disadvantage of using type enforcement to enforce isolation is that a new
+type is needed for each group of domains. In addition, it is not possible to
+allow isolated_domU_t cannot to create loopback event channels without allowing
+two domains of type isolated_domU_t to communicate with one another.
+
+Users and roles
+---------------
+
+Users are defined in tools/flask/policy/policy/users. The example policy defines
+two users (customer_1 and customer_2) in addition to the system user system_u.
+Users are visible in the labels of domains and associated objects (event
+channels); in the example policy, "customer_1:vm_r:domU_t" is a valid label for
+the customer_1 user.
+
+Access control rules involving users and roles are defined in the policy
+constraints file (tools/flask/policy/policy/constraints). The example policy
+provides constraints that prevent different users from communicating using
+grants or event channels, while still allowing communication with dom0.
+
+Resource Policy
+---------------
+
+The example policy also includes a resource type (nic_dev_t) for device
+passthrough, configured to allow use by domU_t. To label the PCI device 3:2.0
+for passthrough, run:
+
+	tools/flask/utils/flask-label-pci 0000:03:02.0 system_u:object_r:nic_dev_t
+
+This command must be rerun on each boot or after any policy reload.
+
+The example policy was only tested with simple domain creation and may be
+missing rules allowing accesses by dom0 or domU when a number of hypervisor
+features are used. When first loading or writing a policy, you should run FLASK
+in permissive mode (the default) and check the Xen logs (xl dmesg) for AVC
+denials before using it in enforcing mode (flask_enforcing=1 on the command
+line, or xl setenforce).
+
+
+MLS/MCS policy
+--------------
+
+If you want to use the MLS policy, then set TYPE=xen-mls in the policy Makefile
+before building the policy.  Note that the MLS constraints in policy/mls
+are incomplete and are only a sample.
+
+
+AVC denials
+-----------
+
+XSM:Flask will emit avc: denied messages when a permission is denied by the
+policy, just like SELinux. For example, if the HVM rules are removed from the
+declare_domain and create_domain interfaces:
+
+# xl dmesg | grep avc
+(XEN) avc:  denied  { setparam } for domid=0 scontext=system_u:system_r:dom0_t tcontext=system_u:system_r:domU_t tclass=hvm
+(XEN) avc:  denied  { getparam } for domid=0 scontext=system_u:system_r:dom0_t tcontext=system_u:system_r:domU_t tclass=hvm
+(XEN) avc:  denied  { irqlevel } for domid=0 scontext=system_u:system_r:dom0_t tcontext=system_u:system_r:domU_t tclass=hvm
+(XEN) avc:  denied  { pciroute } for domid=0 scontext=system_u:system_r:dom0_t tcontext=system_u:system_r:domU_t tclass=hvm
+(XEN) avc:  denied  { setparam } for domid=4 scontext=system_u:system_r:domU_t tcontext=system_u:system_r:domU_t tclass=hvm
+(XEN) avc:  denied  { cacheattr } for domid=0 scontext=system_u:system_r:dom0_t tcontext=system_u:system_r:domU_t tclass=hvm
+(XEN) avc:  denied  { pcilevel } for domid=0 scontext=system_u:system_r:dom0_t tcontext=system_u:system_r:domU_t tclass=hvm
+
+Existing SELinux tools such as audit2allow can be applied to these denials, e.g.
+xl dmesg | audit2allow
+
+The generated allow rules can then be fed back into the policy by
+adding them to xen.te, although manual review is advised and will
+often lead to adding parameterized rules to the interfaces in xen.if
+to address the general case.
+
+
+Device Labeling in Policy
+-------------------------
+
+FLASK is capable of labeling devices and enforcing policies associated with
+them. There are two methods to label devices: dynamic labeling using
+flask-label-pci or similar tools run in dom0, or static labeling defined in
+policy. Static labeling will make security policy machine-specific and may
+prevent the system from booting after any hardware changes (adding PCI cards,
+memory, or even changing certain BIOS settings). Dynamic labeling requires that
+the domain performing the labeling be trusted to label all the devices in the
+system properly.
+
+To enable static device labeling, a checkpolicy >= 2.0.20 and libsepol >=2.0.39
+are required. The policy Makefile (tools/flask/policy/Makefile) must also be
+changed as follows:
+
+########################################
+#
+# Build a binary policy locally
+#
+$(POLVER): policy.conf
+        @echo "Compiling $(NAME) $(POLVER)"
+       $(QUIET) $(CHECKPOLICY) $^ -o $@            (Comment out this line)
+# Uncomment line below to enable policies for devices
+#        $(QUIET) $(CHECKPOLICY) -t Xen $^ -o $@   (Uncomment this line)
+
+########################################
+#
+# Install a binary policy
+#
+$(LOADPATH): policy.conf
+        @echo "Compiling and installing $(NAME) $(LOADPATH)"
+       $(QUIET) $(CHECKPOLICY) $^ -o $@            (Comment out this line)
+# Uncomment line below to enable policies for devices
+#        $(QUIET) $(CHECKPOLICY) -t Xen $^ -o $@   (Uncomment this line)
+
+
+IRQs, PCI devices, I/O memory and ports can all be labeled.  There are
+commented out lines in xen.te policy for examples on how to label devices.
+
+Device Labeling
+---------------
+
+The "lspci -vvn" command can be used to output all the devices and identifiers
+associated with them.  For example, to label an Intel e1000e ethernet card the
+lspci output is..
+
+00:19.0 0200: 8086:10de (rev 02)
+        Subsystem: 1028:0276
+        Interrupt: pin A routed to IRQ 33
+        Region 0: Memory at febe0000 (32-bit, non-prefetchable) [size=128K]
+        Region 1: Memory at febd9000 (32-bit, non-prefetchable) [size=4K]
+        Region 2: I/O ports at ecc0 [size=32]
+        Kernel modules: e1000e
+
+The labeling can be done with these commands
+
+pirqcon 33 system_u:object_r:nicP_t
+iomemcon 0xfebe0-0xfebff system_u:object_r:nicP_t
+iomemcon 0xfebd9 system_u:object_r:nicP_t
+ioportcon 0xecc0-0xecdf system_u:object_r:nicP_t
+pcidevicecon 0xc800 system_u:object_r:nicP_t
+
+The PCI device label must be computed as the 32-bit SBDF number for the PCI
+device. It the PCI device is aaaa:bb:cc.d or bb:cc.d, then the SBDF can be
+calculated using:
+	SBDF = (a << 16) | (b << 8) | (c << 3) | d
+
+The AVC denials for IRQs, memory, ports, and PCI devices will normally contain
+the ranges being denied to more easily determine what resources are required.
+When running in permissive mode, only the first denial of a given
+source/destination is printed to the log, so labeling devices using this method
+may require multiple passes to find all required ranges.
+
+Additional notes on XSM:FLASK
+-----------------------------
+
+1) xen command line parameters
+
+	a) flask_enforcing
+	
+	The default value for flask_enforcing is '0'.  This parameter causes the 
+	platform to boot in permissive mode which means that the policy is loaded 
+	but not enforced.  This mode is often helpful for developing new systems 
+	and policies as the policy violations are reported on the xen console and 
+	may be viewed in dom0 through 'xl dmesg'.
+	
+	To boot the platform into enforcing mode, which means that the policy is
+	loaded and enforced, append 'flask_enforcing=1' on the grub line.
+	
+	This parameter may also be changed through the flask hypercall.
+	
+	b) flask_enabled
+	
+	The default value for flask_enabled is '1'.  This parameter causes the
+	platform to enable the FLASK security module under the XSM framework.
+	The parameter may be enabled/disabled only once per boot.  If the parameter
+	is set to '0', only a reboot can re-enable flask.  When flask_enabled is '0'
+	the DUMMY module is enforced.
+
+	This parameter may also be changed through the flask hypercall.  But may
+	only be performed once per boot.
