@@ -90,3 +90,4 @@ void pci_quadro6000_init(PCIBus* bus) {
 
     printf("Register Quadro6000 device model: %x\n", instance);
 }
+/* vim: set sw=4 ts=4 et tw=80 : */
