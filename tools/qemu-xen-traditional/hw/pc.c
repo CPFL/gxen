@@ -42,6 +42,8 @@
 #include "virtio-console.h"
 #include "hpet_emul.h"
 
+#include "quadro6000.h"
+
 #ifdef CONFIG_PASSTHROUGH
 #include "pass-through.h"
 #endif
@@ -1059,6 +1061,11 @@ vga_bios_error:
             pci_xen_platform_init(pci_bus);
             platform_fixed_ioport_init();
         }
+
+	// TODO:(Constellation)
+	// Added code
+	// Create fake PCI device model for Quadro 6000
+	pci_quadro6000_init(pci_bus);
     }
 
     for(i = 0; i < MAX_SERIAL_PORTS; i++) {
