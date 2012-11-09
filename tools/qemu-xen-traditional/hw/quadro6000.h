@@ -1,6 +1,11 @@
 #ifndef HW_QUADRO6000_H_
 #define HW_QUADRO6000_H_
 
+#define QUADRO6000_VENDOR 0x10DE
+#define QUADRO6000_DEVICE 0x6D8
+#define QUADRO6000_COMMAND 0x05
+#define QUADRO6000_REVISION 0xA3
+
 void pci_quadro6000_init(PCIBus* bus);
 
 #endif  // HW_QUADRO6000_H_
