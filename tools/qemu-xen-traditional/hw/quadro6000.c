@@ -194,4 +194,4 @@ void pci_quadro6000_init(PCIBus* bus) {
     instance = pci_bus_num(bus) << 8 | state->pci_dev.devfn;
     Q6_PRINTF("register device model: %x\n", instance);
 }
-/* vim: set sw=8 ts=8 et tw=80 : */
+/* vim: set sw=4 ts=4 et tw=80 : */
