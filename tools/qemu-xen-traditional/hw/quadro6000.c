@@ -62,22 +62,29 @@ struct pci_config_header {
 void pci_quadro6000_init(PCIBus* bus) {
     quadro6000_state_t* state;
     struct pci_config_header* pch;
+    uint8_t *pci_conf;
     int instance;
 
     state = (quadro6000_state_t*)pci_register_device(bus, "quadro6000", sizeof(quadro6000_state_t), -1, NULL, NULL);
+    pci_conf = state->dev.config;
     pch = (struct pci_config_header *)state->pci_dev.config;
-    pch->vendor_id = QUADRO6000_VENDOR;
-    pch->device_id = QUADRO6000_DEVICE;
+
+    pci_config_set_vendor_id(pci_conf, QUADRO6000_VENDOR);
+    pci_config_set_device_id(pci_conf, QUADRO6000_DEVICE);
     pch->command = QUADRO6000_COMMAND; /* IO, memory access and bus master */
+    pci_config_set_class(pci_conf, PCI_CLASS_DISPLAY_VGA);
     pch->revision = QUADRO6000_REVISION;
-    pch->api = 0;
-    pci_config_set_class(state->pci_dev.config, PCI_CLASS_DISPLAY_VGA);
+    pch->header_type = 0;
+    pci_conf[0x2c] = 0x53; /* subsystem vendor: XenSource */
+    pci_conf[0x2d] = 0x58;
+    pci_conf[0x2e] = 0x01; /* subsystem device */
+    pci_conf[0x2f] = 0x00;
+    pch->interrupt_pin = 1;
+
 #if 0
     pch->subclass = 0x80; /* Other */
     pch->class = 0xff; /* Unclassified device class */
 #endif
-    pch->header_type = 0;
-    pch->interrupt_pin = 1;
 
     instance = pci_bus_num(bus) << 8 | state->pci_dev.devfn;
 
