@@ -3,9 +3,14 @@
 
 #define QUADRO6000_VENDOR 0x10DE
 #define QUADRO6000_DEVICE 0x6D8
-#define QUADRO6000_COMMAND 0x05
+#define QUADRO6000_COMMAND 0x07
 #define QUADRO6000_REVISION 0xA3
+
+#define Q6_PRINTF(fmt, arg...) do {\
+    printf("[Quadro6000] %s:%d - " fmt, __func__, __LINE__, ##arg);\
+} while (0)
 
 void pci_quadro6000_init(PCIBus* bus);
 
 #endif  // HW_QUADRO6000_H_
+/* vim: set sw=4 ts=4 et tw=80 : */
