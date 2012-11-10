@@ -102,23 +102,26 @@ static void quadro6000_initialize_bar0(quadro6000_state_t* state) {
     write32(state->bar[0].space, NV03_PMC_BOOT_0, QUADRO6000_REG0);
 
     // map vbios
+    Q6_PRINTF("BIOS size ... %d\n", sizeof(quadro6000_vbios));
     memcpy(state->bar[0].space + NV_PROM_OFFSET, quadro6000_vbios, sizeof(quadro6000_vbios));
 }
 
 static uint32_t quadro6000_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
-    Q6_PRINTF("MMIO bar0 readb 0x%X\n", addr);
+    // Q6_PRINTF("MMIO bar0 readb 0x%X\n", addr);
     quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
-    return read8(state->bar[0].space, addr - state->bar[0].addr);
+    const target_phys_addr_t offset = addr - state->bar[0].addr;
+    return read8(state->bar[0].space, offset);
 }
 
 static uint32_t quadro6000_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
-    Q6_PRINTF("MMIO bar0 readw 0x%X\n", addr);
+    // Q6_PRINTF("MMIO bar0 readw 0x%X\n", addr);
     quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
-    return read16(state->bar[0].space, addr - state->bar[0].addr);
+    const target_phys_addr_t offset = addr - state->bar[0].addr;
+    return read16(state->bar[0].space, offset);
 }
 
 static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
-    Q6_PRINTF("MMIO bar0 readd 0x%X\n", addr);
+    // Q6_PRINTF("MMIO bar0 readd 0x%X\n", addr);
     quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     switch (offset) {
