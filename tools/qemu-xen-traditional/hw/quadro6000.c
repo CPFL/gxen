@@ -67,31 +67,52 @@ struct pci_config_header {
     uint8_t  max_lat;
 };
 
+// Currently not considering alignment
+static uint32_t read32(void* ptr, ptrdiff_t offset) {
+    return *(uint32_t*)(((uint8_t*)ptr) + offset);
+}
+
+static uint16_t read16(void* ptr, ptrdiff_t offset) {
+    return *(uint16_t*)(((uint8_t*)ptr) + offset);
+}
+
+static uint8_t read8(void* ptr, ptrdiff_t offset) {
+    return *(uint8_t*)(((uint8_t*)ptr) + offset);
+}
+
+static void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
+    *(uint32_t*)(((uint8_t*)ptr) + offset) = data;
+}
+
+static void write16(void* ptr, ptrdiff_t offset, uint16_t data) {
+    *(uint16_t*)(((uint8_t*)ptr) + offset) = data;
+}
+
+static void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
+    *(uint8_t*)(((uint8_t*)ptr) + offset) = data;
+}
+
 static void quadro6000_initialize_bar0(quadro6000_state_t* state) {
     state->bar[0].space = qemu_mallocz(0x2000000);
-    *((uint32_t*)(state->bar[0].space + NV03_PMC_BOOT_0)) = QUADRO6000_REG0;
+    write32(state->bar[0].space, NV03_PMC_BOOT_0, QUADRO6000_REG0);
 }
 
 static uint32_t quadro6000_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
     Q6_PRINTF("MMIO bar0 readb 0x%X\n", addr);
-    return 0;
-//    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
-//    addr -= state->bar[0].addr;
-//    return *((uint8_t*)(state->bar[0].space + addr));
+    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    return read8(state->bar[0].space, addr - state->bar[0].addr);
 }
 
 static uint32_t quadro6000_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
     Q6_PRINTF("MMIO bar0 readw 0x%X\n", addr);
-    return 0;
-//    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
-//    addr -= state->bar[0].addr;
-//    return *((uint16_t*)(state->bar[0].space + addr));
+    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    return read16(state->bar[0].space, addr - state->bar[0].addr);
 }
 
 static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
+    Q6_PRINTF("MMIO bar0 readd 0x%X\n", addr);
     quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
-    addr -= state->bar[0].addr;
-    return *((uint32_t*)(state->bar[0].space + addr));
+    return read32(state->bar[0].space, addr - state->bar[0].addr);
 }
 
 static void quadro6000_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
