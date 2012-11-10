@@ -68,6 +68,43 @@ struct pci_config_header {
     uint8_t  max_lat;
 };
 
+// Functional blocks
+// http://nouveau.freedesktop.org/wiki/HwIntroduction#The_functional_blocks
+#define LIST_FUNCTIONAL_BLOCK(V)\
+    V(PMC)\
+    V(PBUS)\
+    V(PFIFO)\
+    V(PFIFO_CACHE_I)\
+    V(PVIDEO)\
+    V(PTIMER)\
+    V(PTV)\
+    V(PCONNECTOR)\
+    V(PRMVIO)\
+    V(PFB)\
+    V(PEXTDEV)\
+    V(PROM)\
+    V(PGRAPH)\
+    V(PCRTC0)\
+    V(PRMCIO)\
+    V(PDISPLAY)\
+    V(PDISPLAY_USER)\
+    V(PRAMDAC)\
+    V(PRMDIO)\
+    V(PRAMIN)\
+    V(FIFO)
+
+enum functional_block_t {
+#define V(NAME) NAME,
+    LIST_FUNCTIONAL_BLOCK(V)
+#undef V
+};
+
+static const char* functional_block_names = {
+#define V(NAME) #NAME,
+    LIST_FUNCTIONAL_BLOCK(V)
+#undef V
+};
+
 // Currently not considering alignment
 static uint32_t read32(void* ptr, ptrdiff_t offset) {
     return *(uint32_t*)(((uint8_t*)ptr) + offset);
