@@ -200,7 +200,7 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
     bar->size = size;
     bar->type = type;
     cpu_register_physical_memory(addr, size, io_index);
-    Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, mmio_io_addr);
+    Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
 
 static uint32_t quadro6000_ioport_readb(void *opaque, uint32_t addr) {
