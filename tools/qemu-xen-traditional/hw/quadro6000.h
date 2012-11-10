@@ -1,6 +1,7 @@
 #ifndef HW_QUADRO6000_H_
 #define HW_QUADRO6000_H_
 
+#include "nvreg.h"
 #include "nouveau_reg.h"
 
 #define QUADRO6000_VENDOR 0x10DE
