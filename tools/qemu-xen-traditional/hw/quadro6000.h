@@ -7,6 +7,7 @@
 #define QUADRO6000_DEVICE 0x6D8
 #define QUADRO6000_COMMAND 0x07
 #define QUADRO6000_REVISION 0xA3
+#define QUADRO6000_REG0 0x0C0C00A3UL
 
 #define Q6_PRINTF(fmt, arg...) do {\
     printf("[Quadro6000] %s:%d - " fmt, __func__, __LINE__, ##arg);\
