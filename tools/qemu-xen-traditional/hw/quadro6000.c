@@ -28,9 +28,17 @@
 #include "irq.h"
 #include "quadro6000.h"
 
+typedef struct BAR {
+    int io_index;
+    uint32_t addr;
+    uint32_t size;
+    int type;
+    uint8_t* space;
+} bar_t;
+
 typedef struct quadro6000_state {
     PCIDevice  pci_dev;
-    int quadro6000_mmio_addr;
+    bar_t bar[6];
 } quadro6000_state_t;
 
 struct pci_config_header {
@@ -59,55 +67,152 @@ struct pci_config_header {
     uint8_t  max_lat;
 };
 
-static uint32_t quadro6000_mmio_readb(void *opaque, target_phys_addr_t addr) {
+static void quadro6000_initialize_bar0(quadro6000_state_t* state) {
+    state->bar[0].space = qemu_mallocz(0x2000000);
+    *((uint32_t*)(state->bar[0].space + NV03_PMC_BOOT_0)) = QUADRO6000_REG0;
+}
+
+static uint32_t quadro6000_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
+    Q6_PRINTF("MMIO bar0 readb 0x%X\n", addr);
+    return 0;
+//    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+//    addr -= state->bar[0].addr;
+//    return *((uint8_t*)(state->bar[0].space + addr));
+}
+
+static uint32_t quadro6000_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
+    Q6_PRINTF("MMIO bar0 readw 0x%X\n", addr);
+    return 0;
+//    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+//    addr -= state->bar[0].addr;
+//    return *((uint16_t*)(state->bar[0].space + addr));
+}
+
+static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
+    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    addr -= state->bar[0].addr;
+    return *((uint32_t*)(state->bar[0].space + addr));
+}
+
+static void quadro6000_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+}
+
+static void quadro6000_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+}
+
+static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+}
+
+static uint32_t quadro6000_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
+    // Q6_PRINTF("MMIO bar1 readb 0x%X\n", addr);
     return 0;
 }
 
-static uint32_t quadro6000_mmio_readw(void *opaque, target_phys_addr_t addr) {
+static uint32_t quadro6000_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
+    // Q6_PRINTF("MMIO bar1 readw 0x%X\n", addr);
     return 0;
 }
 
-static uint32_t quadro6000_mmio_readd(void *opaque, target_phys_addr_t addr) {
+static uint32_t quadro6000_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
+    // Q6_PRINTF("MMIO bar1 readd 0x%X\n", addr);
     return 0;
 }
 
-static void quadro6000_mmio_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+static void quadro6000_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
 }
 
-static void quadro6000_mmio_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+static void quadro6000_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
 }
 
-static void quadro6000_mmio_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+static void quadro6000_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+}
+
+static uint32_t quadro6000_mmio_bar3_readb(void *opaque, target_phys_addr_t addr) {
+    // Q6_PRINTF("MMIO bar3 readb 0x%X\n", addr);
+    return 0;
+}
+
+static uint32_t quadro6000_mmio_bar3_readw(void *opaque, target_phys_addr_t addr) {
+    // Q6_PRINTF("MMIO bar3 readw 0x%X\n", addr);
+    return 0;
+}
+
+static uint32_t quadro6000_mmio_bar3_readd(void *opaque, target_phys_addr_t addr) {
+    // Q6_PRINTF("MMIO bar3 readd 0x%X\n", addr);
+    return 0;
+}
+
+static void quadro6000_mmio_bar3_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+}
+
+static void quadro6000_mmio_bar3_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+}
+
+static void quadro6000_mmio_bar3_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
 }
 
 // function to access byte (index 0), word (index 1) and dword (index 2)
-static CPUReadMemoryFunc *platform_mmio_read_funcs[3] = {
-    quadro6000_mmio_readb,
-    quadro6000_mmio_readw,
-    quadro6000_mmio_readd,
+typedef CPUReadMemoryFunc* CPUReadMemoryFuncBlock[3];
+static CPUReadMemoryFuncBlock mmio_read_table[5] = {
+    {
+        quadro6000_mmio_bar0_readb,
+        quadro6000_mmio_bar0_readw,
+        quadro6000_mmio_bar0_readd,
+    },
+    {
+        quadro6000_mmio_bar1_readb,
+        quadro6000_mmio_bar1_readw,
+        quadro6000_mmio_bar1_readd,
+    },
+    {},  // bar2
+    {
+        quadro6000_mmio_bar3_readb,
+        quadro6000_mmio_bar3_readw,
+        quadro6000_mmio_bar3_readd,
+    }
 };
 
-static CPUWriteMemoryFunc *platform_mmio_write_funcs[3] = {
-    quadro6000_mmio_writeb,
-    quadro6000_mmio_writew,
-    quadro6000_mmio_writed,
+typedef CPUWriteMemoryFunc* CPUWriteMemoryFuncBlock[3];
+static CPUWriteMemoryFuncBlock mmio_write_table[5] = {
+    {
+        quadro6000_mmio_bar0_writeb,
+        quadro6000_mmio_bar0_writew,
+        quadro6000_mmio_bar0_writed,
+    },
+    {
+        quadro6000_mmio_bar1_writeb,
+        quadro6000_mmio_bar1_writew,
+        quadro6000_mmio_bar1_writed,
+    },
+    {},  // bar2
+    {
+        quadro6000_mmio_bar3_writeb,
+        quadro6000_mmio_bar3_writew,
+        quadro6000_mmio_bar3_writed,
+    }
 };
 
 static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
-    const int mmio_io_addr = cpu_register_io_memory(region_num, platform_mmio_read_funcs, platform_mmio_write_funcs, dev);
-    cpu_register_physical_memory(addr, size, mmio_io_addr);
+    const int io_index = cpu_register_io_memory(region_num, mmio_read_table[region_num], mmio_write_table[region_num], dev);
+    bar_t* bar = &((quadro6000_state_t*)dev)->bar[region_num];
+    bar->io_index = io_index;
+    bar->addr = addr;
+    bar->size = size;
+    bar->type = type;
+    cpu_register_physical_memory(addr, size, io_index);
+    Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, mmio_io_addr);
 }
 
-static uint32_t xen_platform_ioport_readb(void *opaque, uint32_t addr) {
+static uint32_t quadro6000_ioport_readb(void *opaque, uint32_t addr) {
     return 0;
 }
 
-static void xen_platform_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
+static void quadro6000_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
 }
 
 static void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
-    register_ioport_write(addr, size, 1, xen_platform_ioport_writeb, dev);
-    register_ioport_read(addr, size, 1, xen_platform_ioport_readb, dev);
+    register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
+    register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
 }
 
 // Real device information
@@ -181,6 +286,7 @@ void pci_quadro6000_init(PCIBus* bus) {
 
     // Region 0: Memory at d8000000 (32-bit, non-prefetchable) [disabled] [size=32M]
     pci_register_io_region(&state->pci_dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, quadro6000_mmio_map);
+    quadro6000_initialize_bar0(state);
 
     // Region 1: Memory at c0000000 (64-bit, prefetchable) [disabled] [size=128M]
     pci_register_io_region(&state->pci_dev, 1, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, quadro6000_mmio_map);
