@@ -27,6 +27,7 @@
 #include "pci.h"
 #include "irq.h"
 #include "quadro6000.h"
+#include "quadro6000_vbios.inc"
 
 typedef struct BAR {
     int io_index;
@@ -92,9 +93,16 @@ static void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
     *(uint8_t*)(((uint8_t*)ptr) + offset) = data;
 }
 
+// http://nouveau.freedesktop.org/wiki/HwIntroduction
+// BAR 0:
+//   control registers. 16MB in size. Is divided into several areas for
+//   each of the functional blocks of the card.
 static void quadro6000_initialize_bar0(quadro6000_state_t* state) {
     state->bar[0].space = qemu_mallocz(0x2000000);
     write32(state->bar[0].space, NV03_PMC_BOOT_0, QUADRO6000_REG0);
+
+    // map vbios
+    memcpy(state->bar[0].space + NV_PROM_OFFSET, quadro6000_vbios, sizeof(quadro6000_vbios));
 }
 
 static uint32_t quadro6000_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
@@ -112,18 +120,35 @@ static uint32_t quadro6000_mmio_bar0_readw(void *opaque, target_phys_addr_t addr
 static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     Q6_PRINTF("MMIO bar0 readd 0x%X\n", addr);
     quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
-    return read32(state->bar[0].space, addr - state->bar[0].addr);
+    const target_phys_addr_t offset = addr - state->bar[0].addr;
+    switch (offset) {
+        case NV50_PMC_BOOT_0:
+            return QUADRO6000_REG0;
+    }
+    return read32(state->bar[0].space, offset);
 }
 
 static void quadro6000_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    const target_phys_addr_t offset = addr - state->bar[0].addr;
+    write8(state->bar[0].space, offset, val);
 }
 
 static void quadro6000_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    const target_phys_addr_t offset = addr - state->bar[0].addr;
+    write16(state->bar[0].space, offset, val);
 }
 
 static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    const target_phys_addr_t offset = addr - state->bar[0].addr;
+    write32(state->bar[0].space, offset, val);
 }
 
+// BAR 1:
+//   VRAM. On pre-NV50, corresponds directly to the available VRAM on card.
+//   On NV50, gets remapped through VM engine.
 static uint32_t quadro6000_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
     // Q6_PRINTF("MMIO bar1 readb 0x%X\n", addr);
     return 0;
@@ -148,6 +173,7 @@ static void quadro6000_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, u
 static void quadro6000_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
 }
 
+// BAR3 ramin bar
 static uint32_t quadro6000_mmio_bar3_readb(void *opaque, target_phys_addr_t addr) {
     // Q6_PRINTF("MMIO bar3 readb 0x%X\n", addr);
     return 0;
