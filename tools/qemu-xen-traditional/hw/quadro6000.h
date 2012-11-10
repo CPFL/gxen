@@ -1,6 +1,8 @@
 #ifndef HW_QUADRO6000_H_
 #define HW_QUADRO6000_H_
 
+#include "nouveau_reg.h"
+
 #define QUADRO6000_VENDOR 0x10DE
 #define QUADRO6000_DEVICE 0x6D8
 #define QUADRO6000_COMMAND 0x07
