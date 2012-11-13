@@ -70,6 +70,7 @@ void tpm_tis_init(SetIRQFunc *set_irq, void *opaque, int irq);
 
 extern uint8_t *acpi_tables;
 extern size_t acpi_tables_len;
+extern int quadro6000_enabled;
 
 static fdctrl_t *floppy_controller;
 static RTCState *rtc_state;
@@ -1065,7 +1066,9 @@ vga_bios_error:
 	// TODO:(Constellation)
 	// Added code
 	// Create fake PCI device model for Quadro 6000
-	pci_quadro6000_init(pci_bus);
+	if (quadro6000_enabled) {
+	    pci_quadro6000_init(pci_bus);
+	}
     }
 
     for(i = 0; i < MAX_SERIAL_PORTS; i++) {

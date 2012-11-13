@@ -191,6 +191,7 @@ XENAPI_PLATFORM_CFG_TYPES = {
     'pci_power_mgmt': int,
     'xen_platform_pci': int,
     "gfx_passthru": int,
+    "quadro6000": int,
     'oos' : int,
 }
 
