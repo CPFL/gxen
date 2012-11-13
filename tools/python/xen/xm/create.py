@@ -593,6 +593,10 @@ gopts.var('gfx_passthru', val='',
           fn=set_value, default=None,
           use="""Passthrough graphics card?""")
 
+gopts.var('quadro6000', val='',
+          fn=set_value, default=None,
+          use="""export Quadro6000""")
+
 gopts.var('opengl', val='',
           fn=set_value, default=None,
           use="""Enable\Disable OpenGL""")
@@ -1083,7 +1087,7 @@ def configure_hvm(config_image, vals):
              'cpuid', 'cpuid_check',
              'device_model', 'display',
              'fda', 'fdb',
-             'gfx_passthru', 'guest_os_type',
+             'gfx_passthru', 'quadro6000', 'guest_os_type',
              'hap', 'hpet',
              'isa',
              'keymap',
