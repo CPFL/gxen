@@ -23,6 +23,8 @@
  */
 
 #include <time.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include "hw.h"
 #include "pc.h"
 #include "pci.h"
@@ -108,13 +110,18 @@ static const char* functional_block_names = {
 };
 
 // crystal freq is 27000KHz
-#define GPU_CLOCKS_PER_SEC 27000000
+#define GPU_CLOCKS_PER_NANO_SEC 27
+#define GPU_CLOCKS_PER_SEC (GPU_CLOCKS_PER_NANO_SEC * 1000 * 1000)
 static uint32_t timer_numerator = 0;
 static uint32_t timer_denominator = 0;
+static uint64_t timer_nano_sec() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (ts.tv_sec * 1000000ULL) + ts.tv_nsec;
+}
 static uint64_t timer_now() {
-    const uint64_t cpu_clock = clock();
-    const uint64_t gpu_clock = cpu_clock / CLOCKS_PER_SEC * GPU_CLOCKS_PER_SEC;
-    return gpu_clock * (timer_numerator + 1) / (timer_denominator + 1);
+    const uint64_t nano = timer_nano_sec();
+    return nano * GPU_CLOCKS_PER_NANO_SEC * (timer_numerator + 1) / (timer_denominator + 1);
 }
 
 // Currently not considering alignment
@@ -221,27 +228,33 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
 
     case 0x070000:  // nv_wait
         // used in nv50_instmem.c, nv84_instmem_flush
-        // code
-        //     nv_wr32(dev, 0x070000, 0x00000001);
-        //     if (!nv_wait(dev, 0x070000, 0x00000002, 0x00000000))
-        //           NV_ERROR(dev, "PRAMIN flush timeout\n");
         return 0;
 
+    // PTIMER
     // Crystal freq is 27000KHz
     // We use CPU clock value instead of crystal of NVIDIA
     case NV04_PTIMER_TIME_0:
         // low
         return (uint32_t)timer_now();
-
     case NV04_PTIMER_TIME_1:
         // high
         return timer_now() >> 32;
-
     case NV04_PTIMER_NUMERATOR:
         return timer_numerator;
-
     case NV04_PTIMER_DENOMINATOR:
         return timer_denominator;
+
+    // nvc0_graph.c
+    case 0x40910c:  // write 0
+        break;
+    case 0x409100:  // write 2
+        break;
+    case 0x409800:  // nv_wait
+        // used in nvc0_graph.c nvc0_graph_init_ctxctl
+        // HUB init
+        //
+        // FIXME(Yusuke Suzuki) we should store valid context value...
+        return 0x80000001;
 
     // tp
     case GPC_UNIT(0, 0x2608):
@@ -276,10 +289,12 @@ static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, u
 
     case NV04_PTIMER_NUMERATOR:
         timer_numerator = val;
+        Q6_PRINTF("numerator set\n");
         return;
 
     case NV04_PTIMER_DENOMINATOR:
         timer_denominator = val;
+        Q6_PRINTF("denominator set\n");
         return;
     }
     // fallback
