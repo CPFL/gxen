@@ -986,6 +986,7 @@ vga_bios_error:
     }
 
 #ifdef CONFIG_PASSTHROUGH
+    // construct bridge for passthrough
     intel_pch_init(pci_bus);
 #endif
 
@@ -1067,7 +1068,7 @@ vga_bios_error:
 	// Added code
 	// Create fake PCI device model for Quadro 6000
 	if (quadro6000_enabled) {
-	    pci_quadro6000_init(pci_bus);
+	    // pci_quadro6000_init(pci_bus);
 	}
     }
 

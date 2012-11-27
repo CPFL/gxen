@@ -89,6 +89,7 @@
 #include "pt-msi.h"
 #include "qemu-xen.h"
 #include "iomulti.h"
+#include "hw/quadro6000.h"
 
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -4458,16 +4459,32 @@ int power_on_php_devfn(int devfn)
 
     pci_access_init();
 
-    pt_dev =
-        register_real_device(dpci_infos.e_bus,
-            "DIRECT PCI",
-            devfn,
-            php_dev->r_bus,
-            php_dev->r_dev,
-            php_dev->r_func,
-            PT_MACHINE_IRQ_AUTO,
-            dpci_infos.pci_access,
-            php_dev->opt);
+    if (quadro6000_enabled && php_dev->r_bus == 0x0A && php_dev->r_dev == 0x00 && php_dev->r_func == 0x00) {
+	Q6_PRINTF("PASS THROUGH 0x%X\n", devfn);
+	// pci_quadro6000_init(dpci_infos.e_bus, devfn, php_dev->r_bus, php);
+	pt_dev =
+	    pci_quadro6000_init(dpci_infos.e_bus,
+		"VIRTUALIZED GPU",
+		devfn,
+		php_dev->r_bus,
+		php_dev->r_dev,
+		php_dev->r_func,
+		PT_MACHINE_IRQ_AUTO,
+		dpci_infos.pci_access,
+		php_dev->opt);
+
+    } else {
+	pt_dev =
+	    register_real_device(dpci_infos.e_bus,
+		"DIRECT PCI",
+		devfn,
+		php_dev->r_bus,
+		php_dev->r_dev,
+		php_dev->r_func,
+		PT_MACHINE_IRQ_AUTO,
+		dpci_infos.pci_access,
+		php_dev->opt);
+    }
 
     php_dev->opt = NULL;
 
