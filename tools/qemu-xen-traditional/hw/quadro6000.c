@@ -256,6 +256,15 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
         // FIXME(Yusuke Suzuki) we should store valid context value...
         return 0x80000001;
 
+    // nvc0_vm.c
+    case 0x100cb8:
+        break;
+    case 0x100cbc:
+        break;
+    case 0x100c80:
+        // used in nvc0_vm.c nvc0_vm_flush
+        return 0x00ff8000;
+
     // tp
     case GPC_UNIT(0, 0x2608):
         return 0x3;
