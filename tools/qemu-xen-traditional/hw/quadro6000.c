@@ -116,7 +116,7 @@ static uint32_t timer_numerator = 0;
 static uint32_t timer_denominator = 0;
 static uint64_t timer_nano_sec() {
     struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
+    clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000000ULL) + ts.tv_nsec;
 }
 static uint64_t timer_now() {
@@ -125,27 +125,27 @@ static uint64_t timer_now() {
 }
 
 // Currently not considering alignment
-static uint32_t read32(void* ptr, ptrdiff_t offset) {
+static inline uint32_t read32(void* ptr, ptrdiff_t offset) {
     return *(uint32_t*)(((uint8_t*)ptr) + offset);
 }
 
-static uint16_t read16(void* ptr, ptrdiff_t offset) {
+static inline uint16_t read16(void* ptr, ptrdiff_t offset) {
     return *(uint16_t*)(((uint8_t*)ptr) + offset);
 }
 
-static uint8_t read8(void* ptr, ptrdiff_t offset) {
+static inline uint8_t read8(void* ptr, ptrdiff_t offset) {
     return *(uint8_t*)(((uint8_t*)ptr) + offset);
 }
 
-static void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
+static inline void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
     *(uint32_t*)(((uint8_t*)ptr) + offset) = data;
 }
 
-static void write16(void* ptr, ptrdiff_t offset, uint16_t data) {
+static inline void write16(void* ptr, ptrdiff_t offset, uint16_t data) {
     *(uint16_t*)(((uint8_t*)ptr) + offset) = data;
 }
 
-static void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
+static inline void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
     *(uint8_t*)(((uint8_t*)ptr) + offset) = data;
 }
 
@@ -154,12 +154,16 @@ static void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
 //   control registers. 16MB in size. Is divided into several areas for
 //   each of the functional blocks of the card.
 static void quadro6000_initialize_bar0(quadro6000_state_t* state) {
-    state->bar[0].space = qemu_mallocz(0x2000000);
-    write32(state->bar[0].space, NV03_PMC_BOOT_0, QUADRO6000_REG0);
+    void* ptr = qemu_mallocz(0x2000000);
+    state->bar[0].space = ptr;
+    write32(ptr, NV03_PMC_BOOT_0, QUADRO6000_REG0);
 
     // map vbios
     Q6_PRINTF("BIOS size ... %d\n", sizeof(quadro6000_vbios));
     memcpy(state->bar[0].space + NV_PROM_OFFSET, quadro6000_vbios, sizeof(quadro6000_vbios));
+
+    // and initialization information from BIOS
+    #include "quadro6000_init.inc"
 }
 
 static uint32_t quadro6000_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
@@ -193,7 +197,7 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
     quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     switch (offset) {
-    case NV50_PMC_BOOT_0:
+    case NV50_PMC_BOOT_0:  // 0x00000000
         // Q6_PRINTF("MMIO bar0 card 0x%X : 0x%X\n", addr, QUADRO6000_REG0);
         return QUADRO6000_REG0;
 
@@ -233,15 +237,15 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
     // PTIMER
     // Crystal freq is 27000KHz
     // We use CPU clock value instead of crystal of NVIDIA
-    case NV04_PTIMER_TIME_0:
+    case NV04_PTIMER_TIME_0:  // 0x9400
         // low
         return (uint32_t)timer_now();
-    case NV04_PTIMER_TIME_1:
+    case NV04_PTIMER_TIME_1:  // 0x9410
         // high
         return timer_now() >> 32;
-    case NV04_PTIMER_NUMERATOR:
+    case NV04_PTIMER_NUMERATOR:  // 0x9200
         return timer_numerator;
-    case NV04_PTIMER_DENOMINATOR:
+    case NV04_PTIMER_DENOMINATOR:  // 0x9210
         return timer_denominator;
 
     // nvc0_graph.c
