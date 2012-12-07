@@ -27,8 +27,10 @@
 #include <unistd.h>
 #include "hw.h"
 #include "pc.h"
-#include "pci.h"
 #include "irq.h"
+#include "pci.h"
+#include "pci/header.h"
+#include "pci/pci.h"
 #include "pass-through.h"
 #include "quadro6000.h"
 #include "quadro6000_vbios.inc"
@@ -39,11 +41,13 @@ typedef struct BAR {
     uint32_t size;
     int type;
     uint8_t* space;
+    uint8_t* real;
 } bar_t;
 
 typedef struct quadro6000_state {
     struct pt_dev pt_dev;
     bar_t bar[6];
+    struct pci_dev* real;
 } quadro6000_state_t;
 
 struct pci_config_header {
@@ -103,7 +107,7 @@ enum functional_block_t {
 #undef V
 };
 
-static const char* functional_block_names = {
+static const char* functional_block_names[] = {
 #define V(NAME) #NAME,
     LIST_FUNCTIONAL_BLOCK(V)
 #undef V
@@ -114,12 +118,12 @@ static const char* functional_block_names = {
 #define GPU_CLOCKS_PER_SEC (GPU_CLOCKS_PER_NANO_SEC * 1000 * 1000)
 static uint32_t timer_numerator = 0;
 static uint32_t timer_denominator = 0;
-static uint64_t timer_nano_sec() {
+static uint64_t timer_nano_sec(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000000ULL) + ts.tv_nsec;
 }
-static uint64_t timer_now() {
+static uint64_t timer_now(void) {
     const uint64_t nano = timer_nano_sec();
     return nano * GPU_CLOCKS_PER_NANO_SEC * (timer_numerator + 1) / (timer_denominator + 1);
 }
@@ -454,12 +458,15 @@ static CPUWriteMemoryFuncBlock mmio_write_table[5] = {
 };
 
 static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+    quadro6000_state_t* state = (quadro6000_state_t*)dev;
     const int io_index = cpu_register_io_memory(0, mmio_read_table[region_num], mmio_write_table[region_num], dev);
-    bar_t* bar = &((quadro6000_state_t*)dev)->bar[region_num];
+    struct pci_dev* real = state->real;
+    bar_t* bar = &(state)->bar[region_num];
     bar->io_index = io_index;
     bar->addr = addr;
     bar->size = size;
     bar->type = type;
+    // bar->real = ioremap(pt_pci_base_addr(real->base_addr[region_num]), size);
     cpu_register_physical_memory(addr, size, io_index);
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
@@ -474,6 +481,18 @@ static void quadro6000_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) 
 static void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
     register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
+}
+
+// This code is ported from pass-through.c
+static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
+    /* Find real device structure */
+    struct pci_dev* pci_dev;
+    for (pci_dev = pci_access->devices; pci_dev != NULL; pci_dev = pci_dev->next) {
+        if ((r_bus == pci_dev->bus) && (r_dev == pci_dev->dev) && (r_func == pci_dev->func)) {
+            return pci_dev;
+        }
+    }
+    return NULL;
 }
 
 // Real device information
@@ -528,6 +547,7 @@ struct pt_dev * pci_quadro6000_init(PCIBus *bus,
     int instance;
 
     state = (quadro6000_state_t*)pci_register_device(bus, "quadro6000", sizeof(quadro6000_state_t), e_devfn, NULL, NULL);
+    state->real = quadro6000_find_real_device(r_bus, r_dev, r_func, pci_access);
     pci_conf = state->pt_dev.dev.config;
     pch = (struct pci_config_header *)state->pt_dev.dev.config;
 
