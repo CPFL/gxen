@@ -578,7 +578,7 @@ OBJS += rtl8139.o
 OBJS += e1000.o
 
 # Quadro 6000
-OBJS += quadro6000.o
+include $(QEMU_ROOT)/quadro6000.mak
 
 # Serial mouse
 OBJS += msmouse.o
