@@ -33,6 +33,7 @@
 #include "pci/pci.h"
 #include "pass-through.h"
 #include "quadro6000.h"
+#include "quadro6000_channel.h"
 #include "quadro6000_vbios.inc"
 
 typedef struct BAR {
