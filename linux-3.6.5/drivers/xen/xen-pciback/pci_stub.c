@@ -1387,7 +1387,7 @@ static int pcistub_cdv_release(struct inode* inode, struct file* file)
 #define BAR_MASK  0x38U  /*   111000 */
 #define TYPE_MASK 0xC0U  /* 11000000 */
 
-static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned int cmd, unsigned long arg)
+static long pcistub_cdv_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
     // FIXME(Yusuke Suzuki)
     // always considers long is 64bit
@@ -1420,7 +1420,7 @@ static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned in
 	addr = psdev->bars[bar].addr = pci_ioremap_bar(psdev->dev, bar);
     }
 
-    printk(KERN_NOTICE "STUB: BAR %u : 0x%0X memory\n", bar, addr);
+    printk(KERN_NOTICE "STUB: BAR %d : %p memory\n", bar, (void*)addr);
 
     if (read) {
 	switch (wide) {
@@ -1448,7 +1448,7 @@ static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned in
 		writel(value, addr + offset);
 		break;
 	}
-	printk(KERN_NOTICE "STUB: write %u\n", value);
+	printk(KERN_NOTICE "STUB: write %lu\n", value);
     }
 
     spin_unlock_irqrestore(&psdev->lock, flags);
