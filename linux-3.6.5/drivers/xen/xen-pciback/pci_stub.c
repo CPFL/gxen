@@ -1372,11 +1372,13 @@ parse_error:
 
 static int pcistub_cdv_open(struct inode* inode, struct file* file)
 {
+    printk(KERN_NOTICE "pcistub cdv opened\n");
     return 0;
 }
 
 static int pcistub_cdv_release(struct inode* inode, struct file* file)
 {
+    printk(KERN_NOTICE "pcistub cdv closed\n");
     return 0;
 }
 
@@ -1400,8 +1402,13 @@ static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned in
     uint8_t* addr = NULL;
     unsigned long flags;
 
-    struct pcistub_device* psdev = pcistub_device_find(0, (bdf >> 16) & 0xFFUL, (bdf >> 8) & 0xFFUL, bdf & 0xFFUL);
+    struct pcistub_device* psdev = NULL;
+
+    printk(KERN_NOTICE "STUB: ioctl starts BDF %0x\n", bdf);
+
+    psdev = pcistub_device_find(0, (bdf >> 16) & 0xFFUL, (bdf >> 8) & 0xFFUL, bdf & 0xFFUL);
     if (!psdev) {
+	printk(KERN_ERR "STUB: BDF %0x device not found\n", bdf);
 	return -ENODEV;
     }
 
@@ -1412,6 +1419,8 @@ static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned in
     if (!addr) {
 	addr = psdev->bars[bar].addr = pci_ioremap_bar(psdev->dev, bar);
     }
+
+    printk(KERN_NOTICE "STUB: BAR %u : 0x%0X memory\n", bar, addr);
 
     if (read) {
 	switch (wide) {
@@ -1425,6 +1434,7 @@ static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned in
 		ret = readl(addr + offset);
 		break;
 	}
+	printk(KERN_NOTICE "STUB: read %d\n", ret);
     } else {
 	ret = 0;
 	switch (wide) {
@@ -1438,6 +1448,7 @@ static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned in
 		writel(value, addr + offset);
 		break;
 	}
+	printk(KERN_NOTICE "STUB: write %u\n", value);
     }
 
     spin_unlock_irqrestore(&psdev->lock, flags);
@@ -1451,7 +1462,7 @@ static struct file_operations pcistub_fops = {
     .owner = THIS_MODULE,
     .open = pcistub_cdv_open,
     .release = pcistub_cdv_release,
-    .compat_ioctl = pcistub_cdv_ioctl,
+    .unlocked_ioctl = pcistub_cdv_ioctl,
 };
 
 #define PCISTUB_DEV_NAME "pcistub"
