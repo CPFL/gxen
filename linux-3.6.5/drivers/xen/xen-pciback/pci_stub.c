@@ -14,6 +14,8 @@
 #include <linux/wait.h>
 #include <linux/sched.h>
 #include <linux/atomic.h>
+#include <linux/fs.h>
+#include <linux/cdev.h>
 #include <xen/events.h>
 #include <asm/xen/pci.h>
 #include <asm/xen/hypervisor.h>
@@ -38,10 +40,16 @@ struct pcistub_device_id {
 static LIST_HEAD(pcistub_device_ids);
 static DEFINE_SPINLOCK(device_ids_lock);
 
+typedef struct base_address_register {
+    uint8_t* addr;
+} bar_t;
+
 struct pcistub_device {
 	struct kref kref;
 	struct list_head dev_list;
 	spinlock_t lock;
+
+	bar_t bars[7];
 
 	struct pci_dev *dev;
 	struct xen_pcibk_device *pdev;/* non-NULL if struct pci_dev is in use */
@@ -1362,6 +1370,117 @@ parse_error:
 	return -EINVAL;
 }
 
+static int pcistub_cdv_open(struct inode* inode, struct file* file)
+{
+    return 0;
+}
+
+static int pcistub_cdv_release(struct inode* inode, struct file* file)
+{
+    return 0;
+}
+
+#define READ_MASK 0x1U   /*        1 */
+#define WIDE_MASK 0x7U   /*      110 */
+#define BAR_MASK  0x38U  /*   111000 */
+#define TYPE_MASK 0xC0U  /* 11000000 */
+
+static int pcistub_cdv_ioctl(struct inode* inode, struct file* file, unsigned int cmd, unsigned long arg)
+{
+    // FIXME(Yusuke Suzuki)
+    // always considers long is 64bit
+    const int read = cmd & READ_MASK;
+    const int wide = (cmd & WIDE_MASK) >> 1;
+    const int bar = (cmd & BAR_MASK) >> 3;
+    const int type = (cmd & TYPE_MASK) >> 6;
+    const unsigned int bdf = cmd >> 8;
+    const unsigned long value = (unsigned int)arg;
+    const unsigned long offset = arg >> 32;
+    int ret = -EINVAL;
+    uint8_t* addr = NULL;
+    unsigned long flags;
+
+    struct pcistub_device* psdev = pcistub_device_find(0, (bdf >> 16) & 0xFFUL, (bdf >> 8) & 0xFFUL, bdf & 0xFFUL);
+    if (!psdev) {
+	return -ENODEV;
+    }
+
+    spin_lock_irqsave(&psdev->lock, flags);
+
+    // ioremap
+    addr = psdev->bars[bar].addr;
+    if (!addr) {
+	addr = psdev->bars[bar].addr = pci_ioremap_bar(psdev->dev, bar);
+    }
+
+    if (read) {
+	switch (wide) {
+	    case 0x1:  //  byte
+		ret = readb(addr + offset);
+		break;
+	    case 0x2:  //  word
+		ret = readw(addr + offset);
+		break;
+	    case 0x3:  // dword
+		ret = readl(addr + offset);
+		break;
+	}
+    } else {
+	ret = 0;
+	switch (wide) {
+	    case 0x1:  //  byte
+		writeb(value, addr + offset);
+		break;
+	    case 0x2:  //  word
+		writew(value, addr + offset);
+		break;
+	    case 0x3:  // dword
+		writel(value, addr + offset);
+		break;
+	}
+    }
+
+    spin_unlock_irqrestore(&psdev->lock, flags);
+    return ret;
+}
+
+static struct cdev pcistub_cdriver;
+static dev_t pcistub_dev;
+
+static struct file_operations pcistub_fops = {
+    .owner = THIS_MODULE,
+    .open = pcistub_cdv_open,
+    .release = pcistub_cdv_release,
+    .compat_ioctl = pcistub_cdv_ioctl,
+};
+
+#define PCISTUB_DEV_NAME "pcistub"
+#define DEVICE_NUM 1
+#define MAJOR_NUM 300
+#define MINOR_NUM 0
+
+static int pcistub_cdv_init(void)
+{
+    int res;
+    if ((res = alloc_chrdev_region(&pcistub_dev, 0, DEVICE_NUM, PCISTUB_DEV_NAME))) {
+	return -EFAULT;
+    }
+    cdev_init(&pcistub_cdriver, &pcistub_fops);
+    pcistub_cdriver.owner = THIS_MODULE;
+
+    if ((res = cdev_add(&pcistub_cdriver, pcistub_dev, 1))) {
+	return -EFAULT;
+    }
+
+    return 0;
+}
+
+static void pcistub_cdv_exit(void)
+{
+    cdev_del(&pcistub_cdriver);
+    unregister_chrdev_region(pcistub_dev, DEVICE_NUM);
+}
+
 #ifndef MODULE
 /*
  * fs_initcall happens before device_initcall
@@ -1395,6 +1514,11 @@ static int __init xen_pcibk_init(void)
 	if (err)
 		pcistub_exit();
 
+	// character device init code
+	err = pcistub_cdv_init();
+	if (err)
+		pcistub_exit();
+
 	return err;
 }
 
@@ -1402,6 +1526,7 @@ static void __exit xen_pcibk_cleanup(void)
 {
 	xen_pcibk_xenbus_unregister();
 	pcistub_exit();
+	pcistub_cdv_exit();
 }
 
 module_init(xen_pcibk_init);
