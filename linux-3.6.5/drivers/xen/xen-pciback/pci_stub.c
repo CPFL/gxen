@@ -1414,9 +1414,29 @@ static long pcistub_cdv_ioctl(struct file* file, unsigned int cmd, unsigned long
 
     spin_lock_irqsave(&psdev->lock, flags);
 
+    if (!pci_is_enabled(psdev->dev)) {
+	int bars;
+	printk(KERN_NOTICE "STUB: enabling pci\n");
+	bars = pci_select_bars(psdev->dev, IORESOURCE_MEM);
+	if ((ret = pci_enable_device(psdev->dev))) {
+	    printk(KERN_NOTICE "STUB: enabling failed\n");
+	    goto out;
+	}
+	if ((ret = pci_request_selected_regions(psdev->dev, bars, "stub"))) {
+	    printk(KERN_NOTICE "STUB: request region failed\n");
+	    goto out;
+	}
+	if ((ret = pci_save_state(psdev->dev))) {
+	    printk(KERN_NOTICE "STUB: save failed\n");
+	    goto out;
+	}
+    }
+    printk(KERN_NOTICE "STUB: pci enabled %d\n", pci_is_enabled(psdev->dev));
+
     // ioremap
     addr = psdev->bars[bar].addr;
     if (!addr) {
+	printk(KERN_NOTICE "STUB: BAR %d : ioremap %p memory\n", bar, (void*)addr);
 	addr = psdev->bars[bar].addr = pci_ioremap_bar(psdev->dev, bar);
     }
 
@@ -1451,6 +1471,7 @@ static long pcistub_cdv_ioctl(struct file* file, unsigned int cmd, unsigned long
 	printk(KERN_NOTICE "STUB: write %lu\n", value);
     }
 
+out:
     spin_unlock_irqrestore(&psdev->lock, flags);
     return ret;
 }
