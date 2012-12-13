@@ -528,7 +528,7 @@ void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8
                 break;
             }
         }
-        assert(!dev);
+        assert(dev);
 
         ret = pci_device_probe(dev);
         assert(!ret);
