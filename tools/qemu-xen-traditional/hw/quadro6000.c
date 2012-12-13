@@ -39,12 +39,12 @@
 #include "quadro6000_vbios.inc"
 
 typedef struct BAR {
-    int io_index;
-    uint32_t addr;
-    uint32_t size;
+    int io_index;     //  io_index in qemu
+    uint32_t addr;    //  MMIO GPA
+    uint32_t size;    //  MMIO memory size
     int type;
-    uint8_t* space;
-    uint8_t* real;
+    uint8_t* space;   //  workspace memory
+    uint8_t* real;    //  MMIO HVA
 } bar_t;
 
 typedef struct quadro6000_state {
@@ -462,14 +462,31 @@ static CPUWriteMemoryFuncBlock mmio_write_table[5] = {
 };
 
 static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+    int ret;
     quadro6000_state_t* state = (quadro6000_state_t*)dev;
     const int io_index = cpu_register_io_memory(0, mmio_read_table[region_num], mmio_write_table[region_num], dev);
+
     bar_t* bar = &(state)->bar[region_num];
     bar->io_index = io_index;
     bar->addr = addr;
     bar->size = size;
     bar->type = type;
+
+    // get MMIO virtual address to real devices
+    // by using libpciaccess
+    ret = pci_device_map_range(
+            state->access,
+            state->access->regions[region_num].base_addr,
+            state->access->regions[region_num].size,
+            PCI_DEV_MAP_FLAG_WRITABLE,
+            &bar->real);
+
+    if (ret) {
+        Q6_PRINTF("failed to map virt addr\n");
+    }
+
     cpu_register_physical_memory(addr, size, io_index);
+
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
 
