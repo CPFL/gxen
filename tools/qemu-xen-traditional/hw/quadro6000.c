@@ -25,6 +25,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <pciaccess.h>
+#include <assert.h>
 #include "hw.h"
 #include "pc.h"
 #include "irq.h"
@@ -49,6 +51,7 @@ typedef struct quadro6000_state {
     struct pt_dev pt_dev;
     bar_t bar[6];
     struct pci_dev* real;
+    struct pci_device* access;
 } quadro6000_state_t;
 
 struct pci_config_header {
@@ -461,13 +464,11 @@ static CPUWriteMemoryFuncBlock mmio_write_table[5] = {
 static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     quadro6000_state_t* state = (quadro6000_state_t*)dev;
     const int io_index = cpu_register_io_memory(0, mmio_read_table[region_num], mmio_write_table[region_num], dev);
-    struct pci_dev* real = state->real;
     bar_t* bar = &(state)->bar[region_num];
     bar->io_index = io_index;
     bar->addr = addr;
     bar->size = size;
     bar->type = type;
-    // bar->real = ioremap(pt_pci_base_addr(real->base_addr[region_num]), size);
     cpu_register_physical_memory(addr, size, io_index);
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
@@ -494,6 +495,47 @@ static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev,
         }
     }
     return NULL;
+}
+
+// setup real device initialization code
+// TODO(Yusuke Suzuki) See error code
+void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
+    struct pci_device_iterator* it;
+    struct pci_device* dev;
+    int ret;
+
+    ret = pci_system_init();
+    assert(!ret);
+
+    state->real = quadro6000_find_real_device(r_bus, r_dev, r_func, pci_access);
+
+    {
+        struct pci_id_match quadro6000_match = {
+            QUADRO6000_VENDOR,
+            PCI_MATCH_ANY,
+            PCI_MATCH_ANY,
+            PCI_MATCH_ANY,
+            0x30000,
+            0xFFFF0000
+        };
+
+        it = pci_id_match_iterator_create(&quadro6000_match);
+        assert(it);
+
+        while ((dev = pci_device_next(it)) != NULL) {
+            // search by BDF
+            if (dev->bus == r_bus && dev->dev == r_dev && dev->func == r_func) {
+                break;
+            }
+        }
+        assert(!dev);
+
+        ret = pci_device_probe(dev);
+        assert(!ret);
+
+        state->access = dev;
+        pci_iterator_destroy(it);
+    }
 }
 
 // Real device information
@@ -548,7 +590,9 @@ struct pt_dev * pci_quadro6000_init(PCIBus *bus,
     int instance;
 
     state = (quadro6000_state_t*)pci_register_device(bus, "quadro6000", sizeof(quadro6000_state_t), e_devfn, NULL, NULL);
-    state->real = quadro6000_find_real_device(r_bus, r_dev, r_func, pci_access);
+
+    quadro6000_init_real_device(state, r_bus, r_dev, r_func, pci_access);
+
     pci_conf = state->pt_dev.dev.config;
     pch = (struct pci_config_header *)state->pt_dev.dev.config;
 
@@ -586,10 +630,6 @@ struct pt_dev * pci_quadro6000_init(PCIBus *bus,
 
     instance = pci_bus_num(bus) << 8 | state->pt_dev.dev.devfn;
     Q6_PRINTF("register device model: %x\n", instance);
-    {
-        // hard coding...
-        struct pci_dev* device = pt_pci_get_dev(0x0a, 0x00, 0x0);
-    }
     return (struct pt_dev*)state;
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
