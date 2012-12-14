@@ -36,6 +36,7 @@
 #include "pass-through.h"
 #include "quadro6000.h"
 #include "quadro6000_channel.h"
+#include "quadro6000_ioport.h"
 #include "quadro6000_vbios.inc"
 
 typedef struct BAR {
@@ -488,18 +489,6 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
     cpu_register_physical_memory(addr, size, io_index);
 
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
-}
-
-static uint32_t quadro6000_ioport_readb(void *opaque, uint32_t addr) {
-    return 0;
-}
-
-static void quadro6000_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
-}
-
-static void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
-    register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
-    register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
 }
 
 // This code is ported from pass-through.c
