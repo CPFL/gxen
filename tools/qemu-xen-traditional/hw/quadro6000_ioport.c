@@ -23,7 +23,6 @@
  */
 #include "hw.h"
 #include "irq.h"
-#include "pci.h"
 #include "quadro6000.h"
 #include "quadro6000_ioport.h"
 
@@ -35,6 +34,15 @@ static void quadro6000_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) 
 }
 
 void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+    int ret;
+    quadro6000_state_t* state = (quadro6000_state_t*)dev;
+
+    quadro6000_bar_t* bar = &(state)->bar[region_num];
+    bar->io_index = -1;
+    bar->addr = addr;
+    bar->size = size;
+    bar->type = type;
+
     register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
     register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
 }
