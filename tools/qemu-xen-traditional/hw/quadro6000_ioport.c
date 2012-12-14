@@ -21,8 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "hw.h"
-#include "irq.h"
+
 #include "quadro6000.h"
 #include "quadro6000_ioport.h"
 
@@ -33,7 +32,7 @@ static uint32_t quadro6000_ioport_readb(void *opaque, uint32_t addr) {
 static void quadro6000_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
 }
 
-void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+static void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     int ret;
     quadro6000_state_t* state = (quadro6000_state_t*)dev;
 
@@ -46,4 +45,10 @@ void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32
     register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
     register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
 }
+
+void quadro6000_init_ioport(quadro6000_state_t* state) {
+    // Region 5: I/O ports at ec80 [disabled] [size=128]
+    pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, quadro6000_ioport_map);
+}
+
 /* vim: set sw=4 ts=4 et tw=80 : */
