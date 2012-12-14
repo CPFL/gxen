@@ -467,6 +467,9 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
     cpu_register_physical_memory(addr, size, io_index);
 
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
+    if (region_num == 0) {
+        Q6_PRINTF("chipset 0x%X\n", read32(bar->real, 0));
+    }
 }
 
 // This code is ported from pass-through.c
@@ -491,6 +494,7 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
     assert(!ret);
 
     state->real = quadro6000_find_real_device(r_bus, r_dev, r_func, pci_access);
+    pci_fill_info(state->real, PCI_FILL_IRQ | PCI_FILL_BASES | PCI_FILL_ROM_BASE | PCI_FILL_SIZES | PCI_FILL_IDENT | PCI_FILL_CLASS);
 
     {
         struct pci_id_match quadro6000_match = {
@@ -520,6 +524,8 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
 
         state->access = dev;
     }
+    // and enable memory and io port
+    pci_write_word(state->real, PCI_COMMAND, QUADRO6000_COMMAND);
     Q6_PRINTF("PCI device enabled\n");
 }
 
