@@ -467,9 +467,6 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
     cpu_register_physical_memory(addr, size, io_index);
 
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
-    if (region_num == 0) {
-        Q6_PRINTF("chipset 0x%X\n", read32(bar->real, 0));
-    }
 }
 
 // This code is ported from pass-through.c
