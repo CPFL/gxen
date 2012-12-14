@@ -483,16 +483,7 @@ static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev,
 
 // setup real device initialization code
 static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
-    struct pci_device_iterator* it;
-    struct pci_device* dev;
-    int ret;
-
-    ret = pci_system_init();
-    assert(!ret);
-
     state->real = quadro6000_find_real_device(r_bus, r_dev, r_func, pci_access);
-    pci_fill_info(state->real, PCI_FILL_IRQ | PCI_FILL_BASES | PCI_FILL_ROM_BASE | PCI_FILL_SIZES | PCI_FILL_IDENT | PCI_FILL_CLASS);
-
     {
         struct pci_id_match quadro6000_match = {
             QUADRO6000_VENDOR,
@@ -502,6 +493,12 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
             0x30000,
             0xFFFF0000
         };
+        struct pci_device_iterator* it;
+        struct pci_device* dev;
+        int ret;
+
+        ret = pci_system_init();
+        assert(!ret);
 
         it = pci_id_match_iterator_create(&quadro6000_match);
         assert(it);
@@ -514,19 +511,18 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
         pci_iterator_destroy(it);
 
         assert(dev);
+        pci_device_enable(dev);
         ret = pci_device_probe(dev);
         assert(!ret);
 
-        pci_device_enable(dev);
+        // And enable memory and io port.
+        // FIXME(Yusuke Suzuki)
+        // This is very ad-hoc code.
+        // We should cleanup and set precise command code in the future.
+        pci_device_cfg_write_u16(dev, QUADRO6000_COMMAND, PCI_COMMAND);
 
         state->access = dev;
     }
-
-    // And enable memory and io port.
-    // FIXME(Yusuke Suzuki)
-    // This is very ad-hoc code.
-    // We should cleanup and set precise command code in the future.
-    pci_write_word(state->real, PCI_COMMAND, QUADRO6000_COMMAND);
     Q6_PRINTF("PCI device enabled\n");
 }
 
