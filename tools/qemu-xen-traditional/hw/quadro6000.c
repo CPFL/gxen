@@ -524,7 +524,11 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
 
         state->access = dev;
     }
-    // and enable memory and io port
+
+    // And enable memory and io port.
+    // FIXME(Yusuke Suzuki)
+    // This is very ad-hoc code.
+    // We should cleanup and set precise command code in the future.
     pci_write_word(state->real, PCI_COMMAND, QUADRO6000_COMMAND);
     Q6_PRINTF("PCI device enabled\n");
 }
