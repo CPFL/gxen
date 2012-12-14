@@ -51,8 +51,8 @@ typedef struct BAR {
 typedef struct quadro6000_state {
     struct pt_dev pt_dev;
     bar_t bar[6];
-    struct pci_dev* real;
-    struct pci_device* access;
+    struct pci_dev* real;           // from pci.h
+    struct pci_device* access;      // from pciaccess.h. Basically we use this to access device.
 } quadro6000_state_t;
 
 struct pci_config_header {
