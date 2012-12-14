@@ -70,7 +70,6 @@ void tpm_tis_init(SetIRQFunc *set_irq, void *opaque, int irq);
 
 extern uint8_t *acpi_tables;
 extern size_t acpi_tables_len;
-extern int quadro6000_enabled;
 
 static fdctrl_t *floppy_controller;
 static RTCState *rtc_state;

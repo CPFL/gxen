@@ -25,35 +25,11 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <pciaccess.h>
 #include <assert.h>
-#include "hw.h"
-#include "pc.h"
-#include "irq.h"
-#include "pci.h"
-#include "pci/header.h"
-#include "pci/pci.h"
-#include "pass-through.h"
 #include "quadro6000.h"
 #include "quadro6000_channel.h"
 #include "quadro6000_ioport.h"
 #include "quadro6000_vbios.inc"
-
-typedef struct BAR {
-    int io_index;     //  io_index in qemu
-    uint32_t addr;    //  MMIO GPA
-    uint32_t size;    //  MMIO memory size
-    int type;
-    uint8_t* space;   //  workspace memory
-    uint8_t* real;    //  MMIO HVA
-} bar_t;
-
-typedef struct quadro6000_state {
-    struct pt_dev pt_dev;
-    bar_t bar[6];
-    struct pci_dev* real;           // from pci.h
-    struct pci_device* access;      // from pciaccess.h. Basically we use this to access device.
-} quadro6000_state_t;
 
 struct pci_config_header {
     uint16_t vendor_id;
@@ -162,13 +138,13 @@ static inline void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
 // BAR 0:
 //   control registers. 16MB in size. Is divided into several areas for
 //   each of the functional blocks of the card.
-static void quadro6000_initialize_bar0(quadro6000_state_t* state) {
+static void quadro6000_init_bar0(quadro6000_state_t* state) {
     void* ptr = qemu_mallocz(0x2000000);
     state->bar[0].space = ptr;
     write32(ptr, NV03_PMC_BOOT_0, QUADRO6000_REG0);
 
     // map vbios
-    Q6_PRINTF("BIOS size ... %d\n", sizeof(quadro6000_vbios));
+    Q6_PRINTF("BIOS size ... %lu\n", sizeof(quadro6000_vbios));
     memcpy(state->bar[0].space + NV_PROM_OFFSET, quadro6000_vbios, sizeof(quadro6000_vbios));
 
     // and initialization information from BIOS
@@ -327,7 +303,7 @@ static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, u
 // BAR 1:
 //   VRAM. On pre-NV50, corresponds directly to the available VRAM on card.
 //   On NV50, gets remapped through VM engine.
-static void quadro6000_initialize_bar1(quadro6000_state_t* state) {
+static void quadro6000_init_bar1(quadro6000_state_t* state) {
     if (!(state->bar[1].space = qemu_mallocz(0x8000000))) {
         Q6_PRINTF("BAR1 Initialization failed\n");
     }
@@ -377,7 +353,7 @@ static void quadro6000_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, u
 }
 
 // BAR3 ramin bar
-static void quadro6000_initialize_bar3(quadro6000_state_t* state) {
+static void quadro6000_init_bar3(quadro6000_state_t* state) {
     if (!(state->bar[3].space = qemu_mallocz(0x4000000))) {
         Q6_PRINTF("BAR3 Initialization failed\n");
     }
@@ -468,7 +444,7 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
     quadro6000_state_t* state = (quadro6000_state_t*)dev;
     const int io_index = cpu_register_io_memory(0, mmio_read_table[region_num], mmio_write_table[region_num], dev);
 
-    bar_t* bar = &(state)->bar[region_num];
+    quadro6000_bar_t* bar = &(state)->bar[region_num];
     bar->io_index = io_index;
     bar->addr = addr;
     bar->size = size;
@@ -476,15 +452,16 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
 
     // get MMIO virtual address to real devices
     // by using libpciaccess
-    ret = pci_device_map_range(
-            state->access,
-            state->access->regions[region_num].base_addr,
-            state->access->regions[region_num].size,
-            PCI_DEV_MAP_FLAG_WRITABLE,
-            &bar->real);
-
-    if (ret) {
-        Q6_PRINTF("failed to map virt addr\n");
+    if (!bar->real) {
+        ret = pci_device_map_range(
+                state->access,
+                state->access->regions[region_num].base_addr,
+                state->access->regions[region_num].size,
+                PCI_DEV_MAP_FLAG_WRITABLE,
+                (void**)&bar->real);
+        if (ret) {
+            Q6_PRINTF("failed to map virt addr %d\n", ret);
+        }
     }
 
     cpu_register_physical_memory(addr, size, io_index);
@@ -505,7 +482,7 @@ static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev,
 }
 
 // setup real device initialization code
-void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
+static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
     struct pci_device_iterator* it;
     struct pci_device* dev;
     int ret;
@@ -543,6 +520,7 @@ void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8
 
         state->access = dev;
     }
+    Q6_PRINTF("PCI device enabled\n");
 }
 
 // Real device information
@@ -622,18 +600,18 @@ struct pt_dev * pci_quadro6000_init(PCIBus *bus,
 
     // Region 0: Memory at d8000000 (32-bit, non-prefetchable) [disabled] [size=32M]
     pci_register_io_region(&state->pt_dev.dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, quadro6000_mmio_map);
-    quadro6000_initialize_bar0(state);
+    quadro6000_init_bar0(state);
 
     // Region 1: Memory at c0000000 (64-bit, prefetchable) [disabled] [size=128M]
     pci_register_io_region(&state->pt_dev.dev, 1, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, quadro6000_mmio_map);
-    quadro6000_initialize_bar1(state);
+    quadro6000_init_bar1(state);
 
     // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=64M]
     pci_register_io_region(&state->pt_dev.dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, quadro6000_mmio_map);
-    quadro6000_initialize_bar3(state);
+    quadro6000_init_bar3(state);
 
     // Region 5: I/O ports at ec80 [disabled] [size=128]
-    pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, quadro6000_mmio_map);
+    pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, quadro6000_ioport_map);
 
     instance = pci_bus_num(bus) << 8 | state->pt_dev.dev.devfn;
     Q6_PRINTF("register device model: %x\n", instance);
