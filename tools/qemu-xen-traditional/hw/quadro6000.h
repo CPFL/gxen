@@ -31,5 +31,31 @@ extern int quadro6000_enabled;
 #define GPC_UNIT(t, r)   (0x500000 + (t) * 0x8000 + (r))
 #define TP_UNIT(t, m, r) (0x504000 + (t) * 0x8000 + (m) * 0x800 + (r))
 
+// MMIO accesses
+// only considers little endianess
+inline uint8_t quadro6000_read8(const volatile void *addr) {
+    return *(const volatile uint8_t*) addr;
+}
+
+inline uint16_t quadro6000_read16(const volatile void *addr) {
+    return *(const volatile uint16_t*) addr;
+}
+
+inline uint32_t quadro6000_read32(const volatile void *addr) {
+    return *(const volatile uint32_t*) addr;
+}
+
+inline void quadro6000_write8(uint8_t b, volatile void *addr) {
+    *(volatile uint8_t*) addr = b;
+}
+
+inline void quadro6000_write16(uint16_t b, volatile void *addr) {
+    *(volatile uint16_t*) addr = b;
+}
+
+inline void quadro6000_write32(uint32_t b, volatile void *addr) {
+    *(volatile uint32_t*) addr = b;
+}
+
 #endif  // HW_QUADRO6000_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

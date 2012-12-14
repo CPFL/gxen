@@ -133,29 +133,29 @@ static uint64_t timer_now(void) {
     return nano * GPU_CLOCKS_PER_NANO_SEC * (timer_numerator + 1) / (timer_denominator + 1);
 }
 
-// Currently not considering alignment
-static inline uint32_t read32(void* ptr, ptrdiff_t offset) {
-    return *(uint32_t*)(((uint8_t*)ptr) + offset);
+// wrappers
+static inline uint8_t read8(void* ptr, ptrdiff_t offset) {
+    return quadro6000_read8(((uint8_t*)ptr) + offset);
 }
 
 static inline uint16_t read16(void* ptr, ptrdiff_t offset) {
-    return *(uint16_t*)(((uint8_t*)ptr) + offset);
+    return quadro6000_read16(((uint8_t*)ptr) + offset);
 }
 
-static inline uint8_t read8(void* ptr, ptrdiff_t offset) {
-    return *(uint8_t*)(((uint8_t*)ptr) + offset);
-}
-
-static inline void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
-    *(uint32_t*)(((uint8_t*)ptr) + offset) = data;
-}
-
-static inline void write16(void* ptr, ptrdiff_t offset, uint16_t data) {
-    *(uint16_t*)(((uint8_t*)ptr) + offset) = data;
+static inline uint32_t read32(void* ptr, ptrdiff_t offset) {
+    return quadro6000_read32(((uint8_t*)ptr) + offset);
 }
 
 static inline void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
-    *(uint8_t*)(((uint8_t*)ptr) + offset) = data;
+    quadro6000_write8(data, ((uint8_t*)ptr) + offset);
+}
+
+static inline void write16(void* ptr, ptrdiff_t offset, uint16_t data) {
+    quadro6000_write16(data, ((uint8_t*)ptr) + offset);
+}
+
+static inline void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
+    quadro6000_write32(data, ((uint8_t*)ptr) + offset);
 }
 
 // http://nouveau.freedesktop.org/wiki/HwIntroduction
