@@ -538,20 +538,21 @@ void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8
 
         it = pci_id_match_iterator_create(&quadro6000_match);
         assert(it);
-
         while ((dev = pci_device_next(it)) != NULL) {
             // search by BDF
             if (dev->bus == r_bus && dev->dev == r_dev && dev->func == r_func) {
                 break;
             }
         }
-        assert(dev);
+        pci_iterator_destroy(it);
 
+        assert(dev);
         ret = pci_device_probe(dev);
         assert(!ret);
 
+        pci_device_enable(dev);
+
         state->access = dev;
-        pci_iterator_destroy(it);
     }
 }
 
