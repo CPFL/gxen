@@ -207,8 +207,9 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     switch (offset) {
     case NV50_PMC_BOOT_0:  // 0x00000000
-        // Q6_PRINTF("MMIO bar0 card 0x%X : 0x%X\n", addr, QUADRO6000_REG0);
-        return QUADRO6000_REG0;
+        // return QUADRO6000_REG0;
+        // for debugging, we access to real device
+        return read32(state->bar[0].real, offset);
 
     // see nvc0_vram.c
     // Part struct starts with 0x11020c (PBFBs)
