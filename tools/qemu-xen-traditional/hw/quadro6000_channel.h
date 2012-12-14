@@ -7,3 +7,4 @@ typedef struct quadro6000_channel {
 } quadro6000_channel_t;
 
 #endif  // HW_QUADRO6000_CHANNEL_H_
+/* vim: set sw=4 ts=4 et tw=80 : */
