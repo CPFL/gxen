@@ -38,3 +38,4 @@ void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32
     register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
     register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
 }
+/* vim: set sw=4 ts=4 et tw=80 : */

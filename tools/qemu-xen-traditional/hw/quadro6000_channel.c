@@ -25,3 +25,4 @@
 #include "quadro6000_channel.h"
 
 
+/* vim: set sw=4 ts=4 et tw=80 : */
