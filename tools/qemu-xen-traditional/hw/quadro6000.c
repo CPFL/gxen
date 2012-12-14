@@ -515,7 +515,6 @@ static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev,
 }
 
 // setup real device initialization code
-// TODO(Yusuke Suzuki) See error code
 void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
     struct pci_device_iterator* it;
     struct pci_device* dev;
