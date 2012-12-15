@@ -142,7 +142,8 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
         return 0x00000400;
 
     case 0x100800:  //  ?
-        return 0x00000006;
+        break;
+        // return 0x00000006;
 
     case (0x11020c + 0 * 0x1000):  // part 0 size
         return 0x00000400;
@@ -154,7 +155,8 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
 
     case 0x070000:  // nv_wait
         // used in nv50_instmem.c, nv84_instmem_flush
-        return 0;
+        // return 0;
+        break;
 
     // PTIMER
     // Crystal freq is 27000KHz
@@ -180,7 +182,8 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
         // HUB init
         //
         // FIXME(Yusuke Suzuki) we should store valid context value...
-        return 0x80000001;
+        // return 0x80000001;
+        break;
 
     // nvc0_vm.c
     case 0x100cb8:
@@ -189,17 +192,22 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
         break;
     case 0x100c80:
         // used in nvc0_vm.c nvc0_vm_flush
-        return 0x00ff8000;
+        // return 0x00ff8000;
+        break;
 
     // tp
     case GPC_UNIT(0, 0x2608):
-        return 0x3;
+        // return 0x3;
+        break;
     case GPC_UNIT(1, 0x2608):
-        return 0x4;
+        // return 0x4;
+        break;
     case GPC_UNIT(2, 0x2608):
-        return 0x3;
+        // return 0x3;
+        break;
     case GPC_UNIT(3, 0x2608):
-        return 0x4;
+        // return 0x4;
+        break;
     }
     // return read32(state->bar[0].space, offset);
     return read32(state->bar[0].real, offset);
@@ -221,7 +229,8 @@ static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, u
         //           NV_ERROR(dev, "PRAMIN flush timeout\n");
         // flush instruction
         // nv84_instmem_flush();
-        return;
+        // return;
+        break;
 
     case NV04_PTIMER_NUMERATOR:
         timer_numerator = val;
@@ -421,3 +430,4 @@ void quadro6000_init_mmio(quadro6000_state_t* state) {
     pci_register_io_region(&state->pt_dev.dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, quadro6000_mmio_map);
     quadro6000_init_bar3(state);
 }
+/* vim: set sw=4 ts=4 et tw=80 : */
