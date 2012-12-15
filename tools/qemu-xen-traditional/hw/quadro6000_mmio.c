@@ -121,7 +121,7 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
     case NV50_PMC_BOOT_0:  // 0x00000000
         // return QUADRO6000_REG0;
         // for debugging, we access to real device
-        return read32(state->bar[0].real, offset);
+        break;
 
     // see nvc0_vram.c
     // Part struct starts with 0x11020c (PBFBs)
@@ -129,29 +129,34 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
         // Quadro6000 has 6 parts
         // return 0x00000006;
         // Q6_PRINTF("MMIO bar0 parts 0x%X : 0x%X\n", addr, 1);
-        return 0x00000001;  // Expose only 1 parts by Quadro6000 device model
+        // return 0x00000001;  // Expose only 1 parts by Quadro6000 device model
+        break;
 
     case 0x022554:  // pmask
         // Q6_PRINTF("MMIO bar0 pmask 0x%X : 0x%X\n", addr, 0);
-        return 0x00000000;
+        // return 0x00000000;
+        break;
 
     case 0x10f20c:  // bsize
         // Quadro6000 has 0x00000400 size vram per part
         // Actually, because of << 20, VRAM part size is 1GB
         // Q6_PRINTF("MMIO bar0 bsize 0x%X : 0x%X\n", addr, 0x400);
-        return 0x00000400;
+        // return 0x00000400;
+        break;
 
     case 0x100800:  //  ?
-        break;
         // return 0x00000006;
+        break;
 
     case (0x11020c + 0 * 0x1000):  // part 0 size
-        return 0x00000400;
+        // return 0x00000400;
+        break;
 
     case 0x409604:
         // gpc_nr TODO(Yusuke Suzuki) fix upper bits
         // gpc_nr(0x4) & rop_nr(0x6)
-        return 0x00060004;
+        // return 0x00060004;
+        break;
 
     case 0x070000:  // nv_wait
         // used in nv50_instmem.c, nv84_instmem_flush
