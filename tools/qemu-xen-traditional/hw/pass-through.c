@@ -89,7 +89,7 @@
 #include "pt-msi.h"
 #include "qemu-xen.h"
 #include "iomulti.h"
-#include "hw/quadro6000.h"
+#include "hw/nvc0.h"
 
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -4459,10 +4459,10 @@ int power_on_php_devfn(int devfn)
 
     pci_access_init();
 
-    if (quadro6000_enabled && php_dev->r_bus == 0x0A && php_dev->r_dev == 0x00 && php_dev->r_func == 0x00) {
+    if (nvc0_enabled && php_dev->r_bus == 0x0A && php_dev->r_dev == 0x00 && php_dev->r_func == 0x00) {
 	Q6_PRINTF("PASS THROUGH 0x%X\n", devfn);
 	pt_dev =
-	    pci_quadro6000_init(dpci_infos.e_bus,
+	    pci_nvc0_init(dpci_infos.e_bus,
 		"VIRTUALIZED GPU",
 		devfn,
 		php_dev->r_bus,

@@ -1,5 +1,5 @@
 /*
- * NVIDIA Quadro6000 channel model
+ * NVIDIA NVC0 channel model
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "quadro6000.h"
-#include "quadro6000_channel.h"
+#include "nvc0.h"
+#include "nvc0_channel.h"
 
 
 /* vim: set sw=4 ts=4 et tw=80 : */

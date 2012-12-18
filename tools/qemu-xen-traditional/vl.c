@@ -281,7 +281,7 @@ uint8_t qemu_uuid[16];
 
 #include "xen-vl-extra.c"
 
-int quadro6000_enabled = 0;
+int nvc0_enabled = 0;
 
 /***********************************************************/
 /* x86 ISA bus support */
@@ -4298,7 +4298,7 @@ enum {
     QEMU_OPTION_acpi,
     QEMU_OPTION_vcpus,
     QEMU_OPTION_vcpu_avail,
-    QEMU_OPTION_quadro6000,
+    QEMU_OPTION_nvc0,
 
     /* Debug/Expert options: */
     QEMU_OPTION_serial,
@@ -4472,7 +4472,7 @@ static const QEMUOption qemu_options[] = {
     { "vncunused", 0, QEMU_OPTION_vncunused },
     { "vcpus", HAS_ARG, QEMU_OPTION_vcpus },
     { "vcpu_avail", HAS_ARG, QEMU_OPTION_vcpu_avail },
-    { "quadro6000", 0, QEMU_OPTION_quadro6000},
+    { "nvc0", 0, QEMU_OPTION_nvc0},
 #if defined(CONFIG_XEN) && !defined(CONFIG_DM)
     { "xen-domid", HAS_ARG, QEMU_OPTION_xen_domid },
     { "xen-create", 0, QEMU_OPTION_xen_create },
@@ -5600,8 +5600,8 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_gfx_passthru:
                 select_vgahw("passthrough");
                 break;
-	    case QEMU_OPTION_quadro6000:
-		quadro6000_enabled = 1;
+	    case QEMU_OPTION_nvc0:
+		nvc0_enabled = 1;
 		break;
             }
         }

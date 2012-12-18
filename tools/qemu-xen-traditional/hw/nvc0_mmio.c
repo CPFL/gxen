@@ -1,5 +1,5 @@
 /*
- * NVIDIA Quadro6000 MMIO model
+ * NVIDIA NVC0 MMIO model
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -25,8 +25,9 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "quadro6000.h"
-#include "quadro6000_vbios.inc"
+#include "nvc0.h"
+#include "nvc0_mmio.h"
+#include "nvc0_vbios.inc"
 
 // crystal freq is 27000KHz
 #define GPU_CLOCKS_PER_NANO_SEC 27
@@ -45,77 +46,77 @@ static uint64_t timer_now(void) {
 
 // wrappers
 static inline uint8_t read8(void* ptr, ptrdiff_t offset) {
-    return quadro6000_read8(((uint8_t*)ptr) + offset);
+    return nvc0_read8(((uint8_t*)ptr) + offset);
 }
 
 static inline uint16_t read16(void* ptr, ptrdiff_t offset) {
-    return quadro6000_read16(((uint8_t*)ptr) + offset);
+    return nvc0_read16(((uint8_t*)ptr) + offset);
 }
 
 static inline uint32_t read32(void* ptr, ptrdiff_t offset) {
-    return quadro6000_read32(((uint8_t*)ptr) + offset);
+    return nvc0_read32(((uint8_t*)ptr) + offset);
 }
 
 static inline void write8(void* ptr, ptrdiff_t offset, uint8_t data) {
-    quadro6000_write8(data, ((uint8_t*)ptr) + offset);
+    nvc0_write8(data, ((uint8_t*)ptr) + offset);
 }
 
 static inline void write16(void* ptr, ptrdiff_t offset, uint16_t data) {
-    quadro6000_write16(data, ((uint8_t*)ptr) + offset);
+    nvc0_write16(data, ((uint8_t*)ptr) + offset);
 }
 
 static inline void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
-    quadro6000_write32(data, ((uint8_t*)ptr) + offset);
+    nvc0_write32(data, ((uint8_t*)ptr) + offset);
 }
 
 // http://nouveau.freedesktop.org/wiki/HwIntroduction
 // BAR 0:
 //   control registers. 16MB in size. Is divided into several areas for
 //   each of the functional blocks of the card.
-static void quadro6000_init_bar0(quadro6000_state_t* state) {
+static void nvc0_init_bar0(nvc0_state_t* state) {
     void* ptr = qemu_mallocz(0x2000000);
     state->bar[0].space = ptr;
-    write32(ptr, NV03_PMC_BOOT_0, QUADRO6000_REG0);
+    write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
 
     // map vbios
-    Q6_PRINTF("BIOS size ... %lu\n", sizeof(quadro6000_vbios));
-    memcpy(state->bar[0].space + NV_PROM_OFFSET, quadro6000_vbios, sizeof(quadro6000_vbios));
+    Q6_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
+    memcpy(state->bar[0].space + NV_PROM_OFFSET, nvc0_vbios, sizeof(nvc0_vbios));
 
     // and initialization information from BIOS
-    #include "quadro6000_init.inc"
+    #include "nvc0_init.inc"
 }
 
-static uint32_t quadro6000_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // return read8(state->bar[0].space, offset);
     return read8(state->bar[0].real, offset);
 }
 
-static uint32_t quadro6000_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // return read16(state->bar[0].space, offset);
     return read16(state->bar[0].real, offset);
 }
 
-static void quadro6000_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // write8(state->bar[0].space, offset, val);
     write8(state->bar[0].real, offset, val);
 }
 
-static void quadro6000_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // write16(state->bar[0].space, offset, val);
     write16(state->bar[0].real, offset, val);
 }
 
-static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
+static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     // Q6_PRINTF("MMIO bar0 readd 0x%X\n", addr);
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     switch (offset) {
     case NV50_PMC_BOOT_0:  // 0x00000000
@@ -218,8 +219,8 @@ static uint32_t quadro6000_mmio_bar0_readd(void *opaque, target_phys_addr_t addr
     return read32(state->bar[0].real, offset);
 }
 
-static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     switch (offset) {
     case 0x00000000:
@@ -255,98 +256,98 @@ static void quadro6000_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, u
 // BAR 1:
 //   VRAM. On pre-NV50, corresponds directly to the available VRAM on card.
 //   On NV50, gets remapped through VM engine.
-static void quadro6000_init_bar1(quadro6000_state_t* state) {
+static void nvc0_init_bar1(nvc0_state_t* state) {
     if (!(state->bar[1].space = qemu_mallocz(0x8000000))) {
         Q6_PRINTF("BAR1 Initialization failed\n");
     }
 }
 
-static uint32_t quadro6000_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     // return read8(state->bar[1].space, offset);
     return read8(state->bar[1].real, offset);
 }
 
-static uint32_t quadro6000_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     // return read16(state->bar[1].space, offset);
     return read16(state->bar[1].real, offset);
 }
 
-static uint32_t quadro6000_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     // return read32(state->bar[1].space, offset);
     return read32(state->bar[1].real, offset);
 }
 
-static void quadro6000_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     // write8(state->bar[1].space, offset, val);
     write8(state->bar[1].real, offset, val);
 }
 
-static void quadro6000_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     // write16(state->bar[1].space, offset, val);
     write16(state->bar[1].real, offset, val);
 }
 
-static void quadro6000_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     // write32(state->bar[1].space, offset, val);
     write32(state->bar[1].real, offset, val);
 }
 
 // BAR3 ramin bar
-static void quadro6000_init_bar3(quadro6000_state_t* state) {
+static void nvc0_init_bar3(nvc0_state_t* state) {
     if (!(state->bar[3].space = qemu_mallocz(0x4000000))) {
         Q6_PRINTF("BAR3 Initialization failed\n");
     }
 }
 
-static uint32_t quadro6000_mmio_bar3_readb(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar3_readb(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     // return read8(state->bar[3].space, offset);
     return read8(state->bar[3].real, offset);
 }
 
-static uint32_t quadro6000_mmio_bar3_readw(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar3_readw(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     // return read16(state->bar[3].space, offset);
     return read16(state->bar[3].real, offset);
 }
 
-static uint32_t quadro6000_mmio_bar3_readd(void *opaque, target_phys_addr_t addr) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static uint32_t nvc0_mmio_bar3_readd(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     // return read32(state->bar[3].space, offset);
     return read32(state->bar[3].real, offset);
 }
 
-static void quadro6000_mmio_bar3_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar3_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     // write8(state->bar[3].space, offset, val);
     write8(state->bar[3].real, offset, val);
 }
 
-static void quadro6000_mmio_bar3_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar3_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     // write16(state->bar[3].space, offset, val);
     write16(state->bar[3].real, offset, val);
 }
 
-static void quadro6000_mmio_bar3_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    quadro6000_state_t* state = (quadro6000_state_t*)(opaque);
+static void nvc0_mmio_bar3_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     // write32(state->bar[3].space, offset, val);
     write32(state->bar[3].real, offset, val);
@@ -356,49 +357,49 @@ static void quadro6000_mmio_bar3_writed(void *opaque, target_phys_addr_t addr, u
 typedef CPUReadMemoryFunc* CPUReadMemoryFuncBlock[3];
 static CPUReadMemoryFuncBlock mmio_read_table[5] = {
     {
-        quadro6000_mmio_bar0_readb,
-        quadro6000_mmio_bar0_readw,
-        quadro6000_mmio_bar0_readd,
+        nvc0_mmio_bar0_readb,
+        nvc0_mmio_bar0_readw,
+        nvc0_mmio_bar0_readd,
     },
     {
-        quadro6000_mmio_bar1_readb,
-        quadro6000_mmio_bar1_readw,
-        quadro6000_mmio_bar1_readd,
+        nvc0_mmio_bar1_readb,
+        nvc0_mmio_bar1_readw,
+        nvc0_mmio_bar1_readd,
     },
     {},  // bar2
     {
-        quadro6000_mmio_bar3_readb,
-        quadro6000_mmio_bar3_readw,
-        quadro6000_mmio_bar3_readd,
+        nvc0_mmio_bar3_readb,
+        nvc0_mmio_bar3_readw,
+        nvc0_mmio_bar3_readd,
     }
 };
 
 typedef CPUWriteMemoryFunc* CPUWriteMemoryFuncBlock[3];
 static CPUWriteMemoryFuncBlock mmio_write_table[5] = {
     {
-        quadro6000_mmio_bar0_writeb,
-        quadro6000_mmio_bar0_writew,
-        quadro6000_mmio_bar0_writed,
+        nvc0_mmio_bar0_writeb,
+        nvc0_mmio_bar0_writew,
+        nvc0_mmio_bar0_writed,
     },
     {
-        quadro6000_mmio_bar1_writeb,
-        quadro6000_mmio_bar1_writew,
-        quadro6000_mmio_bar1_writed,
+        nvc0_mmio_bar1_writeb,
+        nvc0_mmio_bar1_writew,
+        nvc0_mmio_bar1_writed,
     },
     {},  // bar2
     {
-        quadro6000_mmio_bar3_writeb,
-        quadro6000_mmio_bar3_writew,
-        quadro6000_mmio_bar3_writed,
+        nvc0_mmio_bar3_writeb,
+        nvc0_mmio_bar3_writew,
+        nvc0_mmio_bar3_writed,
     }
 };
 
-static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+static void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     int ret;
-    quadro6000_state_t* state = (quadro6000_state_t*)dev;
+    nvc0_state_t* state = (nvc0_state_t*)dev;
     const int io_index = cpu_register_io_memory(0, mmio_read_table[region_num], mmio_write_table[region_num], dev);
 
-    quadro6000_bar_t* bar = &(state)->bar[region_num];
+    nvc0_bar_t* bar = &(state)->bar[region_num];
     bar->io_index = io_index;
     bar->addr = addr;
     bar->size = size;
@@ -422,17 +423,17 @@ static void quadro6000_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, u
     Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
 
-void quadro6000_init_mmio(quadro6000_state_t* state) {
+void nvc0_init_mmio(nvc0_state_t* state) {
     // Region 0: Memory at d8000000 (32-bit, non-prefetchable) [disabled] [size=32M]
-    pci_register_io_region(&state->pt_dev.dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, quadro6000_mmio_map);
-    quadro6000_init_bar0(state);
+    pci_register_io_region(&state->pt_dev.dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
+    nvc0_init_bar0(state);
 
     // Region 1: Memory at c0000000 (64-bit, prefetchable) [disabled] [size=128M]
-    pci_register_io_region(&state->pt_dev.dev, 1, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, quadro6000_mmio_map);
-    quadro6000_init_bar1(state);
+    pci_register_io_region(&state->pt_dev.dev, 1, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    nvc0_init_bar1(state);
 
     // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=64M]
-    pci_register_io_region(&state->pt_dev.dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, quadro6000_mmio_map);
-    quadro6000_init_bar3(state);
+    pci_register_io_region(&state->pt_dev.dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    nvc0_init_bar3(state);
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

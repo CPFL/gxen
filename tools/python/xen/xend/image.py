@@ -855,7 +855,7 @@ class HVMImageHandler(ImageHandler):
 
         dmargs = [ 'boot', 'fda', 'fdb', 'soundhw',
                    'localtime', 'serial', 'stdvga', 'isa',
-                   'acpi', 'usb', 'usbdevice', 'gfx_passthru', 'quadro6000' ]
+                   'acpi', 'usb', 'usbdevice', 'gfx_passthru', 'nvc0' ]
 
         for a in dmargs:
             v = vmConfig['platform'].get(a)

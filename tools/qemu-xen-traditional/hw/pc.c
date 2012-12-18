@@ -42,7 +42,7 @@
 #include "virtio-console.h"
 #include "hpet_emul.h"
 
-#include "quadro6000.h"
+#include "nvc0.h"
 
 #ifdef CONFIG_PASSTHROUGH
 #include "pass-through.h"
@@ -1065,9 +1065,9 @@ vga_bios_error:
 
 	// TODO:(Constellation)
 	// Added code
-	// Create fake PCI device model for Quadro 6000
-	if (quadro6000_enabled) {
-	    // pci_quadro6000_init(pci_bus);
+	// Create fake PCI device model for nvc0
+	if (nvc0_enabled) {
+	    // pci_nvc0_init(pci_bus);
 	}
     }
 
