@@ -1,5 +1,5 @@
 /*
- * NVIDIA Quadro6000 device model
+ * NVIDIA NVC0 device model
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -23,10 +23,10 @@
  */
 
 #include <assert.h>
-#include "quadro6000.h"
-#include "quadro6000_channel.h"
-#include "quadro6000_ioport.h"
-#include "quadro6000_mmio.h"
+#include "nvc0.h"
+#include "nvc0_channel.h"
+#include "nvc0_ioport.h"
+#include "nvc0_mmio.h"
 
 struct pci_config_header {
     uint16_t vendor_id;
@@ -92,7 +92,7 @@ static const char* functional_block_names[] = {
 };
 
 // This code is ported from pass-through.c
-static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
+static struct pci_dev* nvc0_find_real_device(uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
     /* Find real device structure */
     struct pci_dev* pci_dev;
     for (pci_dev = pci_access->devices; pci_dev != NULL; pci_dev = pci_dev->next) {
@@ -104,11 +104,11 @@ static struct pci_dev* quadro6000_find_real_device(uint8_t r_bus, uint8_t r_dev,
 }
 
 // setup real device initialization code
-static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
-    state->real = quadro6000_find_real_device(r_bus, r_dev, r_func, pci_access);
+static void nvc0_init_real_device(nvc0_state_t* state, uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
+    state->real = nvc0_find_real_device(r_bus, r_dev, r_func, pci_access);
     {
-        struct pci_id_match quadro6000_match = {
-            QUADRO6000_VENDOR,
+        struct pci_id_match nvc0_match = {
+            NVC0_VENDOR,
             PCI_MATCH_ANY,
             PCI_MATCH_ANY,
             PCI_MATCH_ANY,
@@ -122,7 +122,7 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
         ret = pci_system_init();
         assert(!ret);
 
-        it = pci_id_match_iterator_create(&quadro6000_match);
+        it = pci_id_match_iterator_create(&nvc0_match);
         assert(it);
         while ((dev = pci_device_next(it)) != NULL) {
             // search by BDF
@@ -141,7 +141,7 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
         // FIXME(Yusuke Suzuki)
         // This is very ad-hoc code.
         // We should cleanup and set precise command code in the future.
-        pci_device_cfg_write_u16(dev, QUADRO6000_COMMAND, PCI_COMMAND);
+        pci_device_cfg_write_u16(dev, NVC0_COMMAND, PCI_COMMAND);
 
         state->access = dev;
     }
@@ -190,27 +190,27 @@ static void quadro6000_init_real_device(quadro6000_state_t* state, uint8_t r_bus
 //         Capabilities: [600 v1] Vendor Specific Information: ID=0001 Rev=1 Len=024 <?>
 //         Kernel driver in use: pciback
 //         Kernel modules: nouveau, nvidiafb
-struct pt_dev * pci_quadro6000_init(PCIBus *bus,
+struct pt_dev * pci_nvc0_init(PCIBus *bus,
         const char *e_dev_name, int e_devfn, uint8_t r_bus, uint8_t r_dev,
         uint8_t r_func, uint32_t machine_irq, struct pci_access *pci_access,
         char *opt) {
-    quadro6000_state_t* state;
+    nvc0_state_t* state;
     struct pci_config_header* pch;
     uint8_t *pci_conf;
     int instance;
 
-    state = (quadro6000_state_t*)pci_register_device(bus, "quadro6000", sizeof(quadro6000_state_t), e_devfn, NULL, NULL);
+    state = (nvc0_state_t*)pci_register_device(bus, "nvc0", sizeof(nvc0_state_t), e_devfn, NULL, NULL);
 
-    quadro6000_init_real_device(state, r_bus, r_dev, r_func, pci_access);
+    nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
     pci_conf = state->pt_dev.dev.config;
     pch = (struct pci_config_header *)state->pt_dev.dev.config;
 
-    pci_config_set_vendor_id(pci_conf, QUADRO6000_VENDOR);
-    pci_config_set_device_id(pci_conf, QUADRO6000_DEVICE);
-    pch->command = QUADRO6000_COMMAND; /* IO, memory access and bus master */
+    pci_config_set_vendor_id(pci_conf, NVC0_VENDOR);
+    pci_config_set_device_id(pci_conf, NVC0_DEVICE);
+    pch->command = NVC0_COMMAND; /* IO, memory access and bus master */
     pci_config_set_class(pci_conf, PCI_CLASS_DISPLAY_VGA);
-    pch->revision = QUADRO6000_REVISION;
+    pch->revision = NVC0_REVISION;
     pch->header_type = 0;
     pch->interrupt_pin = 1;
     pci_conf[0x2c] = 0x53; /* subsystem vendor: XenSource */
@@ -224,10 +224,10 @@ struct pt_dev * pci_quadro6000_init(PCIBus *bus,
 #endif
 
     // init MMIO
-    quadro6000_init_mmio(state);
+    nvc0_init_mmio(state);
 
     // init I/O ports
-    quadro6000_init_ioport(state);
+    nvc0_init_ioport(state);
 
     instance = pci_bus_num(bus) << 8 | state->pt_dev.dev.devfn;
     Q6_PRINTF("register device model: %x\n", instance);

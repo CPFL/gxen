@@ -309,7 +309,7 @@ libxl_domain_build_info = Struct("domain_build_info",[
                                        ("spice",            libxl_spice_info),
                                        
                                        ("gfx_passthru",     libxl_defbool),
-                                       ("quadro6000",     libxl_defbool),
+                                       ("nvc0",		    libxl_defbool),
                                        
                                        ("serial",           string),
                                        ("boot",             string),

@@ -1,5 +1,5 @@
 /*
- * NVIDIA Quadro6000 ioport model
+ * NVIDIA NVC0 ioport model
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -22,33 +22,33 @@
  * THE SOFTWARE.
  */
 
-#include "quadro6000.h"
-#include "quadro6000_ioport.h"
+#include "nvc0.h"
+#include "nvc0_ioport.h"
 
-static uint32_t quadro6000_ioport_readb(void *opaque, uint32_t addr) {
+static uint32_t nvc0_ioport_readb(void *opaque, uint32_t addr) {
     return 0;
 }
 
-static void quadro6000_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
+static void nvc0_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
 }
 
-static void quadro6000_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+static void nvc0_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     int ret;
-    quadro6000_state_t* state = (quadro6000_state_t*)dev;
+    nvc0_state_t* state = (nvc0_state_t*)dev;
 
-    quadro6000_bar_t* bar = &(state)->bar[region_num];
+    nvc0_bar_t* bar = &(state)->bar[region_num];
     bar->io_index = -1;
     bar->addr = addr;
     bar->size = size;
     bar->type = type;
 
-    register_ioport_write(addr, size, 1, quadro6000_ioport_writeb, dev);
-    register_ioport_read(addr, size, 1, quadro6000_ioport_readb, dev);
+    register_ioport_write(addr, size, 1, nvc0_ioport_writeb, dev);
+    register_ioport_read(addr, size, 1, nvc0_ioport_readb, dev);
 }
 
-void quadro6000_init_ioport(quadro6000_state_t* state) {
+void nvc0_init_ioport(nvc0_state_t* state) {
     // Region 5: I/O ports at ec80 [disabled] [size=128]
-    pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, quadro6000_ioport_map);
+    pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, nvc0_ioport_map);
 }
 
 /* vim: set sw=4 ts=4 et tw=80 : */
