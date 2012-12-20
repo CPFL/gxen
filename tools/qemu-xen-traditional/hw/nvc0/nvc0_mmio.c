@@ -201,6 +201,17 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         // return 0x00ff8000;
         break;
 
+    // peephole
+    // these are write port
+    case 0x00155c:  // PEEPHOLE_W_CTRL
+        break;
+    case 0x060000:  // PEEPHOLE_W_ADDR
+        break;
+    case 0x060004:  // PEEPHOLE_W_DATA
+        break;
+    case 0x06000c:  // PEEPHOLE_RW_ADDR_HIGH
+        break;
+
     // tp
     case GPC_UNIT(0, 0x2608):
         // return 0x3;
@@ -215,6 +226,11 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         // return 0x4;
         break;
     }
+
+    // PFIFO
+    if (0x800000 <= offset) {
+    }
+
     // return read32(state->bar[0].space, offset);
     return read32(state->bar[0].real, offset);
 }
