@@ -42,8 +42,6 @@
 #include "virtio-console.h"
 #include "hpet_emul.h"
 
-#include "nvc0.h"
-
 #ifdef CONFIG_PASSTHROUGH
 #include "pass-through.h"
 #endif
@@ -1066,9 +1064,9 @@ vga_bios_error:
 	// TODO:(Constellation)
 	// Added code
 	// Create fake PCI device model for nvc0
-	if (nvc0_enabled) {
-	    // pci_nvc0_init(pci_bus);
-	}
+	// if (nvc0_enabled) {
+	//     pci_nvc0_init(pci_bus);
+	// }
     }
 
     for(i = 0; i < MAX_SERIAL_PORTS; i++) {

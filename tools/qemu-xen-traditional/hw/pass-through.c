@@ -89,7 +89,7 @@
 #include "pt-msi.h"
 #include "qemu-xen.h"
 #include "iomulti.h"
-#include "hw/nvc0.h"
+#include "nvc0/nvc0.h"
 
 #include <unistd.h>
 #include <sys/ioctl.h>
