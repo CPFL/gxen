@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "nvc0.h"
 #include "nvc0_mmio.h"
+#include "nvc0_channels.h"
 #include "nvc0_vbios.inc"
 
 // crystal freq is 27000KHz
@@ -228,7 +229,16 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     }
 
     // PFIFO
-    if (0x800000 <= offset) {
+    if (0x002000 <= offset && offset <= 0x004000) {
+        // PFIFO
+        // 0x003004 + id * 8
+        // see pscnv/nvc0_fifo.c
+        if ((offset - 0x003004) <= NVC0_CHANNELS * 8) {
+            // channel status access
+            // we should shift access target by guest VM
+        }
+    } else if (0x800000 <= offset) {
+        // PFIFO channel table
     }
 
     // return read32(state->bar[0].space, offset);
