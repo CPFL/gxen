@@ -226,6 +226,11 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     case GPC_UNIT(3, 0x2608):
         // return 0x4;
         break;
+
+    // PFIFO
+    case 0x002634:
+        // we should shift channel id
+        break;
     }
 
     // PFIFO

@@ -36,6 +36,7 @@ typedef struct nvc0_state {
     nvc0_bar_t bar[6];
     struct pci_dev* real;           // from pci.h
     struct pci_device* access;      // from pciaccess.h. Basically we use this to access device.
+    uint32_t guest;                 // guest index
 } nvc0_state_t;
 
 struct pt_dev * pci_nvc0_init(PCIBus *e_bus,
