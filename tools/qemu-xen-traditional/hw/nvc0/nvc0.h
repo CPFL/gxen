@@ -1,5 +1,5 @@
-#ifndef HW_NVC0_H_
-#define HW_NVC0_H_
+#ifndef HW_NVC0_NVC0_H_
+#define HW_NVC0_NVC0_H_
 
 #include <pciaccess.h>
 #include "nvreg.h"
@@ -81,5 +81,5 @@ static inline void nvc0_write32(uint32_t b, volatile void *addr) {
     *(volatile uint32_t*) addr = b;
 }
 
-#endif  // HW_NVC0_H_
+#endif  // HW_NVC0_NVC0_H_
 /* vim: set sw=4 ts=4 et tw=80 : */
