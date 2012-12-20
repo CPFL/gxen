@@ -30,6 +30,7 @@
 #include "hw/isa.h"
 #include "hw/baum.h"
 #include "hw/bt.h"
+#include "hw/nvc0/nvc0.h"
 #include "net.h"
 #include "console.h"
 #include "sysemu.h"
@@ -280,8 +281,6 @@ static QEMUTimer *nographic_timer;
 uint8_t qemu_uuid[16];
 
 #include "xen-vl-extra.c"
-
-int nvc0_enabled = 0;
 
 /***********************************************************/
 /* x86 ISA bus support */

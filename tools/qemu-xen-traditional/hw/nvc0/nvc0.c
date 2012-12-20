@@ -28,6 +28,8 @@
 #include "nvc0_ioport.h"
 #include "nvc0_mmio.h"
 
+int nvc0_enabled = 0;
+
 struct pci_config_header {
     uint16_t vendor_id;
     uint16_t device_id;
