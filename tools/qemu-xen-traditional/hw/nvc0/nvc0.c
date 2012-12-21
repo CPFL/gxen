@@ -203,6 +203,11 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
 
     state = (nvc0_state_t*)pci_register_device(bus, "nvc0", sizeof(nvc0_state_t), e_devfn, NULL, NULL);
 
+    // for debugging...
+    // FIXME(Yusuke Suzuki)
+    // set correct guest id
+    state->guest = 1;
+
     nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
     pci_conf = state->pt_dev.dev.config;
