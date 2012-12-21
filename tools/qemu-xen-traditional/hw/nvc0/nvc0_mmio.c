@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include "nvc0.h"
 #include "nvc0_mmio.h"
-#include "nvc0_channels.h"
+#include "nvc0_channel.h"
 #include "nvc0_vbios.inc"
 
 // crystal freq is 27000KHz
@@ -80,7 +80,7 @@ static void nvc0_init_bar0(nvc0_state_t* state) {
     write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
 
     // map vbios
-    Q6_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
+    NVC0_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
     memcpy(state->bar[0].space + NV_PROM_OFFSET, nvc0_vbios, sizeof(nvc0_vbios));
 
     // and initialization information from BIOS
@@ -116,9 +116,13 @@ static void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_
 }
 
 static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
-    // Q6_PRINTF("MMIO bar0 readd 0x%X\n", addr);
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
+
+    if (state->log) {
+        NVC0_PRINTF("read 0x%X\n", addr);
+    }
+
     switch (offset) {
     case NV50_PMC_BOOT_0:  // 0x00000000
         // return QUADRO6000_REG0;
@@ -130,19 +134,19 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     case 0x022438:  // parts
         // Quadro6000 has 6 parts
         // return 0x00000006;
-        // Q6_PRINTF("MMIO bar0 parts 0x%X : 0x%X\n", addr, 1);
+        // NVC0_PRINTF("MMIO bar0 parts 0x%X : 0x%X\n", addr, 1);
         // return 0x00000001;  // Expose only 1 parts by Quadro6000 device model
         break;
 
     case 0x022554:  // pmask
-        // Q6_PRINTF("MMIO bar0 pmask 0x%X : 0x%X\n", addr, 0);
+        // NVC0_PRINTF("MMIO bar0 pmask 0x%X : 0x%X\n", addr, 0);
         // return 0x00000000;
         break;
 
     case 0x10f20c:  // bsize
         // Quadro6000 has 0x00000400 size vram per part
         // Actually, because of << 20, VRAM part size is 1GB
-        // Q6_PRINTF("MMIO bar0 bsize 0x%X : 0x%X\n", addr, 0x400);
+        // NVC0_PRINTF("MMIO bar0 bsize 0x%X : 0x%X\n", addr, 0x400);
         // return 0x00000400;
         break;
 
@@ -253,9 +257,15 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
 static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
+
+    if (state->log) {
+        NVC0_PRINTF("write 0x%X <= 0x%X\n", addr, val);
+    }
+
     switch (offset) {
     case 0x00000000:
-        Q6_PRINTF("write call 0x%X\n", val);
+        NVC0_PRINTF("write call 0x%X\n", val);
+        state->log = val;
         return;
 
     case 0x070000:  // nv_wait
@@ -271,12 +281,12 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
 
     case NV04_PTIMER_NUMERATOR:
         timer_numerator = val;
-        Q6_PRINTF("numerator set\n");
+        NVC0_PRINTF("numerator set\n");
         return;
 
     case NV04_PTIMER_DENOMINATOR:
         timer_denominator = val;
-        Q6_PRINTF("denominator set\n");
+        NVC0_PRINTF("denominator set\n");
         return;
     }
     // fallback
@@ -289,7 +299,7 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
 //   On NV50, gets remapped through VM engine.
 static void nvc0_init_bar1(nvc0_state_t* state) {
     if (!(state->bar[1].space = qemu_mallocz(0x8000000))) {
-        Q6_PRINTF("BAR1 Initialization failed\n");
+        NVC0_PRINTF("BAR1 Initialization failed\n");
     }
 }
 
@@ -338,7 +348,7 @@ static void nvc0_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_
 // BAR3 ramin bar
 static void nvc0_init_bar3(nvc0_state_t* state) {
     if (!(state->bar[3].space = qemu_mallocz(0x4000000))) {
-        Q6_PRINTF("BAR3 Initialization failed\n");
+        NVC0_PRINTF("BAR3 Initialization failed\n");
     }
 }
 
@@ -445,13 +455,13 @@ static void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_
                 PCI_DEV_MAP_FLAG_WRITABLE,
                 (void**)&bar->real);
         if (ret) {
-            Q6_PRINTF("failed to map virt addr %d\n", ret);
+            NVC0_PRINTF("failed to map virt addr %d\n", ret);
         }
     }
 
     cpu_register_physical_memory(addr, size, io_index);
 
-    Q6_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
+    NVC0_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
 
 void nvc0_init_mmio(nvc0_state_t* state) {
