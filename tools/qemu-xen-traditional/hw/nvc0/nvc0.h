@@ -11,6 +11,7 @@
 #include "pci/header.h"
 #include "pci/pci.h"
 #include "pass-through.h"
+#include "nvc0/nvc0_channel.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -81,6 +82,16 @@ static inline void nvc0_write16(uint16_t b, volatile void *addr) {
 
 static inline void nvc0_write32(uint32_t b, volatile void *addr) {
     *(volatile uint32_t*) addr = b;
+}
+
+// channel function
+
+static inline uint32_t nvc0_channel_get_phys_id(nvc0_state_t* state, uint32_t virt) {
+    return virt + state->guest * NVC0_CHANNELS_SHIFT;
+}
+
+static inline uint32_t nvc0_channel_get_virt_id(nvc0_state_t* state, uint32_t phys) {
+    return phys - state->guest * NVC0_CHANNELS_SHIFT;
 }
 
 #endif  // HW_NVC0_NVC0_H_

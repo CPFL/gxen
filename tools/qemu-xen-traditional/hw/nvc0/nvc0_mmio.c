@@ -120,7 +120,7 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     if (state->log) {
-        NVC0_PRINTF("read 0x%X\n", addr);
+        NVC0_PRINTF("read 0x%X\n", offset);
     }
 
     switch (offset) {
@@ -162,11 +162,6 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         // gpc_nr TODO(Yusuke Suzuki) fix upper bits
         // gpc_nr(0x4) & rop_nr(0x6)
         // return 0x00060004;
-        break;
-
-    case 0x070000:  // nv_wait
-        // used in nv50_instmem.c, nv84_instmem_flush
-        // return 0;
         break;
 
     // PTIMER
@@ -232,19 +227,38 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         break;
 
     // PFIFO
-    case 0x002634:
-        // we should shift channel id
+    // we should shift channel id
+    case 0x002634:  // kill
+        return nvc0_channel_get_virt_id(state, read32(state->bar[0].real, offset));
+    // case 0x070000:  // nv_wait
+        // used in nv50_instmem.c, nv84_instmem_flush
+        // return 0;
         break;
     }
 
     // PFIFO
     if (0x002000 <= offset && offset <= 0x004000) {
-        // PFIFO
         // 0x003004 + id * 8
         // see pscnv/nvc0_fifo.c
         if ((offset - 0x003004) <= NVC0_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
+            const uint32_t virt = (offset - 0x003004) >> 3;
+            if (virt >= NVC0_CHANNELS_SHIFT) {
+                // these channels cannot be used
+                if (virt & 0x4) {
+                    // status
+                } else {
+                    // others
+                }
+                // FIXME(Yusuke Suzuki)
+                // return better value
+                return 0;
+            } else {
+                const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
+                const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
+                return read32(state->bar[0].real, adjusted);
+            }
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
@@ -259,7 +273,7 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     if (state->log) {
-        NVC0_PRINTF("write 0x%X <= 0x%X\n", addr, val);
+        NVC0_PRINTF("write 0x%X <= 0x%X\n", offset, val);
     }
 
     switch (offset) {
@@ -288,7 +302,41 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
         timer_denominator = val;
         NVC0_PRINTF("denominator set\n");
         return;
+
+    // we should shift channel id
+    case 0x002634:  // kill
+        write32(state->bar[0].real, offset, nvc0_channel_get_phys_id(state, val));
+        return;
     }
+
+    // PFIFO
+    if (0x002000 <= offset && offset <= 0x004000) {
+        // 0x003004 + id * 8
+        // see pscnv/nvc0_fifo.c
+        if ((offset - 0x003004) <= NVC0_CHANNELS * 8) {
+            // channel status access
+            // we should shift access target by guest VM
+            const uint32_t virt = (offset - 0x003004) >> 3;
+            if (virt >= NVC0_CHANNELS_SHIFT) {
+                // these channels cannot be used
+                if (virt & 0x4) {
+                    // status
+                } else {
+                    // others
+                }
+                // FIXME(Yusuke Suzuki)
+                // write better value
+            } else {
+                const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
+                const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
+                write32(state->bar[0].real, adjusted, val);
+            }
+            return;
+        }
+    } else if (0x800000 <= offset) {
+        // PFIFO channel table
+    }
+
     // fallback
     // write32(state->bar[0].space, offset, val);
     write32(state->bar[0].real, offset, val);

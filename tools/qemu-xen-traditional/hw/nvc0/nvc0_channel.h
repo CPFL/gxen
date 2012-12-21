@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #define NVC0_CHANNELS 128
+#define NVC0_CHANNELS_SHIFT 64
 
 typedef struct nvc0_channel {
     uint32_t status;
