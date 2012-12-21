@@ -206,7 +206,7 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
     // for debugging...
     // FIXME(Yusuke Suzuki)
     // set correct guest id
-    state->guest = 1;
+    state->guest = 0;
 
     nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
