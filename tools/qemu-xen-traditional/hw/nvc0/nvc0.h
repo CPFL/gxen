@@ -18,7 +18,7 @@
 #define NVC0_REVISION 0xA3
 #define NVC0_REG0 0x0C0C00A3UL
 
-#define Q6_PRINTF(fmt, arg...) do {\
+#define NVC0_PRINTF(fmt, arg...) do {\
     printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##arg);\
 } while (0)
 
@@ -37,6 +37,7 @@ typedef struct nvc0_state {
     struct pci_dev* real;           // from pci.h
     struct pci_device* access;      // from pciaccess.h. Basically we use this to access device.
     uint32_t guest;                 // guest index
+    uint32_t log;                   // log flag
 } nvc0_state_t;
 
 struct pt_dev * pci_nvc0_init(PCIBus *e_bus,

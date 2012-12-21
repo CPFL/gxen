@@ -10,7 +10,7 @@ typedef struct nvc0_channel {
 } nvc0_channel_t;
 
 typedef struct nvc0_pfifo {
-    size_t channels;
+    size_t size;
     nvc0_channel_t channels[NVC0_CHANNELS];
 } nvc0_pfifo_t;
 
