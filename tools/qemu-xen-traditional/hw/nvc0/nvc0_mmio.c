@@ -238,12 +238,12 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
 
     // PFIFO
     if (0x002000 <= offset && offset <= 0x004000) {
-        // 0x003004 + id * 8
+        // 0x003000 + id * 8
         // see pscnv/nvc0_fifo.c
-        if ((offset - 0x003004) <= NVC0_CHANNELS * 8) {
+        if ((offset - 0x003000) <= NVC0_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
-            const uint32_t virt = (offset - 0x003004) >> 3;
+            const uint32_t virt = (offset - 0x003000) >> 3;
             if (virt >= NVC0_CHANNELS_SHIFT) {
                 // these channels cannot be used
                 if (virt & 0x4) {
@@ -311,12 +311,12 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
 
     // PFIFO
     if (0x002000 <= offset && offset <= 0x004000) {
-        // 0x003004 + id * 8
+        // 0x003000 + id * 8
         // see pscnv/nvc0_fifo.c
-        if ((offset - 0x003004) <= NVC0_CHANNELS * 8) {
+        if ((offset - 0x003000) <= NVC0_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
-            const uint32_t virt = (offset - 0x003004) >> 3;
+            const uint32_t virt = (offset - 0x003000) >> 3;
             if (virt >= NVC0_CHANNELS_SHIFT) {
                 // these channels cannot be used
                 if (virt & 0x4) {
