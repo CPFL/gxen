@@ -302,11 +302,6 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
         timer_denominator = val;
         NVC0_PRINTF("denominator set\n");
         return;
-
-    // we should shift channel id
-    case 0x002634:  // kill
-        write32(state->bar[0].real, offset, nvc0_channel_get_phys_id(state, val));
-        return;
     }
 
     // PFIFO
@@ -331,6 +326,14 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
                 write32(state->bar[0].real, adjusted, val);
             }
+            return;
+        } else if (offset == 0x002634) {
+            // kill
+            if (val >= NVC0_CHANNELS_SHIFT) {
+                return;
+            }
+            const uint32_t id = nvc0_channel_get_phys_id(state, val);
+            write32(state->bar[0].real, offset, id);
             return;
         }
     } else if (0x800000 <= offset) {
