@@ -2,8 +2,6 @@
 #define HW_NVC0_NVC0_H_
 
 #include <pciaccess.h>
-#include "nvreg.h"
-#include "nouveau_reg.h"
 #include "hw.h"
 #include "pc.h"
 #include "irq.h"
@@ -11,6 +9,8 @@
 #include "pci/header.h"
 #include "pci/pci.h"
 #include "pass-through.h"
+#include "nvc0/nvreg.h"
+#include "nvc0/nouveau_reg.h"
 #include "nvc0/nvc0_channel.h"
 
 #define NVC0_VENDOR 0x10DE
