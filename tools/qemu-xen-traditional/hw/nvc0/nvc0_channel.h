@@ -13,7 +13,11 @@ typedef struct nvc0_channel {
 typedef struct nvc0_pfifo {
     size_t size;
     nvc0_channel_t channels[NVC0_CHANNELS];
+    uint32_t user_vma;        // physical user_vma channel offset value
+    uint32_t user_vma_enabled;
 } nvc0_pfifo_t;
+
+#define NVC0_USER_VMA_CHANNEL 0x1000
 
 #endif  // HW_NVC0_NVC0_CHANNEL_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

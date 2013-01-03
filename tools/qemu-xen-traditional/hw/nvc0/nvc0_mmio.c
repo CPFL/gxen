@@ -257,11 +257,19 @@ static uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
+                if (state->log) {
+                    NVC0_PRINTF("0x%X adjusted to => 0x%X\n", offset, adjusted);
+                }
                 return read32(state->bar[0].real, adjusted);
             }
+        } else if (offset == 0x002254) {
+            // see nvc0_fifo.c
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
+        if (state->log) {
+            NVC0_PRINTF("channel table access 0x%X => 0x%X\n", offset, read32(state->bar[0].real, offset));
+        }
     }
 
     // return read32(state->bar[0].space, offset);
@@ -335,9 +343,22 @@ static void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_
             const uint32_t id = nvc0_channel_get_phys_id(state, val);
             write32(state->bar[0].real, offset, id);
             return;
+        } else if (offset == 0x002254) {
+            // see nvc0_fifo.c
+            if (val >= 0x10000000) {
+                // FIXME we should scan values...
+                state->pfifo.user_vma = (val & (0x10000000 - 1));  // offset
+                state->pfifo.user_vma_enabled = 1;
+                NVC0_PRINTF("user_vma... 0x%X\n", state->pfifo.user_vma);
+            } else {
+                state->pfifo.user_vma_enabled = 0;
+            }
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
+        if (state->log) {
+            NVC0_PRINTF("channel table access 0x%X <= 0x%X\n", offset, val);
+        }
     }
 
     // fallback
@@ -356,7 +377,7 @@ static void nvc0_init_bar1(nvc0_state_t* state) {
 
 static uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("read 0x%X\n", offset);
     }
@@ -365,7 +386,7 @@ static uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
 
 static uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("read 0x%X\n", offset);
     }
@@ -374,16 +395,26 @@ static uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
 
 static uint32_t nvc0_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("read 0x%X\n", offset);
+    }
+    // tracking user_vma
+    if (state->pfifo.user_vma_enabled) {
+        NVC0_PRINTF("user_vma enabled!... 0x%x and 0x%x\n", state->pfifo.user_vma, offset);
+        if (state->pfifo.user_vma <= offset && offset < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
+            NVC0_PRINTF("offset shift ... 0x%X to 0x%X\n", offset, offset + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
+            offset += ((state->guest * NVC0_CHANNELS_SHIFT) << 12);
+        }
+    } else {
+        NVC0_PRINTF("user_vma disabled!... 0x%x\n", offset);
     }
     return read32(state->bar[1].real, offset);
 }
 
 static void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("write 0x%X <= 0x%X\n", offset, val);
     }
@@ -392,7 +423,7 @@ static void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_
 
 static void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("write 0x%X <= 0x%X\n", offset, val);
     }
@@ -401,9 +432,19 @@ static void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_
 
 static void nvc0_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("write 0x%X <= 0x%X\n", offset, val);
+    }
+    // tracking user_vma
+    if (state->pfifo.user_vma_enabled) {
+        NVC0_PRINTF("user_vma enabled!... 0x%x and 0x%x\n", state->pfifo.user_vma, offset);
+        if (state->pfifo.user_vma <= offset && offset < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
+            NVC0_PRINTF("offset shift ... 0x%X to 0x%X\n", offset, offset + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
+            offset += ((state->guest * NVC0_CHANNELS_SHIFT) << 12);
+        }
+    } else {
+        NVC0_PRINTF("user_vma disabled!... 0x%x\n", offset);
     }
     write32(state->bar[1].real, offset, val);
 }
