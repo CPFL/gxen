@@ -47,7 +47,7 @@ struct pt_dev * pci_nvc0_init(PCIBus *e_bus,
         uint8_t r_func, uint32_t machine_irq, struct pci_access *pci_access,
         char *opt);
 
-extern int nvc0_enabled;
+extern long nvc0_guest_id;
 
 // nvc0 graph
 #define GPC_MAX 4

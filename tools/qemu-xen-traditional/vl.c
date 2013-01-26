@@ -5600,7 +5600,7 @@ int main(int argc, char **argv, char **envp)
                 select_vgahw("passthrough");
                 break;
 	    case QEMU_OPTION_nvc0:
-		nvc0_enabled = 1;
+		nvc0_guest_id = strtol(optarg, NULL, 0);
 		break;
             }
         }

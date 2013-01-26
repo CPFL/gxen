@@ -28,7 +28,7 @@
 #include "nvc0_ioport.h"
 #include "nvc0_mmio.h"
 
-int nvc0_enabled = 0;
+long nvc0_guest_id = -1;
 
 struct pci_config_header {
     uint16_t vendor_id;
@@ -203,10 +203,9 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
 
     state = (nvc0_state_t*)pci_register_device(bus, "nvc0", sizeof(nvc0_state_t), e_devfn, NULL, NULL);
 
-    // for debugging...
     // FIXME(Yusuke Suzuki)
     // set correct guest id
-    state->guest = 1;
+    state->guest = nvc0_guest_id;
 
     nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
