@@ -4471,7 +4471,7 @@ static const QEMUOption qemu_options[] = {
     { "vncunused", 0, QEMU_OPTION_vncunused },
     { "vcpus", HAS_ARG, QEMU_OPTION_vcpus },
     { "vcpu_avail", HAS_ARG, QEMU_OPTION_vcpu_avail },
-    { "nvc0", 0, QEMU_OPTION_nvc0},
+    { "nvc0", HAS_ARG, QEMU_OPTION_nvc0},
 #if defined(CONFIG_XEN) && !defined(CONFIG_DM)
     { "xen-domid", HAS_ARG, QEMU_OPTION_xen_domid },
     { "xen-create", 0, QEMU_OPTION_xen_create },
