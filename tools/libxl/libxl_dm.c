@@ -244,8 +244,10 @@ static char ** libxl__build_device_model_args_old(libxl__gc *gc,
         if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
             flexarray_append(dm_args, "-gfx_passthru");
         }
-        if (libxl_defbool_val(b_info->u.hvm.nvc0)) {
-            flexarray_append(dm_args, "-nvc0");
+        if (b_info->u.hvm.nvc0 >= 0) {
+            flexarray_vappend(dm_args, "-nvc0",
+                              libxl__sprintf(gc, "%d", b_info->u.hvm.nvc0),
+                              NULL);
         }
     } else {
         if (!sdl && !vnc)
@@ -501,8 +503,10 @@ static char ** libxl__build_device_model_args_new(libxl__gc *gc,
         if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
             flexarray_append(dm_args, "-gfx_passthru");
         }
-        if (libxl_defbool_val(b_info->u.hvm.nvc0)) {
-            flexarray_append(dm_args, "-nvc0");
+        if (b_info->u.hvm.nvc0 >= 0) {
+            flexarray_vappend(dm_args, "-nvc0",
+                              libxl__sprintf(gc, "%d", b_info->u.hvm.nvc0),
+                              NULL);
         }
     } else {
         if (!sdl && !vnc) {
