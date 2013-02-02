@@ -282,7 +282,6 @@ int libxl__domain_build_info_setdefault(libxl__gc *gc,
         libxl_defbool_setdefault(&b_info->u.hvm.nographic, false);
 
         libxl_defbool_setdefault(&b_info->u.hvm.gfx_passthru, false);
-        libxl_defbool_setdefault(&b_info->u.hvm.nvc0, false);
 
         break;
     case LIBXL_DOMAIN_TYPE_PV:

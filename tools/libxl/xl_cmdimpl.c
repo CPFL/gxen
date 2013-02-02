@@ -1397,8 +1397,13 @@ skip_vfb:
         xlu_cfg_get_defbool(config, "nographic", &b_info->u.hvm.nographic, 0);
         xlu_cfg_get_defbool(config, "gfx_passthru", 
                             &b_info->u.hvm.gfx_passthru, 0);
-        xlu_cfg_get_defbool(config, "nvc0", 
-                            &b_info->u.hvm.nvc0, 0);
+
+	// set nvc0
+	b_info->u.hvm.nvc0 = -1;
+        if (!xlu_cfg_get_long(config, "nvc0", &l, 0)) {
+	    b_info->u.hvm.nvc0 = l;
+	}
+
         xlu_cfg_replace_string (config, "serial", &b_info->u.hvm.serial, 0);
         xlu_cfg_replace_string (config, "boot", &b_info->u.hvm.boot, 0);
         xlu_cfg_get_defbool(config, "usb", &b_info->u.hvm.usb, 0);
