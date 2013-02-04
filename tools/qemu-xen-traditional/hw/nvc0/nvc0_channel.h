@@ -10,13 +10,6 @@ typedef struct nvc0_channel {
     uint32_t id;
 } nvc0_channel_t;
 
-typedef struct nvc0_pfifo {
-    size_t size;
-    nvc0_channel_t channels[NVC0_CHANNELS];
-    uint32_t user_vma;        // physical user_vma channel offset value
-    uint32_t user_vma_enabled;
-} nvc0_pfifo_t;
-
 #define NVC0_USER_VMA_CHANNEL 0x1000
 
 #endif  // HW_NVC0_NVC0_CHANNEL_H_
