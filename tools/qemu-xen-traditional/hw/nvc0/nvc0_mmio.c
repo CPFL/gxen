@@ -99,7 +99,7 @@ void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size,
     NVC0_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
 
-void nvc0_init_mmio(nvc0_state_t* state) {
+void nvc0_mmio_init(nvc0_state_t* state) {
     // Region 0: Memory at d8000000 (32-bit, non-prefetchable) [disabled] [size=32M]
     pci_register_io_region(&state->pt_dev.dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
     nvc0_init_bar0(state);

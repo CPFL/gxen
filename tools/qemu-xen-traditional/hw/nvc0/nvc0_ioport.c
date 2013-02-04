@@ -46,7 +46,7 @@ static void nvc0_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint3
     register_ioport_read(addr, size, 1, nvc0_ioport_readb, dev);
 }
 
-void nvc0_init_ioport(nvc0_state_t* state) {
+void nvc0_ioport_init(nvc0_state_t* state) {
     // Region 5: I/O ports at ec80 [disabled] [size=128]
     pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, nvc0_ioport_map);
 }

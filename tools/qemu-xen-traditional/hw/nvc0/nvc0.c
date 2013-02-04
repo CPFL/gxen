@@ -27,6 +27,7 @@
 #include "nvc0_channel.h"
 #include "nvc0_ioport.h"
 #include "nvc0_mmio.h"
+#include "nvc0_vm.h"
 
 long nvc0_guest_id = -1;
 
@@ -230,10 +231,13 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
 #endif
 
     // init MMIO
-    nvc0_init_mmio(state);
+    nvc0_mmio_init(state);
 
     // init I/O ports
-    nvc0_init_ioport(state);
+    nvc0_ioport_init(state);
+
+    // init VM
+    nvc0_vm_init(state);
 
     instance = pci_bus_num(bus) << 8 | state->pt_dev.dev.devfn;
     NVC0_PRINTF("register device model: %x with guest id %ld\n", instance, state->guest);

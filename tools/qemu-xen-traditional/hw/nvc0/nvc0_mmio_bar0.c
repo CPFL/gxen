@@ -29,6 +29,7 @@
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_channel.h"
 #include "nvc0_vbios.inc"
+#include "nvc0_vm.h"
 
 // crystal freq is 27000KHz
 #define GPU_CLOCKS_PER_NANO_SEC 27
@@ -209,10 +210,10 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     // we should shift channel id
     case 0x002634:  // channel kill
         return nvc0_channel_get_virt_id(state, nvc0_mmio_read32(state->bar[0].real, offset));
-    // case 0x070000:  // nv_wait
-        // used in nv50_instmem.c, nv84_instmem_flush
-        // return 0;
-        break;
+    }
+
+    if (0x700000 <= offset && offset <= 0x7fffff) {
+        return nvc0_vm_pramin_read(state, offset - 0x700000);
     }
 
     // PFIFO
@@ -269,17 +270,6 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         state->log = val;
         return;
 
-    case 0x070000:  // nv_wait
-        // used in nv50_instmem.c, nv84_instmem_flush
-        // code
-        //     nv_wr32(dev, 0x070000, 0x00000001);
-        //     if (!nv_wait(dev, 0x070000, 0x00000002, 0x00000000))
-        //           NV_ERROR(dev, "PRAMIN flush timeout\n");
-        // flush instruction
-        // nv84_instmem_flush();
-        // return;
-        break;
-
     case NV04_PTIMER_NUMERATOR:
         timer_numerator = val;
         NVC0_PRINTF("numerator set\n");
@@ -295,9 +285,25 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         // 0x1700 (NV50) PMC_BAR0_PRAMIN
         //
         // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
-        state->vm_engine.base = ((nvc0_vm_addr_t)val) << 16;
+        state->vm_engine.pramin = ((nvc0_vm_addr_t)val) << 16;
         nvc0_mmio_write32(state->bar[0].real, offset, val);
-        NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.base);
+        NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.pramin);
+        return;
+
+    case 0x001704:
+        // BAR1 base
+        if (val >= 0x80000000) {
+            // FIXME we should scan values...
+            const nvc0_vm_addr_t bar1_shifted = (val & (0x80000000 - 1));
+            state->vm_engine.bar1 = bar1_shifted << 12;  // offset
+            nvc0_mmio_write32(state->bar[0].real, offset, val);
+            NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.bar1);
+        }
+        return;
+    }
+
+    if (0x700000 <= offset && offset <= 0x7fffff) {
+        nvc0_vm_pramin_write(state, offset - 0x700000, val);
         return;
     }
 

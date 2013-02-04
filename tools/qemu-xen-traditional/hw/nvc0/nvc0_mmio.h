@@ -2,7 +2,7 @@
 #define HW_NVC0_NVC0_MMIO_H_
 #include "nvc0.h"
 
-void nvc0_init_mmio(nvc0_state_t* state);
+void nvc0_mmio_init(nvc0_state_t* state);
 void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type);
 
 // wrappers
