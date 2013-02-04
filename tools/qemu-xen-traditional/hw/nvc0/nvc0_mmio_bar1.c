@@ -24,6 +24,7 @@
 
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar1.h"
+#include "nvc0_vm.h"
 
 // BAR 1:
 //   VRAM. On pre-NV50, corresponds directly to the available VRAM on card.
@@ -36,7 +37,7 @@ void nvc0_init_bar1(nvc0_state_t* state) {
 
 uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    target_phys_addr_t offset = addr - state->bar[1].addr;
+    const target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("read 0x%X\n", offset);
     }
@@ -45,7 +46,7 @@ uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
 
 uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    target_phys_addr_t offset = addr - state->bar[1].addr;
+    const target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("read 0x%X\n", offset);
     }
@@ -54,28 +55,13 @@ uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
 
 uint32_t nvc0_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    target_phys_addr_t offset = addr - state->bar[1].addr;
-    // tracking user_vma
-    if (state->pfifo.user_vma_enabled) {
-        const nvc0_vm_addr_t vm_addr = offset;
-        NVC0_PRINTF("user_vma enabled!... 0x%x and 0x%x\n", state->pfifo.user_vma, offset);
-        if (state->pfifo.user_vma <= vm_addr &&
-                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
-            NVC0_PRINTF("offset shift ... 0x%X to 0x%X\n", vm_addr, vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
-            // TODO(Yusuke Suzuki) check window overflow
-            offset += ((state->guest * NVC0_CHANNELS_SHIFT) << 12);
-        }
-    }
-    const uint32_t result = nvc0_mmio_read32(state->bar[1].real, offset);
-    //if (state->log) {
-        NVC0_PRINTF("read addr 0x%X => 0x%X\n", offset, result);
-    //}
-    return result;
+    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    return nvc0_vm_bar1_read(state, offset);
 }
 
 void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    target_phys_addr_t offset = addr - state->bar[1].addr;
+    const target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("write 0x%X <= 0x%X\n", offset, val);
     }
@@ -84,7 +70,7 @@ void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) 
 
 void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    target_phys_addr_t offset = addr - state->bar[1].addr;
+    const target_phys_addr_t offset = addr - state->bar[1].addr;
     if (state->log) {
         NVC0_PRINTF("write 0x%X <= 0x%X\n", offset, val);
     }
@@ -93,23 +79,7 @@ void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) 
 
 void nvc0_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
-    target_phys_addr_t offset = addr - state->bar[1].addr;
-    // tracking user_vma
-    if (state->pfifo.user_vma_enabled) {
-        const nvc0_vm_addr_t vm_addr = offset;
-        NVC0_PRINTF("user_vma enabled!... 0x%x and 0x%x\n", state->pfifo.user_vma, offset);
-        if (state->pfifo.user_vma <= vm_addr &&
-                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
-            NVC0_PRINTF("offset shift ... 0x%X to 0x%X\n", vm_addr, vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
-            // TODO(Yusuke Suzuki) check window overflow
-            offset += ((state->guest * NVC0_CHANNELS_SHIFT) << 12);
-        }
-    }
-    //if (state->log) {
-        NVC0_PRINTF("write addr 0x%X => 0x%X\n", offset, val);
-    //}
-    nvc0_mmio_write32(state->bar[1].real, offset, val);
-    const uint32_t result = nvc0_mmio_read32(state->bar[1].real, offset);
-    NVC0_PRINTF("checking 0x%X\n", result);
+    const target_phys_addr_t offset = addr - state->bar[1].addr;
+    nvc0_vm_bar1_write(state, offset, val);
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
