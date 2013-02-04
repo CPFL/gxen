@@ -23,6 +23,19 @@
     printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##arg);\
 } while (0)
 
+typedef target_phys_addr_t nvc0_vm_addr_t;
+
+typedef struct nvc0_vm_engine {
+    nvc0_vm_addr_t base;
+} nvc0_vm_engine_t;
+
+typedef struct nvc0_pfifo {
+    size_t size;
+    nvc0_channel_t channels[NVC0_CHANNELS];
+    uint32_t user_vma_enabled;
+    nvc0_vm_addr_t user_vma;        // user_vma channel vm addr value
+} nvc0_pfifo_t;
+
 typedef struct nvc0_bar {
     int io_index;     //  io_index in qemu
     uint32_t addr;    //  MMIO GPA
@@ -40,7 +53,12 @@ typedef struct nvc0_state {
     uint32_t guest;                 // guest index
     uint32_t log;                   // log flag
     nvc0_pfifo_t pfifo;             // pfifo
+    nvc0_vm_engine_t vm_engine;     // BAR1 vm engine
 } nvc0_state_t;
+
+static inline nvc0_vm_addr_t nvc0_get_vm_addr(nvc0_state_t* state, target_phys_addr_t offset) {
+    return state->vm_engine.base + offset;
+}
 
 struct pt_dev * pci_nvc0_init(PCIBus *e_bus,
         const char *e_dev_name, int e_devfn, uint8_t r_bus, uint8_t r_dev,
