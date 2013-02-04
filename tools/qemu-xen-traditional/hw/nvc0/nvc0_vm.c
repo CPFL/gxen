@@ -67,8 +67,6 @@ static void nvc0_vm_write(nvc0_state_t* state, void* real, target_phys_addr_t of
         NVC0_PRINTF("write addr 0x%X => 0x%X\n", offset, value);
     //}
     nvc0_mmio_write32(real, offset, value);
-    const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_PRINTF("checking 0x%X\n", result);
 }
 
 uint32_t nvc0_vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
