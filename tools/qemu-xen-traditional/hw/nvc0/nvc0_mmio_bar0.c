@@ -267,8 +267,13 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
     switch (offset) {
     case 0x00000000:
         NVC0_PRINTF("write call 0x%X\n", val);
-        state->log = val;
-        return;
+        if (val == 0xDEADBEEF) {
+            state->log = 1;
+        } else if (val == 0xDEAFBEEF) {
+            state->log = 0;
+        }
+        // state->log = val;
+        break;
 
     case NV04_PTIMER_NUMERATOR:
         timer_numerator = val;
@@ -344,8 +349,6 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
                 state->pfifo.user_vma = (val & (0x10000000 - 1));  // offset
                 state->pfifo.user_vma_enabled = 1;
                 NVC0_PRINTF("user_vma... 0x%X\n", state->pfifo.user_vma);
-            } else {
-                state->pfifo.user_vma_enabled = 0;
             }
         }
     } else if (0x800000 <= offset) {
