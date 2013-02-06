@@ -36,7 +36,7 @@ static inline nvc0_vm_addr_t nvc0_get_pramin_addr(nvc0_state_t* state, target_ph
 }
 
 static inline bool is_valid_cid(nvc0_state_t* state, uint8_t cid) {
-    return state->guest * NVC0_CHANNELS_SHIFT <= cid && cid < (state->guest + 1) * NVC0_CHANNELS_SHIFT;
+    return cid < NVC0_CHANNELS_SHIFT;
 }
 
 static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr) {
@@ -46,6 +46,7 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
                 vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
             // channel id
             const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
+            NVC0_PRINTF("cid 0x%X\n", (uint32_t)cid);
 
             // check valid cid
             if (!is_valid_cid(state, cid)) {
@@ -60,9 +61,9 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
         }
     }
     const uint32_t result = nvc0_mmio_read32(real, offset);
-    //if (state->log) {
+    // if (state->log) {
         NVC0_PRINTF("read offset 0x%X addr 0x%X => 0x%X\n", offset, vm_addr, result);
-    //}
+    // }
     return result;
 }
 
@@ -73,6 +74,7 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
                 vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
             // channel id
             const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
+            NVC0_PRINTF("cid 0x%X\n", (uint32_t)cid);
 
             // check valid cid
             if (!is_valid_cid(state, cid)) {
@@ -87,9 +89,9 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
             NVC0_PRINTF("offset shift 0x%X to 0x%X\n", vm_addr, vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
         }
     }
-    //if (state->log) {
+    // if (state->log) {
         NVC0_PRINTF("write offset 0x%X addr 0x%X => 0x%X\n", offset, vm_addr, value);
-    //}
+    // }
     nvc0_mmio_write32(real, offset, value);
 }
 
@@ -110,7 +112,7 @@ void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
 }
 
 uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    NVC0_PRINTF("pramin read offset 0x%X addr 0x%X\n", offset, nvc0_get_pramin_addr(state, offset));
+//    NVC0_PRINTF("pramin read offset 0x%X addr 0x%X\n", offset, nvc0_get_pramin_addr(state, offset));
     return nvc0_vm_read(
             state,
             state->bar[0].real + 0x700000,
@@ -119,7 +121,7 @@ uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
 }
 
 void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    NVC0_PRINTF("pramin write offset 0x%X addr 0x%X => 0x%X\n", offset, nvc0_get_pramin_addr(state, offset), value);
+//    NVC0_PRINTF("pramin write offset 0x%X addr 0x%X => 0x%X\n", offset, nvc0_get_pramin_addr(state, offset), value);
     nvc0_vm_write(
             state,
             state->bar[0].real + 0x700000,
