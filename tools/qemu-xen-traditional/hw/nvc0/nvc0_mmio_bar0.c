@@ -290,18 +290,17 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.pramin);
         return;
 
-    case 0x001704:
-        // BAR1 base
-        if (val >= 0x80000000) {
-            // FIXME we should scan values...
+    case 0x001704: {
+            // BAR1 base
             const nvc0_vm_addr_t bar1_shifted = (val & (0x80000000 - 1));
             state->vm_engine.bar1 = bar1_shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
             NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.bar1);
+            return;
         }
-        return;
     }
 
+    // PRAMIN
     if (0x700000 <= offset && offset <= 0x7fffff) {
         nvc0_vm_pramin_write(state, offset - 0x700000, val);
         return;
