@@ -39,7 +39,8 @@ static inline bool is_valid_cid(nvc0_state_t* state, uint8_t cid) {
     return cid < NVC0_CHANNELS_SHIFT;
 }
 
-static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr) {
+// from is only used for debug...
+static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, const char* from) {
     // tracking user_vma
     if (state->pfifo.user_vma_enabled) {
         if (state->pfifo.user_vma <= vm_addr &&
@@ -62,12 +63,12 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
     }
     const uint32_t result = nvc0_mmio_read32(real, offset);
     // if (state->log) {
-        NVC0_PRINTF("read offset 0x%X addr 0x%X => 0x%X\n", offset, vm_addr, result);
+        NVC0_PRINTF(":%s: read offset 0x%X addr 0x%X => 0x%X\n", from, offset, vm_addr, result);
     // }
     return result;
 }
 
-static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, uint32_t value) {
+static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, uint32_t value, const char* from) {
     // tracking user_vma
     if (state->pfifo.user_vma_enabled) {
         if (state->pfifo.user_vma <= vm_addr &&
@@ -90,7 +91,7 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
         }
     }
     // if (state->log) {
-        NVC0_PRINTF("write offset 0x%X addr 0x%X => 0x%X\n", offset, vm_addr, value);
+        NVC0_PRINTF(":%s: write offset 0x%X addr 0x%X => 0x%X\n", from, offset, vm_addr, value);
     // }
     nvc0_mmio_write32(real, offset, value);
 }
@@ -100,7 +101,8 @@ uint32_t nvc0_vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
             state,
             state->bar[1].real,
             state->bar[1].space,
-            offset, nvc0_get_bar1_addr(state, offset));
+            offset, nvc0_get_bar1_addr(state, offset),
+            "BAR1");
 }
 
 void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
@@ -108,7 +110,8 @@ void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
             state,
             state->bar[1].real,
             state->bar[1].space,
-            offset, nvc0_get_bar1_addr(state, offset), value);
+            offset, nvc0_get_bar1_addr(state, offset), value,
+            "BAR1");
 }
 
 uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
@@ -117,7 +120,8 @@ uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
             state,
             state->bar[0].real + 0x700000,
             state->bar[0].space + 0x700000,
-            offset, nvc0_get_pramin_addr(state, offset));
+            offset, nvc0_get_pramin_addr(state, offset),
+            "PRAMIN");
 }
 
 void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
@@ -126,7 +130,8 @@ void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32
             state,
             state->bar[0].real + 0x700000,
             state->bar[0].space + 0x700000,
-            offset, nvc0_get_pramin_addr(state, offset), value);
+            offset, nvc0_get_pramin_addr(state, offset), value,
+            "PRAMIN");
 }
 
 void nvc0_vm_init(nvc0_state_t* state) {

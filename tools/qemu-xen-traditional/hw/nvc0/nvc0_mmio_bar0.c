@@ -292,7 +292,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
         state->vm_engine.pramin = ((nvc0_vm_addr_t)val) << 16;
         nvc0_mmio_write32(state->bar[0].real, offset, val);
-        NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.pramin);
+        NVC0_PRINTF("PRAMIN base addr set 0x%llX\n", (uint64_t)state->vm_engine.pramin);
         return;
 
     case 0x001704: {
