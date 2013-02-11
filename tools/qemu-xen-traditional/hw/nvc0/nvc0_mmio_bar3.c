@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include "nvc0_inttypes.h"
+#include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar3.h"
 
@@ -35,14 +37,14 @@ void nvc0_init_bar3(nvc0_state_t* state) {
 uint32_t nvc0_mmio_bar3_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
-    NVC0_LOG("read 0x%llX\n", (uint64_t)offset);
+    NVC0_LOG("read 0x%"PRIx64"\n", (uint64_t)offset);
     return nvc0_mmio_read8(state->bar[3].real, offset);
 }
 
 uint32_t nvc0_mmio_bar3_readw(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
-    NVC0_LOG("read 0x%llX\n", (uint64_t)offset);
+    NVC0_LOG("read 0x%"PRIx64"\n", (uint64_t)offset);
     return nvc0_mmio_read16(state->bar[3].real, offset);
 }
 
@@ -55,14 +57,14 @@ uint32_t nvc0_mmio_bar3_readd(void *opaque, target_phys_addr_t addr) {
 void nvc0_mmio_bar3_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
-    NVC0_LOG("write 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
+    NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
     nvc0_mmio_write8(state->bar[3].real, offset, val);
 }
 
 void nvc0_mmio_bar3_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
-    NVC0_LOG("write 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
+    NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
     nvc0_mmio_write16(state->bar[3].real, offset, val);
 }
 

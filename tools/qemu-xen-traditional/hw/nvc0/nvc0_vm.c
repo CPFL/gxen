@@ -23,6 +23,7 @@
  */
 
 #include "nvc0.h"
+#include "nvc0_inttypes.h"
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 
@@ -61,13 +62,13 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
             }
 
             // TODO(Yusuke Suzuki) check window overflow
-            NVC0_LOG(":%s: offset shift 0x%llX to 0x%llX\n", from, (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
+            NVC0_LOG(":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, ((uint64_t)vm_addr), ((uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12))));
             offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
             vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
         }
     }
     const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_LOG(":%s: read offset 0x%llX addr 0x%llX => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, result);
+    NVC0_LOG(":%s: read offset 0x%"PRIx64" addr 0x%"PRIx64" => 0x%X\n", from, ((uint64_t)offset), ((uint64_t)vm_addr), result);
     return result;
 }
 
@@ -88,12 +89,12 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
             }
 
             // TODO(Yusuke Suzuki) check window overflow
-            NVC0_LOG("offset shift 0x%llX to 0x%llX\n", (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
+            NVC0_LOG("offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
             offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
             vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
         }
     }
-    NVC0_LOG(":%s: write offset 0x%llX addr 0x%llX => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
+    NVC0_LOG(":%s: write offset 0x%"PRIx64" addr 0x%"PRIx64" => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
     nvc0_mmio_write32(real, offset, value);
 }
 

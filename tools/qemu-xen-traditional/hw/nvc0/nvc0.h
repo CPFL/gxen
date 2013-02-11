@@ -12,6 +12,7 @@
 #include "nvc0/nvreg.h"
 #include "nvc0/nouveau_reg.h"
 #include "nvc0/nvc0_channel.h"
+#include "nvc0/nvc0_static_assert.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -19,17 +20,19 @@
 #define NVC0_REVISION 0xA3
 #define NVC0_REG0 0x0C0C00A3UL
 
-#define NVC0_PRINTF(fmt, arg...) do {\
-    printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##arg);\
+#define NVC0_PRINTF(fmt, args...) do {\
+    printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##args);\
 } while (0)
 
-#define NVC0_LOG(fmt, arg...) do {\
+#define NVC0_LOG(fmt, args...) do {\
     if (state->log) {\
-        NVC0_PRINTF(fmt, ##arg);\
+        printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##args);\
     }\
 } while (0)
 
 typedef target_phys_addr_t nvc0_vm_addr_t;
+
+NVC0_STATIC_ASSERT(sizeof(nvc0_vm_addr_t) <= sizeof(uint64_t), nvc0_vm_addr_t_overflow);
 
 typedef struct nvc0_vm_engine {
     nvc0_vm_addr_t bar1;

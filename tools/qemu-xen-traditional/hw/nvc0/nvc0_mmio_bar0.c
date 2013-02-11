@@ -25,6 +25,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include "nvc0_inttypes.h"
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_channel.h"
@@ -95,7 +96,7 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
-    NVC0_LOG("read 0x%llX\n", (uint64_t)offset);
+    NVC0_LOG("read 0x%"PRIx64"\n", (uint64_t)offset);
 
     switch (offset) {
     case NV50_PMC_BOOT_0:  // 0x00000000
@@ -235,7 +236,7 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                NVC0_LOG("0x%llX adjusted to => 0x%llX\n", (uint64_t)offset, (uint64_t)adjusted);
+                NVC0_LOG("0x%"PRIx64" adjusted to => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)adjusted);
                 return nvc0_mmio_read32(state->bar[0].real, adjusted);
             }
         } else if (offset == 0x002254) {
@@ -243,7 +244,7 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
-        NVC0_LOG("channel table access 0x%llX => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
+        NVC0_LOG("channel table access 0x%"PRIx64" => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
     }
 
     // return nvc0_mmio_read32(state->bar[0].space, offset);
@@ -254,7 +255,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
-    NVC0_LOG("write 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
+    NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
 
     switch (offset) {
     case 0x00000000:
@@ -284,7 +285,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
             state->vm_engine.pramin = ((nvc0_vm_addr_t)val) << 16;
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            NVC0_PRINTF("PRAMIN base addr set 0x%llX\n", (uint64_t)state->vm_engine.pramin);
+            NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.pramin);
             return;
         }
 
@@ -293,7 +294,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             const nvc0_vm_addr_t shifted = (val & (0x80000000 - 1));
             state->vm_engine.bar1 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            NVC0_PRINTF("BAR1 base addr set 0x%llX\n", (uint64_t)state->vm_engine.bar1);
+            NVC0_PRINTF("BAR1 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar1);
             return;
         }
 
@@ -302,7 +303,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             const nvc0_vm_addr_t shifted = (val & (0xc0000000 - 1));
             state->vm_engine.bar3 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            NVC0_PRINTF("BAR3 base addr set 0x%llX\n", (uint64_t)state->vm_engine.bar3);
+            NVC0_PRINTF("BAR3 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar3);
             return;
         }
     }
@@ -333,7 +334,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                NVC0_LOG("channel shift from 0x%llX to 0x%llX\n", (uint64_t)virt, (uint64_t)phys);
+                NVC0_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
                 nvc0_mmio_write32(state->bar[0].real, adjusted, val);
             }
             return;
@@ -351,12 +352,12 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
                 // FIXME we should scan values...
                 state->pfifo.user_vma = (val & (0x10000000 - 1));  // offset
                 state->pfifo.user_vma_enabled = 1;
-                NVC0_PRINTF("user_vma... 0x%llX\n", (uint64_t)state->pfifo.user_vma);
+                NVC0_PRINTF("user_vma... 0x%"PRIx64"\n", (uint64_t)state->pfifo.user_vma);
             }
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
-        NVC0_LOG("channel table access 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
+        NVC0_LOG("channel table access 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
     }
 
     // fallback
