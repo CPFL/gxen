@@ -95,9 +95,7 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
-    if (state->log) {
-        NVC0_PRINTF("read 0x%llX\n", (uint64_t)offset);
-    }
+    NVC0_LOG("read 0x%llX\n", (uint64_t)offset);
 
     switch (offset) {
     case NV50_PMC_BOOT_0:  // 0x00000000
@@ -237,9 +235,7 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                if (state->log) {
-                    NVC0_PRINTF("0x%llX adjusted to => 0x%llX\n", (uint64_t)offset, (uint64_t)adjusted);
-                }
+                NVC0_LOG("0x%llX adjusted to => 0x%llX\n", (uint64_t)offset, (uint64_t)adjusted);
                 return nvc0_mmio_read32(state->bar[0].real, adjusted);
             }
         } else if (offset == 0x002254) {
@@ -247,9 +243,7 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
-        if (state->log) {
-            NVC0_PRINTF("channel table access 0x%llX => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
-        }
+        NVC0_LOG("channel table access 0x%llX => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
     }
 
     // return nvc0_mmio_read32(state->bar[0].space, offset);
@@ -260,9 +254,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
-    if (state->log) {
-        NVC0_PRINTF("write 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
-    }
+    NVC0_LOG("write 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
 
     switch (offset) {
     case 0x00000000:
@@ -341,6 +333,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
+                NVC0_LOG("channel shift from 0x%llX to 0x%llX\n", (uint64_t)virt, (uint64_t)phys);
                 nvc0_mmio_write32(state->bar[0].real, adjusted, val);
             }
             return;
@@ -363,9 +356,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
-        if (state->log) {
-            NVC0_PRINTF("channel table access 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
-        }
+        NVC0_LOG("channel table access 0x%llX <= 0x%llX\n", (uint64_t)offset, (uint64_t)val);
     }
 
     // fallback
