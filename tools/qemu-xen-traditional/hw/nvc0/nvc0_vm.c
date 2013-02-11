@@ -28,8 +28,8 @@
 #include "nvc0_mmio.h"
 
 static inline nvc0_vm_addr_t nvc0_get_bar1_addr(nvc0_state_t* state, target_phys_addr_t offset) {
-    // return offset;
-    return state->vm_engine.bar1 + offset;
+    return offset;
+    // return state->vm_engine.bar1 + offset;
 }
 
 static inline nvc0_vm_addr_t nvc0_get_bar3_addr(nvc0_state_t* state, target_phys_addr_t offset) {
@@ -79,7 +79,7 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
                 vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
             // channel id
             const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-            NVC0_LOG("cid 0x%X\n", (uint32_t)cid);
+            NVC0_LOG(":%s: cid 0x%X => 0x%X\n", from, (uint32_t)cid, value);
 
             // check valid cid
             if (!is_valid_cid(state, cid)) {
@@ -89,7 +89,7 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
             }
 
             // TODO(Yusuke Suzuki) check window overflow
-            NVC0_LOG("offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
+            NVC0_LOG(":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
             offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
             vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
         }
