@@ -27,8 +27,13 @@
 #include "nvc0_mmio.h"
 
 static inline nvc0_vm_addr_t nvc0_get_bar1_addr(nvc0_state_t* state, target_phys_addr_t offset) {
-    return offset;
-    // return state->vm_engine.bar1 + offset;
+    // return offset;
+    return state->vm_engine.bar1 + offset;
+}
+
+static inline nvc0_vm_addr_t nvc0_get_bar3_addr(nvc0_state_t* state, target_phys_addr_t offset) {
+    // return offset;
+    return state->vm_engine.bar3 + offset;
 }
 
 static inline nvc0_vm_addr_t nvc0_get_pramin_addr(nvc0_state_t* state, target_phys_addr_t offset) {
@@ -47,7 +52,9 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
                 vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
             // channel id
             const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-            NVC0_PRINTF("cid 0x%X\n", (uint32_t)cid);
+            if (state->log) {
+                NVC0_PRINTF("cid 0x%X\n", (uint32_t)cid);
+            }
 
             // check valid cid
             if (!is_valid_cid(state, cid)) {
@@ -56,15 +63,17 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
             }
 
             // TODO(Yusuke Suzuki) check window overflow
+            if (state->log) {
+                NVC0_PRINTF("offset shift 0x%llX to 0x%llX\n", (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
+            }
             offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
             vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-            NVC0_PRINTF("offset shift 0x%X to 0x%X\n", vm_addr, vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
         }
     }
     const uint32_t result = nvc0_mmio_read32(real, offset);
-    // if (state->log) {
-        NVC0_PRINTF(":%s: read offset 0x%X addr 0x%X => 0x%X\n", from, offset, vm_addr, result);
-    // }
+    if (state->log) {
+        NVC0_PRINTF(":%s: read offset 0x%llX addr 0x%llX => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, result);
+    }
     return result;
 }
 
@@ -75,7 +84,9 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
                 vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
             // channel id
             const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-            NVC0_PRINTF("cid 0x%X\n", (uint32_t)cid);
+            if (state->log) {
+                NVC0_PRINTF("cid 0x%X\n", (uint32_t)cid);
+            }
 
             // check valid cid
             if (!is_valid_cid(state, cid)) {
@@ -85,14 +96,16 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
             }
 
             // TODO(Yusuke Suzuki) check window overflow
+            if (state->log) {
+                NVC0_PRINTF("offset shift 0x%llX to 0x%llX\n", (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
+            }
             offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
             vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-            NVC0_PRINTF("offset shift 0x%X to 0x%X\n", vm_addr, vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12));
         }
     }
-    // if (state->log) {
-        NVC0_PRINTF(":%s: write offset 0x%X addr 0x%X => 0x%X\n", from, offset, vm_addr, value);
-    // }
+    if (state->log) {
+        NVC0_PRINTF(":%s: write offset 0x%llX addr 0x%llX => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
+    }
     nvc0_mmio_write32(real, offset, value);
 }
 
@@ -112,6 +125,24 @@ void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
             state->bar[1].space,
             offset, nvc0_get_bar1_addr(state, offset), value,
             "BAR1");
+}
+
+uint32_t nvc0_vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
+    return nvc0_vm_read(
+            state,
+            state->bar[3].real,
+            state->bar[3].space,
+            offset, nvc0_get_bar3_addr(state, offset),
+            "BAR3");
+}
+
+void nvc0_vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+    nvc0_vm_write(
+            state,
+            state->bar[3].real,
+            state->bar[3].space,
+            offset, nvc0_get_bar3_addr(state, offset), value,
+            "BAR3");
 }
 
 uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {

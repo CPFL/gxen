@@ -27,6 +27,7 @@ typedef target_phys_addr_t nvc0_vm_addr_t;
 
 typedef struct nvc0_vm_engine {
     nvc0_vm_addr_t bar1;
+    nvc0_vm_addr_t bar3;
     nvc0_vm_addr_t pramin;
 } nvc0_vm_engine_t;
 
