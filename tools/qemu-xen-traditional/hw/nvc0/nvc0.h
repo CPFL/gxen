@@ -23,6 +23,12 @@
     printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##arg);\
 } while (0)
 
+#define NVC0_LOG(fmt, arg...) do {\
+    if (state->log) {\
+        NVC0_PRINTF(fmt, ##arg);\
+    }\
+} while (0)
+
 typedef target_phys_addr_t nvc0_vm_addr_t;
 
 typedef struct nvc0_vm_engine {
