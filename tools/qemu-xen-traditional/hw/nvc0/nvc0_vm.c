@@ -117,39 +117,43 @@ void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
 }
 
 uint32_t nvc0_vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    return nvc0_vm_read(
-            state,
-            state->bar[3].real,
-            state->bar[3].space,
-            offset, nvc0_get_bar3_addr(state, offset),
-            "BAR3");
+    return nvc0_mmio_read32(state->bar[3].real, offset);
+//    return nvc0_vm_read(
+//            state,
+//            state->bar[3].real,
+//            state->bar[3].space,
+//            offset, nvc0_get_bar3_addr(state, offset),
+//            "BAR3");
 }
 
 void nvc0_vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    nvc0_vm_write(
-            state,
-            state->bar[3].real,
-            state->bar[3].space,
-            offset, nvc0_get_bar3_addr(state, offset), value,
-            "BAR3");
+    nvc0_mmio_write32(state->bar[3].real, offset, value);
+//    nvc0_vm_write(
+//            state,
+//            state->bar[3].real,
+//            state->bar[3].space,
+//            offset, nvc0_get_bar3_addr(state, offset), value,
+//            "BAR3");
 }
 
 uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    return nvc0_vm_read(
-            state,
-            state->bar[0].real + 0x700000,
-            state->bar[0].space + 0x700000,
-            offset, nvc0_get_pramin_addr(state, offset),
-            "PRAMIN");
+    return nvc0_mmio_read32(state->bar[0].real + 0x700000, offset);
+//    return nvc0_vm_read(
+//            state,
+//            state->bar[0].real + 0x700000,
+//            state->bar[0].space + 0x700000,
+//            offset, nvc0_get_pramin_addr(state, offset),
+//            "PRAMIN");
 }
 
 void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    nvc0_vm_write(
-            state,
-            state->bar[0].real + 0x700000,
-            state->bar[0].space + 0x700000,
-            offset, nvc0_get_pramin_addr(state, offset), value,
-            "PRAMIN");
+    nvc0_mmio_write32(state->bar[0].real + 0x700000, offset, value);
+//    nvc0_vm_write(
+//            state,
+//            state->bar[0].real + 0x700000,
+//            state->bar[0].space + 0x700000,
+//            offset, nvc0_get_pramin_addr(state, offset), value,
+//            "PRAMIN");
 }
 
 void nvc0_vm_init(nvc0_state_t* state) {
