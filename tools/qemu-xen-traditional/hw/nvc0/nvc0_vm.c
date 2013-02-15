@@ -38,7 +38,7 @@ static inline nvc0_vm_addr_t nvc0_get_bar3_addr(nvc0_state_t* state, target_phys
 }
 
 static inline nvc0_vm_addr_t nvc0_get_pramin_addr(nvc0_state_t* state, target_phys_addr_t offset) {
-    return state->vm_engine.pramin + offset;
+    return (state->vm_engine.pramin << 16) + offset;
 }
 
 static inline bool is_valid_cid(nvc0_state_t* state, uint8_t cid) {

@@ -29,6 +29,8 @@
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_channel.h"
+#include "nvc0_fifo.h"
+#include "nvc0_pramin.h"
 #include "nvc0_vbios.inc"
 #include "nvc0_vm.h"
 
@@ -283,9 +285,9 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             // 0x1700 (NV50) PMC_BAR0_PRAMIN
             //
             // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
-            state->vm_engine.pramin = ((nvc0_vm_addr_t)val) << 16;
+            state->vm_engine.pramin = val;
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.pramin);
+            NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.pramin << 16);
             return;
         }
 
@@ -306,6 +308,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             NVC0_PRINTF("BAR3 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar3);
             return;
         }
+
     }
 
     // PRAMIN
@@ -338,7 +341,10 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
                 nvc0_mmio_write32(state->bar[0].real, adjusted, val);
             }
             return;
-        } else if (offset == 0x002634) {
+        }
+
+
+        if (offset == 0x002634) {
             // kill
             if (val >= NVC0_CHANNELS_SHIFT) {
                 return;
@@ -346,7 +352,9 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             const uint32_t id = nvc0_channel_get_phys_id(state, val);
             nvc0_mmio_write32(state->bar[0].real, offset, id);
             return;
-        } else if (offset == 0x002254) {
+        }
+
+        if (offset == 0x002254) {
             // see nvc0_fifo.c
             if (val >= 0x10000000) {
                 // FIXME we should scan values...
@@ -354,6 +362,22 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
                 state->pfifo.user_vma_enabled = 1;
                 NVC0_PRINTF("user_vma... 0x%"PRIx64"\n", (uint64_t)state->pfifo.user_vma);
             }
+            nvc0_mmio_write32(state->bar[0].real, offset, val);
+            return;
+        }
+
+        if (offset == 0x002270) {
+            state->pfifo.playlist = val << 12;
+            nvc0_mmio_write32(state->bar[0].real, offset, val);
+            return;
+        }
+
+        if (offset == 0x002274) {
+            state->pfifo.playlist_count = val & 0x2f;  // 0x2f == 127
+            nvc0_fifo_playlist_update(state, state->pfifo.playlist, state->pfifo.playlist_count);
+            nvc0_mmio_write32(state->bar[0].real, 0x2270, state->pfifo.playlist >> 12);
+            nvc0_mmio_write32(state->bar[0].real, 0x2274, val);
+            return;
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
