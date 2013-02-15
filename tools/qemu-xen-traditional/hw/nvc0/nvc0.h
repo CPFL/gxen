@@ -2,6 +2,7 @@
 #define HW_NVC0_NVC0_H_
 
 #include <pciaccess.h>
+#include "exec-all.h"
 #include "hw.h"
 #include "pc.h"
 #include "irq.h"
@@ -31,6 +32,7 @@
 } while (0)
 
 typedef target_phys_addr_t nvc0_vm_addr_t;
+typedef uint32_t nvc0_raw_word;
 
 NVC0_STATIC_ASSERT(sizeof(nvc0_vm_addr_t) <= sizeof(uint64_t), nvc0_vm_addr_t_overflow);
 
@@ -45,6 +47,9 @@ typedef struct nvc0_pfifo {
     nvc0_channel_t channels[NVC0_CHANNELS];
     uint32_t user_vma_enabled;
     nvc0_vm_addr_t user_vma;        // user_vma channel vm addr value
+
+    nvc0_vm_addr_t playlist;
+    uint32_t playlist_count;
 } nvc0_pfifo_t;
 
 typedef struct nvc0_bar {
@@ -65,6 +70,7 @@ typedef struct nvc0_state {
     uint32_t log;                   // log flag
     nvc0_pfifo_t pfifo;             // pfifo
     nvc0_vm_engine_t vm_engine;     // BAR1 vm engine
+    spinlock_t pramin_lock;         // PRAMIN lock
 } nvc0_state_t;
 
 struct pt_dev * pci_nvc0_init(PCIBus *e_bus,
