@@ -48,25 +48,25 @@ static inline bool is_valid_cid(nvc0_state_t* state, uint8_t cid) {
 // from is only used for debug...
 static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, const char* from) {
     // tracking user_vma
-    if (state->pfifo.user_vma_enabled) {
-        if (state->pfifo.user_vma <= vm_addr &&
-                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
-            // channel id
-            const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-            NVC0_LOG(":%s: cid 0x%X\n", from, (uint32_t)cid);
-
-            // check valid cid
-            if (!is_valid_cid(state, cid)) {
-                // invalid cid read
-                return nvc0_mmio_read32(virt, offset);
-            }
-
-            // TODO(Yusuke Suzuki) check window overflow
-            NVC0_LOG(":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, ((uint64_t)vm_addr), ((uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12))));
-            offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-        }
-    }
+//    if (state->pfifo.user_vma_enabled) {
+//        if (state->pfifo.user_vma <= vm_addr &&
+//                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
+//            // channel id
+//            const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
+//            NVC0_LOG(":%s: cid 0x%X\n", from, (uint32_t)cid);
+//
+//            // check valid cid
+//            if (!is_valid_cid(state, cid)) {
+//                // invalid cid read
+//                return nvc0_mmio_read32(virt, offset);
+//            }
+//
+//            // TODO(Yusuke Suzuki) check window overflow
+//            NVC0_LOG(":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, ((uint64_t)vm_addr), ((uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12))));
+//            offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
+//            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
+//        }
+//    }
     const uint32_t result = nvc0_mmio_read32(real, offset);
     NVC0_LOG(":%s: read offset 0x%"PRIx64" addr 0x%"PRIx64" => 0x%X\n", from, ((uint64_t)offset), ((uint64_t)vm_addr), result);
     return result;
@@ -74,26 +74,26 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
 
 static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, uint32_t value, const char* from) {
     // tracking user_vma
-    if (state->pfifo.user_vma_enabled) {
-        if (state->pfifo.user_vma <= vm_addr &&
-                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
-            // channel id
-            const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-            NVC0_LOG(":%s: cid 0x%X => 0x%X\n", from, (uint32_t)cid, value);
-
-            // check valid cid
-            if (!is_valid_cid(state, cid)) {
-                // invalid cid read
-                nvc0_mmio_write32(virt, offset, value);
-                return;
-            }
-
-            // TODO(Yusuke Suzuki) check window overflow
-            NVC0_LOG(":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
-            offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-        }
-    }
+//    if (state->pfifo.user_vma_enabled) {
+//        if (state->pfifo.user_vma <= vm_addr &&
+//                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
+//            // channel id
+//            const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
+//            NVC0_LOG(":%s: cid 0x%X => 0x%X\n", from, (uint32_t)cid, value);
+//
+//            // check valid cid
+//            if (!is_valid_cid(state, cid)) {
+//                // invalid cid read
+//                nvc0_mmio_write32(virt, offset, value);
+//                return;
+//            }
+//
+//            // TODO(Yusuke Suzuki) check window overflow
+//            NVC0_LOG(":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
+//            offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
+//            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
+//        }
+//    }
     NVC0_LOG(":%s: write offset 0x%"PRIx64" addr 0x%"PRIx64" => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
     nvc0_mmio_write32(real, offset, value);
 }
@@ -117,43 +117,43 @@ void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
 }
 
 uint32_t nvc0_vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    return nvc0_mmio_read32(state->bar[3].real, offset);
-//    return nvc0_vm_read(
-//            state,
-//            state->bar[3].real,
-//            state->bar[3].space,
-//            offset, nvc0_get_bar3_addr(state, offset),
-//            "BAR3");
+    // return nvc0_mmio_read32(state->bar[3].real, offset);
+    return nvc0_vm_read(
+            state,
+            state->bar[3].real,
+            state->bar[3].space,
+            offset, nvc0_get_bar3_addr(state, offset),
+            "BAR3");
 }
 
 void nvc0_vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    nvc0_mmio_write32(state->bar[3].real, offset, value);
-//    nvc0_vm_write(
-//            state,
-//            state->bar[3].real,
-//            state->bar[3].space,
-//            offset, nvc0_get_bar3_addr(state, offset), value,
-//            "BAR3");
+    // nvc0_mmio_write32(state->bar[3].real, offset, value);
+    nvc0_vm_write(
+            state,
+            state->bar[3].real,
+            state->bar[3].space,
+            offset, nvc0_get_bar3_addr(state, offset), value,
+            "BAR3");
 }
 
 uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    return nvc0_mmio_read32(state->bar[0].real + 0x700000, offset);
-//    return nvc0_vm_read(
-//            state,
-//            state->bar[0].real + 0x700000,
-//            state->bar[0].space + 0x700000,
-//            offset, nvc0_get_pramin_addr(state, offset),
-//            "PRAMIN");
+    // return nvc0_mmio_read32(state->bar[0].real + 0x700000, offset);
+    return nvc0_vm_read(
+            state,
+            state->bar[0].real + 0x700000,
+            state->bar[0].space + 0x700000,
+            offset, nvc0_get_pramin_addr(state, offset),
+            "PRAMIN");
 }
 
 void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    nvc0_mmio_write32(state->bar[0].real + 0x700000, offset, value);
-//    nvc0_vm_write(
-//            state,
-//            state->bar[0].real + 0x700000,
-//            state->bar[0].space + 0x700000,
-//            offset, nvc0_get_pramin_addr(state, offset), value,
-//            "PRAMIN");
+    // nvc0_mmio_write32(state->bar[0].real + 0x700000, offset, value);
+    nvc0_vm_write(
+            state,
+            state->bar[0].real + 0x700000,
+            state->bar[0].space + 0x700000,
+            offset, nvc0_get_pramin_addr(state, offset), value,
+            "PRAMIN");
 }
 
 void nvc0_vm_init(nvc0_state_t* state) {
