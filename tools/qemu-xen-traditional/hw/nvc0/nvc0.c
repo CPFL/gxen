@@ -208,7 +208,6 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
     // set correct guest id
     state->guest = nvc0_guest_id;
     state->log = 0;
-    state->pramin_lock = SPIN_LOCK_UNLOCKED;
 
     nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
