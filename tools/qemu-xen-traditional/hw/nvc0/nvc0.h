@@ -1,8 +1,11 @@
 #ifndef HW_NVC0_NVC0_H_
 #define HW_NVC0_NVC0_H_
 
+#ifdef __cpp
+extern "C" {
+#endif
+
 #include <pciaccess.h>
-#include "exec-all.h"
 #include "hw.h"
 #include "pc.h"
 #include "irq.h"
@@ -70,7 +73,6 @@ typedef struct nvc0_state {
     uint32_t log;                   // log flag
     nvc0_pfifo_t pfifo;             // pfifo
     nvc0_vm_engine_t vm_engine;     // BAR1 vm engine
-    spinlock_t pramin_lock;         // PRAMIN lock
 } nvc0_state_t;
 
 struct pt_dev * pci_nvc0_init(PCIBus *e_bus,
@@ -125,6 +127,10 @@ static inline uint32_t nvc0_channel_get_phys_id(nvc0_state_t* state, uint32_t vi
 static inline uint32_t nvc0_channel_get_virt_id(nvc0_state_t* state, uint32_t phys) {
     return phys - state->guest * NVC0_CHANNELS_SHIFT;
 }
+
+#ifdef __cpp
+}
+#endif
 
 #endif  // HW_NVC0_NVC0_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

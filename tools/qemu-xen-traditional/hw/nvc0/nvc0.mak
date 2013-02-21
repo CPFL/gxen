@@ -2,6 +2,7 @@
 #
 # This file is included in Makefile.target
 
+
 VPATH+=:$(SRC_PATH)/hw/nvc0
 
 OBJS += nvc0.o
@@ -16,4 +17,4 @@ OBJS += nvc0_pramin.o
 OBJS += nvc0_fifo.o
 
 # link pciaccess
-LIBS+=-lpciaccess
+LIBS += -lpciaccess

@@ -96,9 +96,8 @@ void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) 
 
 uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = (nvc0_state_t*)(opaque);
+    uint32_t ret = 0;
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-
-    NVC0_LOG("read 0x%"PRIx64"\n", (uint64_t)offset);
 
     switch (offset) {
     case NV50_PMC_BOOT_0:  // 0x00000000
@@ -146,14 +145,18 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     // We use CPU clock value instead of crystal of NVIDIA
     case NV04_PTIMER_TIME_0:  // 0x9400
         // low
-        return (uint32_t)timer_now();
+        ret = (uint32_t)timer_now();
+        goto end;
     case NV04_PTIMER_TIME_1:  // 0x9410
         // high
-        return timer_now() >> 32;
+        ret = timer_now() >> 32;
+        goto end;
     case NV04_PTIMER_NUMERATOR:  // 0x9200
-        return timer_numerator;
+        ret = timer_numerator;
+        goto end;
     case NV04_PTIMER_DENOMINATOR:  // 0x9210
-        return timer_denominator;
+        ret = timer_denominator;
+        goto end;
 
     // nvc0_graph.c
     case 0x40910c:  // write 0
@@ -205,16 +208,19 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
 
     // VRAM base address
     case 0x001700:
-        return nvc0_mmio_read32(state->bar[0].real, offset);
+        ret = nvc0_mmio_read32(state->bar[0].real, offset);
+        goto end;
 
     // PFIFO
     // we should shift channel id
     case 0x002634:  // channel kill
-        return nvc0_channel_get_virt_id(state, nvc0_mmio_read32(state->bar[0].real, offset));
+        ret = nvc0_channel_get_virt_id(state, nvc0_mmio_read32(state->bar[0].real, offset));
+        goto end;
     }
 
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        return nvc0_vm_pramin_read(state, offset - 0x700000);
+        ret = nvc0_vm_pramin_read(state, offset - 0x700000);
+        goto end;
     }
 
     // PFIFO
@@ -234,12 +240,14 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
                 }
                 // FIXME(Yusuke Suzuki)
                 // return better value
-                return 0;
+                ret = 0;
+                goto end;
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
                 NVC0_LOG("0x%"PRIx64" adjusted to => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)adjusted);
-                return nvc0_mmio_read32(state->bar[0].real, adjusted);
+                ret = nvc0_mmio_read32(state->bar[0].real, adjusted);
+                goto end;
             }
         } else if (offset == 0x002254) {
             // see nvc0_fifo.c
@@ -249,8 +257,13 @@ uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
         NVC0_LOG("channel table access 0x%"PRIx64" => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
     }
 
-    // return nvc0_mmio_read32(state->bar[0].space, offset);
-    return nvc0_mmio_read32(state->bar[0].real, offset);
+    ret = nvc0_mmio_read32(state->bar[0].real, offset);
+    goto end;
+
+end:
+    NVC0_LOG("read 0x%"PRIx64" => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)ret);
+
+    return ret;
 }
 
 void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
@@ -266,6 +279,8 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
             state->log = 1;
         } else if (val == 0xDEAFBEEF) {
             state->log = 0;
+        } else if (val == 0xDEADFACE) {
+            NVC0_LOG("DEADFACE\n");
         }
         // state->log = val;
         break;
@@ -324,7 +339,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         if ((offset - 0x003000) <= NVC0_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
-            const uint32_t virt = (offset - 0x003000) >> 3;
+            const uint32_t virt = (offset - 0x003000) / 0x8;
             if (virt >= NVC0_CHANNELS_SHIFT) {
                 // these channels cannot be used
                 if (virt & 0x4) {

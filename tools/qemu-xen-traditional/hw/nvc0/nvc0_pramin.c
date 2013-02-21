@@ -27,7 +27,7 @@
 
 uint32_t nvc0_pramin_read32(nvc0_state_t* state, uint64_t addr) {
     uint32_t res = 0;
-    spin_lock(&state->pramin_lock);
+    // spin_lock(&state->pramin_lock);
     {
         const uint64_t old = state->vm_engine.pramin;
         const int matched = ((addr >> 16) == old);
@@ -41,12 +41,12 @@ uint32_t nvc0_pramin_read32(nvc0_state_t* state, uint64_t addr) {
             res = nvc0_vm_pramin_read(state, (addr & 0xFFFF));
         }
     }
-    spin_unlock(&state->pramin_lock);
+    // spin_unlock(&state->pramin_lock);
     return res;
 }
 
 void nvc0_pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
-    spin_lock(&state->pramin_lock);
+    // spin_lock(&state->pramin_lock);
     {
         const uint64_t old = state->vm_engine.pramin;
         const int matched = ((addr >> 16) == old);
@@ -60,7 +60,7 @@ void nvc0_pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
             nvc0_vm_pramin_write(state, (addr & 0xFFFF), val);
         }
     }
-    spin_unlock(&state->pramin_lock);
+    // spin_unlock(&state->pramin_lock);
 }
 
 /* vim: set sw=4 ts=4 et tw=80 : */
