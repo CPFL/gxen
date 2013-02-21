@@ -578,7 +578,7 @@ OBJS += rtl8139.o
 OBJS += e1000.o
 
 # NVC0
-include $(QEMU_ROOT)/nvc0.mak
+include $(QEMU_ROOT)/hw/nvc0/nvc0.mak
 
 # Serial mouse
 OBJS += msmouse.o
