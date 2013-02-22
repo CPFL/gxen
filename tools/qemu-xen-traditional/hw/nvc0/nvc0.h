@@ -6,12 +6,6 @@ extern "C" {
 #endif
 
 #include <pciaccess.h>
-#include "hw.h"
-#include "pc.h"
-#include "irq.h"
-#include "pci.h"
-#include "pci/header.h"
-#include "pci/pci.h"
 #include "pass-through.h"
 #include "nvc0/nvreg.h"
 #include "nvc0/nouveau_reg.h"
@@ -34,7 +28,7 @@ extern "C" {
     }\
 } while (0)
 
-typedef target_phys_addr_t nvc0_vm_addr_t;
+typedef uint64_t nvc0_vm_addr_t;
 typedef uint32_t nvc0_raw_word;
 
 NVC0_STATIC_ASSERT(sizeof(nvc0_vm_addr_t) <= sizeof(uint64_t), nvc0_vm_addr_t_overflow);

@@ -23,6 +23,12 @@
  */
 
 #include <assert.h>
+#include "hw.h"
+#include "pc.h"
+#include "irq.h"
+#include "pci.h"
+#include "pci/header.h"
+#include "pci/pci.h"
 #include "nvc0.h"
 #include "nvc0_channel.h"
 #include "nvc0_ioport.h"
