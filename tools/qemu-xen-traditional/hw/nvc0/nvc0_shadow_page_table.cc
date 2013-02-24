@@ -25,7 +25,7 @@
 #include "nvc0_shadow_page_table.h"
 namespace nvc0 {
 
-void shadow_page_table::refresh() {
+void shadow_page_table::refresh(uint64_t addr) {
     // construct shadow page table from real data
 }
 

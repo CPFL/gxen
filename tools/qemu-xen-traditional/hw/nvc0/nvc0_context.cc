@@ -24,7 +24,6 @@
 
 #include "nvc0.h"
 #include "nvc0_context.h"
-
 namespace nvc0 {
 
 context::context(nvc0_state_t* state)
@@ -33,13 +32,13 @@ context::context(nvc0_state_t* state)
     , bar3_table_() {
 }
 
-context* nvc0_context(nvc0_state_t* state) {
+context* context::extract(nvc0_state_t* state) {
     return static_cast<context*>(state->priv);
 }
+
+}  // namespace nvc0
 
 extern "C" void nvc0_context_init(nvc0_state_t* state) {
     state->priv = static_cast<void*>(new nvc0::context(state));
 }
-
-}  // namespace nvc0
 /* vim: set sw=4 ts=4 et tw=80 : */
