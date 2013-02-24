@@ -32,6 +32,7 @@
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_channel.h"
+#include "nvc0_context.h"
 #include "nvc0_fifo.h"
 #include "nvc0_pramin.h"
 #include "nvc0_vbios.inc"
@@ -272,6 +273,7 @@ end:
 
 extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
+    nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
@@ -315,6 +317,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             const nvc0_vm_addr_t shifted = (val & (0x80000000 - 1));
             state->vm_engine.bar1 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
+            ctx->bar1_table()->refresh(val);
             NVC0_PRINTF("BAR1 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar1);
             return;
         }

@@ -84,7 +84,7 @@ class shadow_page_entry {
 
 class shadow_page_table {
  public:
-    void refresh();
+    void refresh(uint64_t value);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
