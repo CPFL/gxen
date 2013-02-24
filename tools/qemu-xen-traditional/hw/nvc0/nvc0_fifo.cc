@@ -34,10 +34,10 @@ void fifo_playlist_update(nvc0_state_t* state, uint64_t vm_addr, uint32_t count)
     uint32_t i;
     NVC0_LOG("FIFO playlist update %u\n", count);
     for (i = 0; i < count; ++i) {
-        const uint32_t cid = nvc0_pramin_read32(state, vm_addr + i * 0x8);
+        const uint32_t cid = pramin_read32(state, vm_addr + i * 0x8);
         NVC0_LOG("FIFO playlist cid %u => %u\n", cid, nvc0_channel_get_phys_id(state, cid));
-        nvc0_pramin_write32(state, vm_addr + i * 0x8, nvc0_channel_get_phys_id(state, cid));
-        nvc0_pramin_write32(state, vm_addr + i * 0x8 + 0x4, 0x4);
+        pramin_write32(state, vm_addr + i * 0x8, nvc0_channel_get_phys_id(state, cid));
+        pramin_write32(state, vm_addr + i * 0x8 + 0x4, 0x4);
     }
 
     // FIXME(Yusuke Suzuki): BAR flush wait code is needed?

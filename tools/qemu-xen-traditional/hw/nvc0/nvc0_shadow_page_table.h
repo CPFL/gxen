@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <vector>
 #include "nvc0_static_assert.h"
+#include "nvc0.h"
 namespace nvc0 {
 
 // We assume Little Endianess machine.
@@ -12,6 +13,31 @@ static const unsigned kLARGE_PAGE_SHIFT = 17;
 static const unsigned kPAGE_TABLE_BITS = 27;
 static const unsigned kBLOCK = 4096;
 static const unsigned kPAGE_TABLE_SIZE = 0x8000;
+
+struct page_descriptor {
+    union {
+        struct {
+            uint32_t page_directory_address_low;
+            uint32_t page_directory_address_high : 8;
+        };
+        struct {
+            uint64_t page_directory_address : 40;
+        };
+        uint64_t dword0;
+    };
+    union {
+        struct {
+            uint32_t page_limit_low;
+            uint32_t page_limit_high : 8;
+        };
+        struct {
+            uint64_t page_limit : 40;
+        };
+        uint64_t dword1;
+    };
+};
+
+NVC0_STATIC_ASSERT(sizeof(struct page_descriptor) == (sizeof(uint64_t) * 2), page_descriptor_size_is_invalid);
 
 struct page_directory {
     enum size_type_t {
@@ -84,7 +110,7 @@ class shadow_page_entry {
 
 class shadow_page_table {
  public:
-    void refresh(uint64_t value);
+    void refresh(nvc0_state_t* state, uint64_t value);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
