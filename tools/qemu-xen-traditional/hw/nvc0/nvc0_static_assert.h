@@ -2,8 +2,7 @@
 #define HW_NVC0_NVC0_STATIC_ASSERT_H_
 
 // http://stackoverflow.com/questions/174356/ways-to-assert-expressions-at-build-time-in-c
-#ifdef __GNUC__
-
+#if defined(__GNUC__) && !defined(__cplusplus)
     #define NVC0_STATIC_ASSERT_HELPER(expr, msg) \
         (!!sizeof \
             (struct { unsigned int NVC0_STATIC_ASSERTION__##msg: (expr) ? 1 : -1; }))
