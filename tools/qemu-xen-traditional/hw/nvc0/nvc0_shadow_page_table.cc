@@ -23,10 +23,21 @@
  */
 
 #include "nvc0_shadow_page_table.h"
+#include "nvc0_pramin.h"
 namespace nvc0 {
 
-void shadow_page_table::refresh(uint64_t addr) {
+void shadow_page_table::refresh(nvc0_state_t* state, uint64_t ramin) {
     // construct shadow page table from real data
+    pramin_accessor pramin(state);
+
+    page_descriptor descriptor;
+    descriptor.page_directory_address_low = pramin.read32(ramin + 0x200);
+    descriptor.page_directory_address_high = pramin.read32(ramin + 0x204);
+    descriptor.page_limit_low = pramin.read32(ramin + 0x208);
+    descriptor.page_limit_high = pramin.read32(ramin + 0x20c);
+
+    NVC0_PRINTF("page directory address 0x%" PRIx64 " and size %" PRIu64 "\n", descriptor.page_directory_address, descriptor.page_limit);
+
 }
 
 void shadow_page_table::set_low_size(uint32_t value) {

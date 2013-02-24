@@ -24,45 +24,48 @@
 #include "nvc0_pramin.h"
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
-extern "C" {
+namespace nvc0 {
 
-uint32_t nvc0_pramin_read32(nvc0_state_t* state, uint64_t addr) {
-    uint32_t res = 0;
-    // spin_lock(&state->pramin_lock);
-    {
-        const uint64_t old = state->vm_engine.pramin;
-        const int matched = ((addr >> 16) == old);
-        if (!matched) {
-            state->vm_engine.pramin = addr >> 16;
-            nvc0_mmio_write32(state->bar[0].real, 0x1700, addr >> 16);
-            res = nvc0_vm_pramin_read(state, (addr & 0xFFFF));
-            state->vm_engine.pramin = old;
-            nvc0_mmio_write32(state->bar[0].real, 0x1700, old);
-        } else {
-            res = nvc0_vm_pramin_read(state, (addr & 0xFFFF));
-        }
+uint32_t pramin_read32(nvc0_state_t* state, uint64_t addr) {
+    pramin_accessor accessor(state);
+    return accessor.read32(addr);
+}
+
+void pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
+    pramin_accessor accessor(state);
+    accessor.write32(addr, val);
+}
+
+pramin_accessor::pramin_accessor(nvc0_state_t* state)
+    : state_(state)
+    , old_(state->vm_engine.pramin)
+    , current_(state->vm_engine.pramin) {
+}
+
+pramin_accessor::~pramin_accessor() {
+    if (current_ != old_) {
+        nvc0_mmio_write32(state_->bar[0].real, 0x1700, old_);
     }
-    // spin_unlock(&state->pramin_lock);
-    return res;
 }
 
-void nvc0_pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
-    // spin_lock(&state->pramin_lock);
-    {
-        const uint64_t old = state->vm_engine.pramin;
-        const int matched = ((addr >> 16) == old);
-        if (!matched) {
-            state->vm_engine.pramin = addr >> 16;
-            nvc0_mmio_write32(state->bar[0].real, 0x1700, addr >> 16);
-            nvc0_vm_pramin_write(state, (addr & 0xFFFF), val);
-            state->vm_engine.pramin = old;
-            nvc0_mmio_write32(state->bar[0].real, 0x1700, old);
-        } else {
-            nvc0_vm_pramin_write(state, (addr & 0xFFFF), val);
-        }
+uint32_t pramin_accessor::read32(uint64_t addr) {
+    change_current(addr);
+    return nvc0_vm_pramin_read(state_, (addr & 0xFFFF));
+}
+
+void pramin_accessor::write32(uint64_t addr, uint32_t val) {
+    change_current(addr);
+    nvc0_vm_pramin_write(state_, (addr & 0xFFFF), val);
+}
+
+void pramin_accessor::change_current(uint64_t addr) {
+    const uint64_t shifted = (addr >> 16);
+    if (shifted != current_) {
+        current_ = shifted;
+        state_->vm_engine.pramin = current_;
+        nvc0_mmio_write32(state_->bar[0].real, 0x1700, current_);
     }
-    // spin_unlock(&state->pramin_lock);
 }
 
-}
+}  // namespace nvc0
 /* vim: set sw=4 ts=4 et tw=80 : */
