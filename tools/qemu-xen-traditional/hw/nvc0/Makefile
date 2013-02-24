@@ -5,8 +5,7 @@
 
 VPATH+=:$(SRC_PATH)/hw/nvc0
 
-OBJS += nvc0.o
-OBJS += nvc0_channel.o
+OBJS += nvc0_main.o
 OBJS += nvc0_ioport.o
 OBJS += nvc0_mmio.o
 OBJS += nvc0_mmio_bar0.o

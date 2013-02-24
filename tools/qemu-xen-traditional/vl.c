@@ -30,7 +30,7 @@
 #include "hw/isa.h"
 #include "hw/baum.h"
 #include "hw/bt.h"
-#include "hw/nvc0/nvc0.h"
+#include "hw/nvc0/nvc0_main.h"
 #include "net.h"
 #include "console.h"
 #include "sysemu.h"

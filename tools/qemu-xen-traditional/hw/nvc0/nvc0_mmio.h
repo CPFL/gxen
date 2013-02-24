@@ -2,12 +2,11 @@
 #define HW_NVC0_NVC0_MMIO_H_
 #include "nvc0.h"
 
-#ifdef __cpp
+#ifdef __cplusplus
 extern "C" {
 #endif
 
 void nvc0_mmio_init(nvc0_state_t* state);
-void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type);
 
 // wrappers
 static inline uint8_t nvc0_mmio_read8(void* ptr, ptrdiff_t offset) {
@@ -30,7 +29,7 @@ static inline void nvc0_mmio_write32(void* ptr, ptrdiff_t offset, uint32_t data)
     nvc0_write32(data, ((uint8_t*)ptr) + offset);
 }
 
-#ifdef __cpp
+#ifdef __cplusplus
 }
 #endif
 #endif  // HW_NVC0_NVC0_MMIO_H_

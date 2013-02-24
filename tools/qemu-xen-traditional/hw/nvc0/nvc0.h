@@ -1,16 +1,17 @@
 #ifndef HW_NVC0_NVC0_H_
 #define HW_NVC0_NVC0_H_
 
-#ifdef __cpp
-extern "C" {
-#endif
-
 #include <pciaccess.h>
-#include "pass-through.h"
+#include <stdint.h>
+#include <stdio.h>
 #include "nvc0/nvreg.h"
 #include "nvc0/nouveau_reg.h"
 #include "nvc0/nvc0_channel.h"
 #include "nvc0/nvc0_static_assert.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -30,6 +31,9 @@ extern "C" {
 
 typedef uint64_t nvc0_vm_addr_t;
 typedef uint32_t nvc0_raw_word;
+
+// FIXME
+typedef uint64_t target_phys_addr_t;
 
 NVC0_STATIC_ASSERT(sizeof(nvc0_vm_addr_t) <= sizeof(uint64_t), nvc0_vm_addr_t_overflow);
 
@@ -58,8 +62,9 @@ typedef struct nvc0_bar {
     uint8_t* real;    //  MMIO HVA
 } nvc0_bar_t;
 
-typedef struct nvc0_state {
-    struct pt_dev pt_dev;
+
+typedef struct {
+    struct pt_dev* device;
     nvc0_bar_t bar[6];
     struct pci_dev* real;           // from pci.h
     struct pci_device* access;      // from pciaccess.h. Basically we use this to access device.
@@ -69,12 +74,7 @@ typedef struct nvc0_state {
     nvc0_vm_engine_t vm_engine;     // BAR1 vm engine
 } nvc0_state_t;
 
-struct pt_dev * pci_nvc0_init(PCIBus *e_bus,
-        const char *e_dev_name, int e_devfn, uint8_t r_bus, uint8_t r_dev,
-        uint8_t r_func, uint32_t machine_irq, struct pci_access *pci_access,
-        char *opt);
-
-extern long nvc0_guest_id;
+nvc0_state_t* nvc0_state(void* opaque);
 
 // nvc0 graph
 #define GPC_MAX 4
@@ -122,7 +122,7 @@ static inline uint32_t nvc0_channel_get_virt_id(nvc0_state_t* state, uint32_t ph
     return phys - state->guest * NVC0_CHANNELS_SHIFT;
 }
 
-#ifdef __cpp
+#ifdef __cplusplus
 }
 #endif
 

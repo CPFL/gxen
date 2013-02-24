@@ -24,6 +24,7 @@
 #include "nvc0_pramin.h"
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
+extern "C" {
 
 uint32_t nvc0_pramin_read32(nvc0_state_t* state, uint64_t addr) {
     uint32_t res = 0;
@@ -63,4 +64,5 @@ void nvc0_pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
     // spin_unlock(&state->pramin_lock);
 }
 
+}
 /* vim: set sw=4 ts=4 et tw=80 : */

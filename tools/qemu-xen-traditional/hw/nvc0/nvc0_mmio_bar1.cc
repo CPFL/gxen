@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include "nvc0_inttypes.h"
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar1.h"
@@ -30,48 +32,51 @@
 // BAR 1:
 //   VRAM. On pre-NV50, corresponds directly to the available VRAM on card.
 //   On NV50, gets remapped through VM engine.
-void nvc0_init_bar1(nvc0_state_t* state) {
-    if (!(state->bar[1].space = qemu_mallocz(0x8000000))) {
-        NVC0_PRINTF("BAR1 Initialization failed\n");
+extern "C" void nvc0_init_bar1(nvc0_state_t* state) {
+    if (void* ptr = malloc(0x8000000)) {
+        state->bar[1].space = static_cast<uint8_t*>(ptr);
+        memset(ptr, 0, 0x8000000);
+        return;
     }
+    NVC0_PRINTF("BAR1 Initialization failed\n");
 }
 
-uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     NVC0_LOG("read 0x%"PRIx64"\n", (uint64_t)offset);
     return nvc0_mmio_read8(state->bar[1].real, offset);
 }
 
-uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" uint32_t nvc0_mmio_bar1_readw(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     NVC0_LOG("read 0x%"PRIx64"\n", (uint64_t)offset);
     return nvc0_mmio_read16(state->bar[1].real, offset);
 }
 
-uint32_t nvc0_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" uint32_t nvc0_mmio_bar1_readd(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     return nvc0_vm_bar1_read(state, offset);
 }
 
-void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" void nvc0_mmio_bar1_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
     nvc0_mmio_write8(state->bar[1].real, offset, val);
 }
 
-void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" void nvc0_mmio_bar1_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
     nvc0_mmio_write16(state->bar[1].real, offset, val);
 }
 
-void nvc0_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" void nvc0_mmio_bar1_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[1].addr;
     nvc0_vm_bar1_write(state, offset, val);
 }

@@ -24,6 +24,7 @@
 
 #include "nvc0.h"
 #include "nvc0_ioport.h"
+#include "pass-through.h"
 
 static uint32_t nvc0_ioport_readb(void *opaque, uint32_t addr) {
     return 0;
@@ -34,7 +35,7 @@ static void nvc0_ioport_writeb(void *opaque, uint32_t addr, uint32_t val) {
 
 static void nvc0_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     int ret;
-    nvc0_state_t* state = (nvc0_state_t*)dev;
+    nvc0_state_t* state = nvc0_state(dev);
 
     nvc0_bar_t* bar = &(state)->bar[region_num];
     bar->io_index = -1;
@@ -48,7 +49,7 @@ static void nvc0_ioport_map(PCIDevice *dev, int region_num, uint32_t addr, uint3
 
 void nvc0_ioport_init(nvc0_state_t* state) {
     // Region 5: I/O ports at ec80 [disabled] [size=128]
-    pci_register_io_region(&state->pt_dev.dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, nvc0_ioport_map);
+    pci_register_io_region(&state->device->dev, 5, 0x0000080, PCI_ADDRESS_SPACE_IO, nvc0_ioport_map);
 }
 
 /* vim: set sw=4 ts=4 et tw=80 : */

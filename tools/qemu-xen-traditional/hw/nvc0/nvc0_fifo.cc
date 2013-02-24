@@ -27,8 +27,9 @@
 #include "nvc0_fifo.h"
 #include "nvc0_pramin.h"
 #include "nvc0_mmio.h"
+namespace nvc0 {
 
-void nvc0_fifo_playlist_update(nvc0_state_t* state, uint64_t vm_addr, uint32_t count) {
+void fifo_playlist_update(nvc0_state_t* state, uint64_t vm_addr, uint32_t count) {
     // scan fifo and update values
     uint32_t i;
     NVC0_LOG("FIFO playlist update %u\n", count);
@@ -44,4 +45,5 @@ void nvc0_fifo_playlist_update(nvc0_state_t* state, uint64_t vm_addr, uint32_t c
     usleep(1000);
 }
 
+}
 /* vim: set sw=4 ts=4 et tw=80 : */
