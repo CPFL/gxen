@@ -72,9 +72,14 @@ typedef struct {
     uint32_t log;                   // log flag
     nvc0_pfifo_t pfifo;             // pfifo
     nvc0_vm_engine_t vm_engine;     // BAR1 vm engine
+    void* priv;                     // store C++ NVC0 context
 } nvc0_state_t;
 
+// convert pt_dev to nvc0_state_t
 nvc0_state_t* nvc0_state(void* opaque);
+
+// construct NVC0 context
+void nvc0_context_init(nvc0_state_t* state);
 
 // nvc0 graph
 #define GPC_MAX 4
