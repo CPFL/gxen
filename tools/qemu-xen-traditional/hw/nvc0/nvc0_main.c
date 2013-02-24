@@ -222,6 +222,9 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
     // init VM
     nvc0_vm_init(state);
 
+    // init C++ nvc0 context
+    nvc0_context_init(state);
+
     instance = pci_bus_num(bus) << 8 | state->device->dev.devfn;
     NVC0_PRINTF("register device model: %x with guest id %u\n", instance, state->guest);
     return state->device;
