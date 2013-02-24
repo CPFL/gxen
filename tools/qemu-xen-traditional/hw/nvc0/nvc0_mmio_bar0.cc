@@ -22,6 +22,9 @@
  * THE SOFTWARE.
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -53,9 +56,10 @@ static uint64_t timer_now(void) {
 // BAR 0:
 //   control registers. 16MB in size. Is divided into several areas for
 //   each of the functional blocks of the card.
-void nvc0_init_bar0(nvc0_state_t* state) {
-    void* ptr = qemu_mallocz(0x2000000);
-    state->bar[0].space = ptr;
+extern "C" void nvc0_init_bar0(nvc0_state_t* state) {
+    void* ptr = malloc(0x2000000);
+    memset(ptr, 0, 0x2000000);
+    state->bar[0].space = static_cast<uint8_t*>(ptr);
     nvc0_mmio_write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
 
     // map vbios
@@ -66,36 +70,36 @@ void nvc0_init_bar0(nvc0_state_t* state) {
     #include "nvc0_init.inc"
 }
 
-uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // return nvc0_mmio_read8(state->bar[0].space, offset);
     return nvc0_mmio_read8(state->bar[0].real, offset);
 }
 
-uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // return nvc0_mmio_read16(state->bar[0].space, offset);
     return nvc0_mmio_read16(state->bar[0].real, offset);
 }
 
-void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // nvc0_mmio_write8(state->bar[0].space, offset, val);
     nvc0_mmio_write8(state->bar[0].real, offset, val);
 }
 
-void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // nvc0_mmio_write16(state->bar[0].space, offset, val);
     nvc0_mmio_write16(state->bar[0].real, offset, val);
 }
 
-uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
+    nvc0_state_t* state = nvc0_state(opaque);
     uint32_t ret = 0;
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
@@ -266,8 +270,8 @@ end:
     return ret;
 }
 
-void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
-    nvc0_state_t* state = (nvc0_state_t*)(opaque);
+extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
+    nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
@@ -307,7 +311,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         }
 
     case 0x001704: {
-            // BAR1 base
+            // BAR1 channel RAMIN
             const nvc0_vm_addr_t shifted = (val & (0x80000000 - 1));
             state->vm_engine.bar1 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
@@ -316,7 +320,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
         }
 
     case 0x001714: {
-            // BAR3 base
+            // BAR3 channel RAMIN
             const nvc0_vm_addr_t shifted = (val & (0xc0000000 - 1));
             state->vm_engine.bar3 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
@@ -389,7 +393,7 @@ void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) 
 
         if (offset == 0x002274) {
             state->pfifo.playlist_count = val & 0x2f;  // 0x2f == 127
-            nvc0_fifo_playlist_update(state, state->pfifo.playlist, state->pfifo.playlist_count);
+            nvc0::fifo_playlist_update(state, state->pfifo.playlist, state->pfifo.playlist_count);
             nvc0_mmio_write32(state->bar[0].real, 0x2270, state->pfifo.playlist >> 12);
             nvc0_mmio_write32(state->bar[0].real, 0x2274, val);
             return;

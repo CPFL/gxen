@@ -2,7 +2,7 @@
 #define HW_NVC0_NVC0_CHANNEL_H_
 #include <stddef.h>
 
-#ifdef __cpp
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -16,7 +16,7 @@ typedef struct nvc0_channel {
 
 #define NVC0_USER_VMA_CHANNEL 0x1000
 
-#ifdef __cpp
+#ifdef __cplusplus
 }
 #endif
 

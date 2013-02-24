@@ -27,6 +27,8 @@
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 
+extern "C" {
+
 static inline nvc0_vm_addr_t nvc0_get_bar1_addr(nvc0_state_t* state, target_phys_addr_t offset) {
     return offset;
     // return state->vm_engine.bar1 + offset;
@@ -41,7 +43,7 @@ static inline nvc0_vm_addr_t nvc0_get_pramin_addr(nvc0_state_t* state, target_ph
     return (state->vm_engine.pramin << 16) + offset;
 }
 
-static inline bool is_valid_cid(nvc0_state_t* state, uint8_t cid) {
+static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
     return cid < NVC0_CHANNELS_SHIFT;
 }
 
@@ -68,7 +70,7 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
 //        }
 //    }
     const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_LOG(":%s: read offset 0x%"PRIx64" addr 0x%"PRIx64" => 0x%X\n", from, ((uint64_t)offset), ((uint64_t)vm_addr), result);
+    NVC0_LOG(":%s: read offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), ((uint64_t)vm_addr), result);
     return result;
 }
 
@@ -94,7 +96,7 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
 //            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
 //        }
 //    }
-    NVC0_LOG(":%s: write offset 0x%"PRIx64" addr 0x%"PRIx64" => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
+    NVC0_LOG(":%s: write offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
     nvc0_mmio_write32(real, offset, value);
 }
 
@@ -157,5 +159,7 @@ void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32
 }
 
 void nvc0_vm_init(nvc0_state_t* state) {
+}
+
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

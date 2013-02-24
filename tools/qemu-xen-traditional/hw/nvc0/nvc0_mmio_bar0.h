@@ -1,8 +1,9 @@
 #ifndef HW_NVC0_NVC0_MMIO_BAR0_H_
 #define HW_NVC0_NVC0_MMIO_BAR0_H_
+
 #include "nvc0.h"
 
-#ifdef __cpp
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -20,7 +21,7 @@ void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val);
 void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val);
 
 
-#ifdef __cpp
+#ifdef __cplusplus
 }
 #endif
 

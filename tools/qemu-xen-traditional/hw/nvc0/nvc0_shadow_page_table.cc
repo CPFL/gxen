@@ -23,3 +23,19 @@
  */
 
 #include "nvc0_shadow_page_table.h"
+namespace nvc0 {
+
+void shadow_page_table::refresh() {
+    // construct shadow page table from real data
+}
+
+void shadow_page_table::set_low_size(uint32_t value) {
+    low_size_ = value;
+}
+
+void shadow_page_table::set_high_size(uint32_t value) {
+    high_size_ = value;
+}
+
+}  // namespace nvc
+/* vim: set sw=4 ts=4 et tw=80 : */

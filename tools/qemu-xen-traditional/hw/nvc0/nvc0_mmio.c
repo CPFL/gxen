@@ -27,6 +27,7 @@
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_mmio_bar1.h"
 #include "nvc0_mmio_bar3.h"
+#include "pass-through.h"
 
 
 // function to access byte (index 0), word (index 1) and dword (index 2)
@@ -70,9 +71,9 @@ static CPUWriteMemoryFuncBlock mmio_write_table[5] = {
     }
 };
 
-void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
+static void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
     int ret;
-    nvc0_state_t* state = (nvc0_state_t*)dev;
+    nvc0_state_t* state = nvc0_state(dev);
     const int io_index = cpu_register_io_memory(0, mmio_read_table[region_num], mmio_write_table[region_num], dev);
 
     nvc0_bar_t* bar = &(state)->bar[region_num];
@@ -101,15 +102,15 @@ void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size,
 
 void nvc0_mmio_init(nvc0_state_t* state) {
     // Region 0: Memory at d8000000 (32-bit, non-prefetchable) [disabled] [size=32M]
-    pci_register_io_region(&state->pt_dev.dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
+    pci_register_io_region(&state->device->dev, 0, 0x2000000, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
     nvc0_init_bar0(state);
 
     // Region 1: Memory at c0000000 (64-bit, prefetchable) [disabled] [size=128M]
-    pci_register_io_region(&state->pt_dev.dev, 1, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    pci_register_io_region(&state->device->dev, 1, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     nvc0_init_bar1(state);
 
     // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=64M]
-    pci_register_io_region(&state->pt_dev.dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    pci_register_io_region(&state->device->dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     nvc0_init_bar3(state);
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

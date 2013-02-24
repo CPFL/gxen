@@ -29,6 +29,7 @@
 #include "pci.h"
 #include "pci/header.h"
 #include "pci/pci.h"
+#include "pass-through.h"
 #include "nvc0.h"
 #include "nvc0_channel.h"
 #include "nvc0_ioport.h"
@@ -63,42 +64,14 @@ struct pci_config_header {
     uint8_t  max_lat;
 };
 
-// Functional blocks
-// http://nouveau.freedesktop.org/wiki/HwIntroduction#The_functional_blocks
-#define LIST_FUNCTIONAL_BLOCK(V)\
-    V(PMC)\
-    V(PBUS)\
-    V(PFIFO)\
-    V(PFIFO_CACHE_I)\
-    V(PVIDEO)\
-    V(PTIMER)\
-    V(PTV)\
-    V(PCONNECTOR)\
-    V(PRMVIO)\
-    V(PFB)\
-    V(PEXTDEV)\
-    V(PROM)\
-    V(PGRAPH)\
-    V(PCRTC0)\
-    V(PRMCIO)\
-    V(PDISPLAY)\
-    V(PDISPLAY_USER)\
-    V(PRAMDAC)\
-    V(PRMDIO)\
-    V(PRAMIN)\
-    V(FIFO)
-
-enum functional_block_t {
-#define V(NAME) NAME,
-    LIST_FUNCTIONAL_BLOCK(V)
-#undef V
+struct pt_dev_with_state {
+    struct pt_dev pt_dev;
+    nvc0_state_t state;
 };
 
-static const char* functional_block_names[] = {
-#define V(NAME) #NAME,
-    LIST_FUNCTIONAL_BLOCK(V)
-#undef V
-};
+nvc0_state_t* nvc0_state(void* opaque) {
+    return &(((struct pt_dev_with_state*)opaque)->state);
+}
 
 // This code is ported from pass-through.c
 static struct pci_dev* nvc0_find_real_device(uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
@@ -203,12 +176,15 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
         const char *e_dev_name, int e_devfn, uint8_t r_bus, uint8_t r_dev,
         uint8_t r_func, uint32_t machine_irq, struct pci_access *pci_access,
         char *opt) {
+    struct pt_dev_with_state* result;
     nvc0_state_t* state;
     struct pci_config_header* pch;
     uint8_t *pci_conf;
     int instance;
 
-    state = (nvc0_state_t*)pci_register_device(bus, "nvc0", sizeof(nvc0_state_t), e_devfn, NULL, NULL);
+    result = (struct pt_dev_with_state*)pci_register_device(bus, "nvc0", sizeof(struct pt_dev_with_state), e_devfn, NULL, NULL);
+    state = nvc0_state(result);
+    state->device = (struct pt_dev*)result;
 
     // FIXME(Yusuke Suzuki)
     // set correct guest id
@@ -217,8 +193,8 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
 
     nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
-    pci_conf = state->pt_dev.dev.config;
-    pch = (struct pci_config_header *)state->pt_dev.dev.config;
+    pci_conf = state->device->dev.config;
+    pch = (struct pci_config_header *)state->device->dev.config;
 
     pci_config_set_vendor_id(pci_conf, NVC0_VENDOR);
     pci_config_set_device_id(pci_conf, NVC0_DEVICE);
@@ -246,8 +222,8 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
     // init VM
     nvc0_vm_init(state);
 
-    instance = pci_bus_num(bus) << 8 | state->pt_dev.dev.devfn;
+    instance = pci_bus_num(bus) << 8 | state->device->dev.devfn;
     NVC0_PRINTF("register device model: %x with guest id %u\n", instance, state->guest);
-    return (struct pt_dev*)state;
+    return state->device;
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
