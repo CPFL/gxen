@@ -28,6 +28,10 @@
 #include "nvc0_context.h"
 namespace nvc0 {
 
+static uint64_t round_up(uint64_t x, uint64_t y) {
+    return (((x) + (y - 1)) & ~(y - 1));
+}
+
 shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
@@ -58,7 +62,7 @@ bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
 
     const uint64_t vspace_size = descriptor.page_limit + 1;
 
-    const std::size_t page_directory_size = vspace_size / kPAGE_DIRECTORY_COVERED_SIZE;
+    const std::size_t page_directory_size = round_up(vspace_size, kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE;
     if (page_directory_size > kMAX_PAGE_DIRECTORIES) {
         return false;
     }
