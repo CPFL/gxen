@@ -24,11 +24,14 @@
 
 #include "nvc0_shadow_page_table.h"
 #include "nvc0_pramin.h"
+#include "nvc0_bit_mask.h"
 namespace nvc0 {
 
-void shadow_page_table::refresh(nvc0_state_t* state, uint64_t ramin) {
+void shadow_page_table::refresh(nvc0_state_t* state, uint64_t value) {
     // construct shadow page table from real data
     pramin_accessor pramin(state);
+
+    const uint64_t ramin = bit_mask<30>(value) << 12;
 
     page_descriptor descriptor;
     descriptor.page_directory_address_low = pramin.read32(ramin + 0x200);
@@ -36,7 +39,8 @@ void shadow_page_table::refresh(nvc0_state_t* state, uint64_t ramin) {
     descriptor.page_limit_low = pramin.read32(ramin + 0x208);
     descriptor.page_limit_high = pramin.read32(ramin + 0x20c);
 
-    NVC0_PRINTF("page directory address 0x%" PRIx64 " and size %" PRIu64 "\n", descriptor.page_directory_address, descriptor.page_limit);
+    NVC0_PRINTF("ramin 0x%" PRIx64 " page directory address 0x%" PRIx64 " and size %" PRIu64 "\n",
+                ramin, descriptor.page_directory_address, descriptor.page_limit);
 
 }
 

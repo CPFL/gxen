@@ -37,3 +37,4 @@ using noncopyable_::noncopyable;
 
 } // namespace nvc0
 #endif  // HW_NVC0_NVC0_NONCOPYABLE_H_
+/* vim: set sw=4 ts=4 et tw=80 : */
