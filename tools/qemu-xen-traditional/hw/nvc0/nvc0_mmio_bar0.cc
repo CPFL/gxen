@@ -327,6 +327,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             const nvc0_vm_addr_t shifted = (val & (0xc0000000 - 1));
             state->vm_engine.bar3 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
+            ctx->bar3_table()->refresh(state, val);
             NVC0_PRINTF("BAR3 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar3);
             return;
         }

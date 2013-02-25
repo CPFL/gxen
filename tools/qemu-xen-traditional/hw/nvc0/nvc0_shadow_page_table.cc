@@ -25,13 +25,23 @@
 #include "nvc0_shadow_page_table.h"
 #include "nvc0_pramin.h"
 #include "nvc0_bit_mask.h"
+#include "nvc0_context.h"
 namespace nvc0 {
+
+shadow_page_table::shadow_page_table(uint32_t channel_id)
+    : directories_()
+    , size_(0)
+    , channel_id_(channel_id) {
+}
 
 // TODO(Yusuke Suzuki)
 // Handling shadow page table when TLB cache is flushed is better?
 bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
     // construct shadow page table from real data
     pramin_accessor pramin(state);
+    context* ctx = context::extract(state);
+
+    ctx->barrier()->clear(channel_id());
 
     const uint64_t ramin = static_cast<uint64_t>(bit_mask<30>(value)) << 12;
 
@@ -40,6 +50,8 @@ bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
     descriptor.page_directory_address_high = pramin.read32(ramin + 0x204);
     descriptor.page_limit_low = pramin.read32(ramin + 0x208);
     descriptor.page_limit_high = pramin.read32(ramin + 0x20c);
+
+    ctx->barrier()->register_barrier(channel_id(), mmio_barrier::interval(ramin, ramin + 0x1000));
 
     NVC0_PRINTF("ramin 0x%" PRIx64 " page directory address 0x%" PRIx64 " and size %" PRIu64 "\n",
                 ramin, descriptor.page_directory_address, descriptor.page_limit);
@@ -58,8 +70,14 @@ bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
     std::size_t i = 0;
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
-        it->refresh(&pramin, descriptor.page_directory_address + 0x8 * i);
+        it->refresh(ctx, channel_id(), &pramin, descriptor.page_directory_address + 0x8 * i);
     }
+
+    ctx->barrier()->register_barrier(
+        channel_id(),
+        mmio_barrier::interval(
+            descriptor.page_directory_address,
+            descriptor.page_directory_address + 0x8 * i));
 }
 
 void shadow_page_table::set_low_size(uint32_t value) {
@@ -70,7 +88,7 @@ void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
 }
 
-void shadow_page_directory::refresh(pramin_accessor* pramin, uint64_t page_directory_address) {
+void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address) {
     struct page_directory virt = { };
     virt.word0 = pramin->read32(page_directory_address);
     virt.word1 = pramin->read32(page_directory_address + 0x4);
@@ -97,6 +115,11 @@ void shadow_page_directory::refresh(pramin_accessor* pramin, uint64_t page_direc
                             it->virt().target);
             }
         }
+        ctx->barrier()->register_barrier(
+            channel_id,
+            mmio_barrier::interval(
+                address,
+                address + 0x8 * i));
     } else {
         large_entries_.clear();
     }
@@ -119,6 +142,11 @@ void shadow_page_directory::refresh(pramin_accessor* pramin, uint64_t page_direc
                             it->virt().target);
             }
         }
+        ctx->barrier()->register_barrier(
+            channel_id,
+            mmio_barrier::interval(
+                address,
+                address + 0x8 * i));
     } else {
         small_entries_.clear();
     }

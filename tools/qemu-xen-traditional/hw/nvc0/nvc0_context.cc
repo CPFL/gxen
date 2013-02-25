@@ -28,8 +28,8 @@ namespace nvc0 {
 
 context::context(nvc0_state_t* state)
     : state_(state)
-    , bar1_table_()
-    , bar3_table_()
+    , bar1_table_(0x10001)
+    , bar3_table_(0x10003)
     , barrier_() {
 }
 

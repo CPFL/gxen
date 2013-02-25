@@ -26,6 +26,7 @@
 #include "nvc0_inttypes.h"
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
+#include "nvc0_context.h"
 
 extern "C" {
 
@@ -139,22 +140,26 @@ void nvc0_vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
 }
 
 uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    // return nvc0_mmio_read32(state->bar[0].real + 0x700000, offset);
+    const uint64_t address = nvc0_get_pramin_addr(state, offset);
+    nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->barrier()->handle(address);
     return nvc0_vm_read(
             state,
             state->bar[0].real + 0x700000,
             state->bar[0].space + 0x700000,
-            offset, nvc0_get_pramin_addr(state, offset),
+            offset, address,
             "PRAMIN");
 }
 
 void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    // nvc0_mmio_write32(state->bar[0].real + 0x700000, offset, value);
+    const uint64_t address = nvc0_get_pramin_addr(state, offset);
+    nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->barrier()->handle(address);
     nvc0_vm_write(
             state,
             state->bar[0].real + 0x700000,
             state->bar[0].space + 0x700000,
-            offset, nvc0_get_pramin_addr(state, offset), value,
+            offset, address, value,
             "PRAMIN");
 }
 
