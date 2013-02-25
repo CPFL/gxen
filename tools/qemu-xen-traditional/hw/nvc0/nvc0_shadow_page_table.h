@@ -12,12 +12,15 @@ class pramin_accessor;
 
 static const unsigned kSMALL_PAGE_SHIFT = 12;
 static const unsigned kLARGE_PAGE_SHIFT = 17;
-static const unsigned kPAGE_TABLE_BITS = 27;
+static const unsigned kPAGE_TABLE_BITS = 27 - 12;
 static const unsigned kBLOCK = 4096;
 static const unsigned kPAGE_TABLE_SIZE = 0x8000;
 
 static const unsigned kPAGE_DIRECTORY_COVERED_SIZE = 0x8000000;
 static const unsigned kMAX_PAGE_DIRECTORIES = 0x2000;
+
+static const unsigned kSMALL_PAGE_SIZE = 0x1 << kSMALL_PAGE_SHIFT;
+static const unsigned kLARGE_PAGE_SIZE = 0x1 << kLARGE_PAGE_SHIFT;
 
 struct page_descriptor {
     union {
@@ -44,12 +47,56 @@ struct page_descriptor {
 
 NVC0_STATIC_ASSERT(sizeof(struct page_descriptor) == (sizeof(uint64_t) * 2), page_descriptor_size_is_invalid);
 
+struct page_entry {
+    enum target_type_t {
+        TARGET_TYPE_VRAM            = 0,
+        TARGET_TYPE_SYSRAM          = 2,
+        TARGET_TYPE_SYSRAM_NO_SNOOP = 3
+    };
+
+    union {
+        struct {
+            unsigned present : 1;
+            unsigned supervisor_only : 1;
+            unsigned read_only : 1;
+            unsigned encrypted : 1;        // only used by SYSRAM
+            unsigned address: 28;
+        };
+        uint32_t word0;
+    };
+    union {
+        struct {
+            unsigned unknown0 : 1;
+            unsigned target : 2;
+            unsigned unknown1 : 1;
+            unsigned storage_type : 8;      // 0 / 0xdb ZETA / 0xfe tiled surface
+            unsigned tag : 17;
+            unsigned unknown2 : 3;
+        };
+        uint32_t word1;
+    };
+};
+
+NVC0_STATIC_ASSERT(sizeof(struct page_entry) == sizeof(uint64_t), page_entry_size_is_invalid);
+
+class shadow_page_entry {
+ public:
+    bool refresh(pramin_accessor* pramin, uint64_t page_entry_address);
+    const struct page_entry& virt() const { return virt_; }
+    const struct page_entry& phys() const { return phys_; }
+    bool present() const { return virt_.present; }
+
+ private:
+    struct page_entry virt_;
+    struct page_entry phys_;
+};
+
 struct page_directory {
     enum size_type_t {
         SIZE_TYPE_FULL = 0,
         SIZE_TYPE_64M  = 1,
         SIZE_TYPE_32M  = 2,
-        SIZE_TYPE_16M  = 3,
+        SIZE_TYPE_16M  = 3
     };
 
     union {
@@ -77,51 +124,24 @@ NVC0_STATIC_ASSERT(sizeof(struct page_directory) == sizeof(uint64_t), page_direc
 
 class shadow_page_directory {
  public:
-    void refresh(pramin_accessor* pramin, uint64_t address);
+    typedef std::vector<shadow_page_entry> shadow_page_entries;
+
+    void refresh(pramin_accessor* pramin, uint64_t page_directory_address);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
+
  private:
     struct page_directory virt_;
     struct page_directory phys_;
-};
-
-struct page_entry {
-    union {
-        struct {
-            unsigned present : 1;
-            unsigned supervisor_only : 1;
-            unsigned read_only : 1;
-            unsigned encrypted : 1;        // only used by SYSRAM
-            unsigned address: 28;
-        };
-        uint32_t word0;
-    };
-    union {
-        struct {
-            unsigned unknown0 : 1;
-            unsigned target : 2;
-            unsigned unknown1 : 1;
-            unsigned storage_type : 8;      // 0 / 0xdb ZETA / 0xfe tiled surface
-            unsigned tag : 17;
-            unsigned unknown2 : 3;
-        };
-        uint32_t word1;
-    };
-};
-
-NVC0_STATIC_ASSERT(sizeof(struct page_entry) == sizeof(uint64_t), page_entry_size_is_invalid);
-
-class shadow_page_entry {
- private:
-    struct page_entry virt_;
-    struct page_entry phys_;
+    shadow_page_entries large_entries_;
+    shadow_page_entries small_entries_;
 };
 
 class shadow_page_table {
  public:
     typedef std::vector<shadow_page_directory> shadow_page_directories;
 
-    bool refresh(nvc0_state_t* state, uint64_t value);
+    bool refresh(nvc0_state_t* state, uint32_t value);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
