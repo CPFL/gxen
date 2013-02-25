@@ -2,6 +2,7 @@
 #define HW_NVC0_NVC0_CONTEXT_H_
 #include "nvc0.h"
 #include "nvc0_shadow_page_table.h"
+#include "nvc0_mmio_barrier.h"
 namespace nvc0 {
 
 class context {
@@ -16,6 +17,7 @@ class context {
     nvc0_state_t* state_;
     shadow_page_table bar1_table_;
     shadow_page_table bar3_table_;
+    mmio_barrier barrier_;
 };
 
 }  // namespace nvc0

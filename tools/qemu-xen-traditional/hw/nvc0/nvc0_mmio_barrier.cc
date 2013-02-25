@@ -1,5 +1,5 @@
 /*
- * NVIDIA NVC0 Context
+ * NVIDIA NVC0 MMIO barrier
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -22,24 +22,10 @@
  * THE SOFTWARE.
  */
 
-#include "nvc0.h"
-#include "nvc0_context.h"
+#include "nvc0_mmio_barrier.h"
+
 namespace nvc0 {
 
-context::context(nvc0_state_t* state)
-    : state_(state)
-    , bar1_table_()
-    , bar3_table_()
-    , barrier_() {
-}
-
-context* context::extract(nvc0_state_t* state) {
-    return static_cast<context*>(state->priv);
-}
 
 }  // namespace nvc0
-
-extern "C" void nvc0_context_init(nvc0_state_t* state) {
-    state->priv = static_cast<void*>(new nvc0::context(state));
-}
 /* vim: set sw=4 ts=4 et tw=80 : */
