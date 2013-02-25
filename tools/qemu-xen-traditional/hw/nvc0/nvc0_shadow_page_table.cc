@@ -27,11 +27,13 @@
 #include "nvc0_bit_mask.h"
 namespace nvc0 {
 
-bool shadow_page_table::refresh(nvc0_state_t* state, uint64_t value) {
+// TODO(Yusuke Suzuki)
+// Handling shadow page table when TLB cache is flushed is better?
+bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
     // construct shadow page table from real data
     pramin_accessor pramin(state);
 
-    const uint64_t ramin = bit_mask<30>(value) << 12;
+    const uint64_t ramin = static_cast<uint64_t>(bit_mask<30>(value)) << 12;
 
     page_descriptor descriptor;
     descriptor.page_directory_address_low = pramin.read32(ramin + 0x200);
@@ -68,12 +70,70 @@ void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
 }
 
-void shadow_page_directory::refresh(pramin_accessor* pramin, uint64_t address) {
+void shadow_page_directory::refresh(pramin_accessor* pramin, uint64_t page_directory_address) {
     struct page_directory virt = { };
-    virt.word0 = pramin->read32(address);
-    virt.word1 = pramin->read32(address + 0x4);
-
+    virt.word0 = pramin->read32(page_directory_address);
+    virt.word1 = pramin->read32(page_directory_address + 0x4);
     virt_ = virt;
+
+    NVC0_PRINTF("PDE 0x%" PRIx64 " : large %d / small %d\n",
+                page_directory_address,
+                virt.large_page_table_present,
+                virt.small_page_table_present);
+    if (virt.large_page_table_present) {
+        const uint64_t address = static_cast<uint64_t>(virt.large_page_table_address) << 12;
+        const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
+        large_entries_.resize(count);
+        std::size_t i = 0;
+        for (shadow_page_entries::iterator it = large_entries_.begin(),
+             last = large_entries_.end(); it != last; ++it, ++i) {
+            it->refresh(pramin, address + 0x8 * i);
+
+            if (it->present()) {
+                NVC0_PRINTF("PTE 0x%" PRIx64 " - 0x%" PRIx64 " [%s] type [%d]\n",
+                            it->virt().address,
+                            it->virt().address + kLARGE_PAGE_SIZE - 1,
+                            it->virt().read_only ? "RO" : "RW",
+                            it->virt().target);
+            }
+        }
+    } else {
+        large_entries_.clear();
+    }
+
+    if (virt.small_page_table_present) {
+        const uint64_t address = static_cast<uint64_t>(virt.small_page_table_address) << 12;
+        const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
+        const uint64_t size = count * sizeof(page_entry);
+        small_entries_.resize(count);
+        std::size_t i = 0;
+        for (shadow_page_entries::iterator it = small_entries_.begin(),
+             last = small_entries_.end(); it != last; ++it, ++i) {
+            it->refresh(pramin, address + 0x8 * i);
+
+            if (it->present()) {
+                NVC0_PRINTF("PTE 0x%" PRIx64 " - 0x%" PRIx64 " [%s] type [%d]\n",
+                            it->virt().address,
+                            it->virt().address + kSMALL_PAGE_SIZE - 1,
+                            it->virt().read_only ? "RO" : "RW",
+                            it->virt().target);
+            }
+        }
+    } else {
+        small_entries_.clear();
+    }
+
+    // TODO(Yusuke Suzuki)
+    // Calculate physical page address
+    phys_ = virt;
+}
+
+bool shadow_page_entry::refresh(pramin_accessor* pramin, uint64_t page_entry_address) {
+    struct page_entry virt = { };
+    virt.word0 = pramin->read32(page_entry_address);
+    virt.word1 = pramin->read32(page_entry_address + 0x4);
+    virt_ = virt;
+
     // TODO(Yusuke Suzuki)
     // Calculate physical page address
     phys_ = virt;
