@@ -38,12 +38,12 @@ void pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
 
 pramin_accessor::pramin_accessor(nvc0_state_t* state)
     : state_(state)
-    , old_(state->vm_engine.pramin)
-    , current_(state->vm_engine.pramin) {
+    , old_(state->vm_engine.pramin) {
 }
 
 pramin_accessor::~pramin_accessor() {
-    if (current_ != old_) {
+    if (state_->vm_engine.pramin != old_) {
+        state_->vm_engine.pramin = old_;
         nvc0_mmio_write32(state_->bar[0].real, 0x1700, old_);
     }
 }
@@ -60,10 +60,9 @@ void pramin_accessor::write32(uint64_t addr, uint32_t val) {
 
 void pramin_accessor::change_current(uint64_t addr) {
     const uint64_t shifted = (addr >> 16);
-    if (shifted != current_) {
-        current_ = shifted;
-        state_->vm_engine.pramin = current_;
-        nvc0_mmio_write32(state_->bar[0].real, 0x1700, current_);
+    if (state_->vm_engine.pramin != shifted) {
+        state_->vm_engine.pramin = shifted;
+        nvc0_mmio_write32(state_->bar[0].real, 0x1700, shifted);
     }
 }
 
