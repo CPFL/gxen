@@ -37,6 +37,7 @@
 #include "nvc0_pramin.h"
 #include "nvc0_vbios.inc"
 #include "nvc0_vm.h"
+#include "nvc0_bit_mask.h"
 
 // crystal freq is 27000KHz
 #define GPU_CLOCKS_PER_NANO_SEC 27
@@ -314,7 +315,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     case 0x001704: {
             // BAR1 channel RAMIN
-            const nvc0_vm_addr_t shifted = (val & (0x80000000 - 1));
+            const nvc0_vm_addr_t shifted = nvc0::bit_mask<30>(val);
             state->vm_engine.bar1 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
             ctx->bar1_table()->refresh(state, val);
@@ -324,7 +325,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     case 0x001714: {
             // BAR3 channel RAMIN
-            const nvc0_vm_addr_t shifted = (val & (0xc0000000 - 1));
+            const nvc0_vm_addr_t shifted = nvc0::bit_mask<30>(val);
             state->vm_engine.bar3 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
             ctx->bar3_table()->refresh(state, val);
