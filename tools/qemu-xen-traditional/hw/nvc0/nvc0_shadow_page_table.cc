@@ -27,7 +27,7 @@
 #include "nvc0_bit_mask.h"
 namespace nvc0 {
 
-void shadow_page_table::refresh(nvc0_state_t* state, uint64_t value) {
+bool shadow_page_table::refresh(nvc0_state_t* state, uint64_t value) {
     // construct shadow page table from real data
     pramin_accessor pramin(state);
 
@@ -42,6 +42,22 @@ void shadow_page_table::refresh(nvc0_state_t* state, uint64_t value) {
     NVC0_PRINTF("ramin 0x%" PRIx64 " page directory address 0x%" PRIx64 " and size %" PRIu64 "\n",
                 ramin, descriptor.page_directory_address, descriptor.page_limit);
 
+    const uint64_t vspace_size = descriptor.page_limit + 1;
+
+    const std::size_t page_directory_size = vspace_size / kPAGE_DIRECTORY_COVERED_SIZE;
+    if (page_directory_size > kMAX_PAGE_DIRECTORIES) {
+        return false;
+    }
+
+    // store size
+    size_ = vspace_size;
+
+    directories_.resize(page_directory_size);
+    std::size_t i = 0;
+    for (shadow_page_directories::iterator it = directories_.begin(),
+         last = directories_.end(); it != last; ++it, ++i) {
+        it->refresh(&pramin, descriptor.page_directory_address + 0x8 * i);
+    }
 }
 
 void shadow_page_table::set_low_size(uint32_t value) {
@@ -50,6 +66,17 @@ void shadow_page_table::set_low_size(uint32_t value) {
 
 void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
+}
+
+void shadow_page_directory::refresh(pramin_accessor* pramin, uint64_t address) {
+    struct page_directory virt = { };
+    virt.word0 = pramin->read32(address);
+    virt.word1 = pramin->read32(address + 0x4);
+
+    virt_ = virt;
+    // TODO(Yusuke Suzuki)
+    // Calculate physical page address
+    phys_ = virt;
 }
 
 }  // namespace nvc
