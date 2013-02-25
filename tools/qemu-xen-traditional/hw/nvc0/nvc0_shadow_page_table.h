@@ -7,6 +7,7 @@
 namespace nvc0 {
 
 class pramin_accessor;
+class context;
 
 // We assume Little Endianess machine.
 
@@ -126,7 +127,7 @@ class shadow_page_directory {
  public:
     typedef std::vector<shadow_page_entry> shadow_page_entries;
 
-    void refresh(pramin_accessor* pramin, uint64_t page_directory_address);
+    void refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
 
@@ -141,10 +142,12 @@ class shadow_page_table {
  public:
     typedef std::vector<shadow_page_directory> shadow_page_directories;
 
+    shadow_page_table(uint32_t channel_id);
     bool refresh(nvc0_state_t* state, uint32_t value);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
+    uint32_t channel_id() const { return channel_id_; }
 
  private:
     shadow_page_directories directories_;
@@ -155,6 +158,7 @@ class shadow_page_table {
         };
         uint64_t size_ : 40;
     };
+    uint32_t channel_id_;
 };
 
 }  // namespace nvc0

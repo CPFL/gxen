@@ -22,10 +22,39 @@
  * THE SOFTWARE.
  */
 
+#include <utility>
 #include "nvc0_mmio_barrier.h"
 
 namespace nvc0 {
 
+bool mmio_barrier::handle(uint64_t address) {
+    barrier_map::const_iterator it = barriers_.upper_bound(interval(address, address));
+
+    if (it == barriers_.begin()) {
+        return false;
+    }
+    --it;
+
+    if (it->first.second <= address) {
+        return false;
+    }
+
+    NVC0_PRINTF("handling 0x%" PRIX64 " access\n", address);
+    return true;
+}
+
+void mmio_barrier::clear(uint32_t type) {
+    const std::pair<item_map::iterator, item_map::iterator> pair = items_.equal_range(type);
+    for (item_map::const_iterator it = pair.first, last = pair.second; it != last; ++it) {
+        barriers_.erase(it->second);
+    }
+    items_.erase(pair.first, pair.second);
+}
+
+void mmio_barrier::register_barrier(uint32_t type, interval i) {
+    barriers_.insert(std::make_pair(i, type));
+    items_.insert(std::make_pair(type, i));
+}
 
 }  // namespace nvc0
 /* vim: set sw=4 ts=4 et tw=80 : */
