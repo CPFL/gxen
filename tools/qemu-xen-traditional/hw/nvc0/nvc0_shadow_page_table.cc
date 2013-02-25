@@ -57,7 +57,7 @@ bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
 
     ctx->barrier()->register_barrier(channel_id(), mmio_barrier::interval(ramin, ramin + 0x1000));
 
-    NVC0_PRINTF("ramin 0x%" PRIx64 " page directory address 0x%" PRIx64 " and size %" PRIu64 "\n",
+    NVC0_PRINTF("ramin 0x%" PRIX64 " page directory address 0x%" PRIX64 " and size %" PRIu64 "\n",
                 ramin, descriptor.page_directory_address, descriptor.page_limit);
 
     const uint64_t vspace_size = descriptor.page_limit + 1;
@@ -82,6 +82,8 @@ bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
         mmio_barrier::interval(
             descriptor.page_directory_address,
             descriptor.page_directory_address + 0x8 * i));
+
+    NVC0_PRINTF("scan page table done 0x%" PRIX64 "\n", ramin);
 }
 
 void shadow_page_table::set_low_size(uint32_t value) {
@@ -98,7 +100,7 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
     virt.word1 = pramin->read32(page_directory_address + 0x4);
     virt_ = virt;
 
-    NVC0_PRINTF("PDE 0x%" PRIx64 " : large %d / small %d\n",
+    NVC0_PRINTF("PDE 0x%" PRIX64 " : large %d / small %d\n",
                 page_directory_address,
                 virt.large_page_table_present,
                 virt.small_page_table_present);
@@ -112,7 +114,7 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
             it->refresh(pramin, address + 0x8 * i);
 
             if (it->present()) {
-                NVC0_PRINTF("PTE 0x%" PRIx64 " - 0x%" PRIx64 " [%s] type [%d]\n",
+                NVC0_PRINTF("PTE 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
                             it->virt().address,
                             it->virt().address + kLARGE_PAGE_SIZE - 1,
                             it->virt().read_only ? "RO" : "RW",
@@ -139,7 +141,7 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
             it->refresh(pramin, address + 0x8 * i);
 
             if (it->present()) {
-                NVC0_PRINTF("PTE 0x%" PRIx64 " - 0x%" PRIx64 " [%s] type [%d]\n",
+                NVC0_PRINTF("PTE 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
                             it->virt().address,
                             it->virt().address + kSMALL_PAGE_SIZE - 1,
                             it->virt().read_only ? "RO" : "RW",
