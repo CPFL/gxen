@@ -20,7 +20,6 @@ class pramin_accessor : private noncopyable<> {
 
     nvc0_state_t* state_;
     uint32_t old_;
-    uint32_t current_;
 };
 
 }  // namespace nvc0
