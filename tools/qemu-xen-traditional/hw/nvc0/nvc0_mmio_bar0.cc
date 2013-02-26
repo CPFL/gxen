@@ -112,6 +112,10 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         // for debugging, we access to real device
         break;
 
+    case 0x00121c75:  // mem ctrl num
+        ret = 0x3;  // 3GB
+        goto end;
+
     // see nvc0_vram.c
     // Part struct starts with 0x11020c (PBFBs)
     case 0x022438:  // parts
@@ -119,7 +123,8 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         // return 0x00000006;
         // NVC0_PRINTF("MMIO bar0 parts 0x%X : 0x%X\n", addr, 1);
         // return 0x00000001;  // Expose only 1 parts by Quadro6000 device model
-        break;
+        ret = 0x3;  // 3GB
+        goto end;
 
     case 0x022554:  // pmask
         // NVC0_PRINTF("MMIO bar0 pmask 0x%X : 0x%X\n", addr, 0);
