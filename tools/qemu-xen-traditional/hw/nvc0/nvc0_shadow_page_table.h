@@ -152,7 +152,7 @@ class shadow_page_table {
     uint64_t size() const { return size_; }
     uint32_t channel_id() const { return channel_id_; }
     uint64_t resolve(uint64_t virtual_address);
-    void dump();
+    void dump() const;
 
  private:
     shadow_page_directories directories_;

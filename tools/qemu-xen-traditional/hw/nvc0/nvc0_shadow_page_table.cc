@@ -104,7 +104,7 @@ uint64_t shadow_page_table::resolve(uint64_t virtual_address) {
     return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE);
 }
 
-void shadow_page_table::dump() {
+void shadow_page_table::dump() const {
     std::size_t i = 0;
     for (shadow_page_directories::const_iterator it = directories_.begin(),
          iz = directories_.end(); it != iz; ++it, ++i) {
