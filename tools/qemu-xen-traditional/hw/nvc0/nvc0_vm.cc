@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <stdint.h>
 #include "nvc0.h"
 #include "nvc0_inttypes.h"
 #include "nvc0_vm.h"
@@ -56,7 +57,7 @@ static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, targ
 //        }
 //    }
     const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), result);
+    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), result);
     return result;
 }
 
@@ -82,7 +83,7 @@ static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_
 //            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
 //        }
 //    }
-    NVC0_LOG(state, ":%s: write offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, value);
+    NVC0_LOG(state, ":%s: write offset 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, value);
     nvc0_mmio_write32(real, offset, value);
 }
 
@@ -106,6 +107,12 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
 }
 
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
+    context* ctx = context::extract(state);
+    const uint64_t gphys = ctx->bar3_table()->resolve(offset);
+    if (gphys != UINT64_MAX) {
+        // resolved
+        ctx->barrier()->handle(gphys);
+    }
     return vm_read(
             state,
             state->bar[3].real,
@@ -115,6 +122,12 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
 }
 
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+    context* ctx = context::extract(state);
+    const uint64_t gphys = ctx->bar3_table()->resolve(offset);
+    if (gphys != UINT64_MAX) {
+        // resolved
+        ctx->barrier()->handle(gphys);
+    }
     vm_write(
             state,
             state->bar[3].real,
