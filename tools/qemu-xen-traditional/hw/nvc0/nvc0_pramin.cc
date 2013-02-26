@@ -52,14 +52,21 @@ pramin_accessor::~pramin_accessor() {
 
 uint32_t pramin_accessor::read32(uint64_t addr) {
     change_current(addr);
-    ctx_->barrier()->handle(addr);
+    if (ctx_->barrier()->handle(addr)) {
+        // TODO(Yusuke Suzuki)
+        // memory separation
+        // currently do nothing
+    }
     const uint32_t result = nvc0_mmio_read32(ctx_->state()->bar[0].real + 0x700000, bit_mask<16>(addr));
     return result;
 }
 
 void pramin_accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
-    ctx_->barrier()->handle(addr);
+    if (ctx_->barrier()->handle(addr)) {
+        // TODO(Yusuke Suzuki)
+        // reconstruct page table entry
+    }
     nvc0_mmio_write32(ctx_->state()->bar[0].real + 0x700000, bit_mask<16>(addr), val);
 }
 
