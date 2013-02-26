@@ -225,7 +225,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     }
 
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        ret = nvc0::vm_pramin_read(state, offset - 0x700000);
+        ret = nvc0::pramin_read32(state, state->vm_engine.pramin + nvc0::bit_mask<16>(offset - 0x700000));
         goto end;
     }
 
@@ -337,7 +337,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     // PRAMIN
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        nvc0::vm_pramin_write(state, offset - 0x700000, val);
+        nvc0::pramin_write32(state, state->vm_engine.pramin + nvc0::bit_mask<16>(offset - 0x700000), val);
         return;
     }
 
