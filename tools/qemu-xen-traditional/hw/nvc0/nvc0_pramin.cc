@@ -21,9 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "nvc0.h"
 #include "nvc0_pramin.h"
-#include "nvc0_vm.h"
 #include "nvc0_mmio.h"
+#include "nvc0_context.h"
+#include "nvc0_bit_mask.h"
 namespace nvc0 {
 
 uint32_t pramin_read32(nvc0_state_t* state, uint64_t addr) {
@@ -50,12 +52,17 @@ pramin_accessor::~pramin_accessor() {
 
 uint32_t pramin_accessor::read32(uint64_t addr) {
     change_current(addr);
-    return vm_pramin_read(state_, (addr & 0xFFFF));
+    nvc0::context* ctx = nvc0::context::extract(state_);
+    ctx->barrier()->handle(addr);
+    const uint32_t result = nvc0_mmio_read32(state_->bar[0].real + 0x700000, bit_mask<16>(addr));
+    return result;
 }
 
 void pramin_accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
-    vm_pramin_write(state_, (addr & 0xFFFF), val);
+    nvc0::context* ctx = nvc0::context::extract(state_);
+    ctx->barrier()->handle(addr);
+    nvc0_mmio_write32(state_->bar[0].real + 0x700000, bit_mask<16>(addr), val);
 }
 
 void pramin_accessor::change_current(uint64_t addr) {

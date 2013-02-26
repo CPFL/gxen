@@ -39,10 +39,6 @@ static inline nvc0_vm_addr_t nvc0_get_bar3_addr(nvc0_state_t* state, target_phys
     return state->vm_engine.bar3 + offset;
 }
 
-static inline nvc0_vm_addr_t nvc0_get_pramin_addr(nvc0_state_t* state, target_phys_addr_t offset) {
-    return (state->vm_engine.pramin << 16) + offset;
-}
-
 static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
     return cid < NVC0_CHANNELS_SHIFT;
 }
@@ -119,7 +115,6 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
 }
 
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    // return nvc0_mmio_read32(state->bar[3].real, offset);
     return vm_read(
             state,
             state->bar[3].real,
@@ -129,37 +124,12 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
 }
 
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    // nvc0_mmio_write32(state->bar[3].real, offset, value);
     vm_write(
             state,
             state->bar[3].real,
             state->bar[3].space,
             offset, nvc0_get_bar3_addr(state, offset), value,
             "BAR3");
-}
-
-uint32_t vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    const uint64_t address = nvc0_get_pramin_addr(state, offset);
-    nvc0::context* ctx = nvc0::context::extract(state);
-    ctx->barrier()->handle(address);
-    return vm_read(
-            state,
-            state->bar[0].real + 0x700000,
-            state->bar[0].space + 0x700000,
-            offset, address,
-            "PRAMIN");
-}
-
-void vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    const uint64_t address = nvc0_get_pramin_addr(state, offset);
-    nvc0::context* ctx = nvc0::context::extract(state);
-    ctx->barrier()->handle(address);
-    vm_write(
-            state,
-            state->bar[0].real + 0x700000,
-            state->bar[0].space + 0x700000,
-            offset, address, value,
-            "PRAMIN");
 }
 
 }  // namespace nvc0
