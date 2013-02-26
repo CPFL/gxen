@@ -50,12 +50,12 @@ pramin_accessor::~pramin_accessor() {
 
 uint32_t pramin_accessor::read32(uint64_t addr) {
     change_current(addr);
-    return nvc0_vm_pramin_read(state_, (addr & 0xFFFF));
+    return vm_pramin_read(state_, (addr & 0xFFFF));
 }
 
 void pramin_accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
-    nvc0_vm_pramin_write(state_, (addr & 0xFFFF), val);
+    vm_pramin_write(state_, (addr & 0xFFFF), val);
 }
 
 void pramin_accessor::change_current(uint64_t addr) {

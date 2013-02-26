@@ -27,8 +27,7 @@
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 #include "nvc0_context.h"
-
-extern "C" {
+namespace nvc0 {
 
 static inline nvc0_vm_addr_t nvc0_get_bar1_addr(nvc0_state_t* state, target_phys_addr_t offset) {
     return offset;
@@ -49,7 +48,7 @@ static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
 }
 
 // from is only used for debug...
-static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, const char* from) {
+static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, const char* from) {
     // tracking user_vma
 //    if (state->pfifo.user_vma_enabled) {
 //        if (state->pfifo.user_vma <= vm_addr &&
@@ -75,7 +74,7 @@ static inline uint32_t nvc0_vm_read(nvc0_state_t* state, void* real, void* virt,
     return result;
 }
 
-static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, uint32_t value, const char* from) {
+static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, nvc0_vm_addr_t vm_addr, uint32_t value, const char* from) {
     // tracking user_vma
 //    if (state->pfifo.user_vma_enabled) {
 //        if (state->pfifo.user_vma <= vm_addr &&
@@ -101,8 +100,8 @@ static inline void nvc0_vm_write(nvc0_state_t* state, void* real, void* virt, ta
     nvc0_mmio_write32(real, offset, value);
 }
 
-uint32_t nvc0_vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
-    return nvc0_vm_read(
+uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
+    return vm_read(
             state,
             state->bar[1].real,
             state->bar[1].space,
@@ -110,8 +109,8 @@ uint32_t nvc0_vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
             "BAR1");
 }
 
-void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
-    nvc0_vm_write(
+void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+    vm_write(
             state,
             state->bar[1].real,
             state->bar[1].space,
@@ -119,9 +118,9 @@ void nvc0_vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
             "BAR1");
 }
 
-uint32_t nvc0_vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
+uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     // return nvc0_mmio_read32(state->bar[3].real, offset);
-    return nvc0_vm_read(
+    return vm_read(
             state,
             state->bar[3].real,
             state->bar[3].space,
@@ -129,9 +128,9 @@ uint32_t nvc0_vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
             "BAR3");
 }
 
-void nvc0_vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     // nvc0_mmio_write32(state->bar[3].real, offset, value);
-    nvc0_vm_write(
+    vm_write(
             state,
             state->bar[3].real,
             state->bar[3].space,
@@ -139,11 +138,11 @@ void nvc0_vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t
             "BAR3");
 }
 
-uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
+uint32_t vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
     const uint64_t address = nvc0_get_pramin_addr(state, offset);
     nvc0::context* ctx = nvc0::context::extract(state);
     ctx->barrier()->handle(address);
-    return nvc0_vm_read(
+    return vm_read(
             state,
             state->bar[0].real + 0x700000,
             state->bar[0].space + 0x700000,
@@ -151,11 +150,11 @@ uint32_t nvc0_vm_pramin_read(nvc0_state_t* state, target_phys_addr_t offset) {
             "PRAMIN");
 }
 
-void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+void vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     const uint64_t address = nvc0_get_pramin_addr(state, offset);
     nvc0::context* ctx = nvc0::context::extract(state);
     ctx->barrier()->handle(address);
-    nvc0_vm_write(
+    vm_write(
             state,
             state->bar[0].real + 0x700000,
             state->bar[0].space + 0x700000,
@@ -163,8 +162,5 @@ void nvc0_vm_pramin_write(nvc0_state_t* state, target_phys_addr_t offset, uint32
             "PRAMIN");
 }
 
-void nvc0_vm_init(nvc0_state_t* state) {
-}
-
-}
+}  // namespace nvc0
 /* vim: set sw=4 ts=4 et tw=80 : */
