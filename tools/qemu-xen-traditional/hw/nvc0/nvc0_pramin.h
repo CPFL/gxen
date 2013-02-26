@@ -4,12 +4,14 @@
 #include "nvc0_noncopyable.h"
 namespace nvc0 {
 
-uint32_t pramin_read32(nvc0_state_t* state, uint64_t addr);
-void pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val);
+class context;
+
+uint32_t pramin_read32(context* ctx, uint64_t addr);
+void pramin_write32(context* ctx, uint64_t addr, uint32_t val);
 
 class pramin_accessor : private noncopyable<> {
  public:
-    explicit pramin_accessor(nvc0_state_t* state);
+    explicit pramin_accessor(context* ctx);
     ~pramin_accessor();
 
     uint32_t read32(uint64_t addr);
@@ -18,7 +20,7 @@ class pramin_accessor : private noncopyable<> {
  private:
     void change_current(uint64_t addr);
 
-    nvc0_state_t* state_;
+    context* ctx_;
     uint32_t old_;
 };
 

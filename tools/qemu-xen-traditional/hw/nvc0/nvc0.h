@@ -23,33 +23,21 @@ extern "C" {
     printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##args);\
 } while (0)
 
-#define NVC0_LOG(fmt, args...) do {\
+#define NVC0_LOG(state, fmt, args...) do {\
     if (state->log) {\
         printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##args);\
     }\
 } while (0)
 
-typedef uint64_t nvc0_vm_addr_t;
-typedef uint32_t nvc0_raw_word;
-
 // FIXME
 typedef uint64_t target_phys_addr_t;
-
-NVC0_STATIC_ASSERT(sizeof(nvc0_vm_addr_t) <= sizeof(uint64_t), nvc0_vm_addr_t_overflow);
-
-typedef struct nvc0_vm_engine {
-    nvc0_vm_addr_t bar1;
-    nvc0_vm_addr_t bar3;
-    nvc0_vm_addr_t pramin;
-} nvc0_vm_engine_t;
 
 typedef struct nvc0_pfifo {
     size_t size;
     nvc0_channel_t channels[NVC0_CHANNELS];
     uint32_t user_vma_enabled;
-    nvc0_vm_addr_t user_vma;        // user_vma channel vm addr value
-
-    nvc0_vm_addr_t playlist;
+    uint64_t user_vma;        // user_vma channel vm addr value
+    uint64_t playlist;
     uint32_t playlist_count;
 } nvc0_pfifo_t;
 
@@ -71,7 +59,6 @@ typedef struct {
     uint32_t guest;                 // guest index
     uint32_t log;                   // log flag
     nvc0_pfifo_t pfifo;             // pfifo
-    nvc0_vm_engine_t vm_engine;     // BAR1 vm engine
     void* priv;                     // store C++ NVC0 context
 } nvc0_state_t;
 

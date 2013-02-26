@@ -30,7 +30,8 @@ context::context(nvc0_state_t* state)
     : state_(state)
     , bar1_table_(0x10001)
     , bar3_table_(0x10003)
-    , barrier_() {
+    , barrier_()
+    , pramin_() {
 }
 
 context* context::extract(nvc0_state_t* state) {

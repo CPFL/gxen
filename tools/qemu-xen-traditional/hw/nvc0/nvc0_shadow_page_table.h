@@ -144,7 +144,7 @@ class shadow_page_table {
     typedef std::vector<shadow_page_directory> shadow_page_directories;
 
     shadow_page_table(uint32_t channel_id);
-    bool refresh(nvc0_state_t* state, uint32_t value);
+    bool refresh(context* ctx, uint32_t value);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }

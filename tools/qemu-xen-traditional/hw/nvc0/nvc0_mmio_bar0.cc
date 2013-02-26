@@ -102,6 +102,7 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
 
 extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
+    nvc0::context* ctx = nvc0::context::extract(state);
     uint32_t ret = 0;
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
@@ -225,7 +226,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     }
 
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        ret = nvc0::pramin_read32(state, state->vm_engine.pramin + nvc0::bit_mask<16>(offset - 0x700000));
+        ret = nvc0::pramin_read32(ctx, (ctx->pramin() << 16) + nvc0::bit_mask<16>(offset - 0x700000));
         goto end;
     }
 
@@ -251,7 +252,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                NVC0_LOG("0x%"PRIx64" adjusted to => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)adjusted);
+                NVC0_LOG(state, "0x%"PRIx64" adjusted to => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)adjusted);
                 ret = nvc0_mmio_read32(state->bar[0].real, adjusted);
                 goto end;
             }
@@ -260,14 +261,14 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
-        NVC0_LOG("channel table access 0x%"PRIx64" => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
+        NVC0_LOG(state, "channel table access 0x%"PRIx64" => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
     }
 
     ret = nvc0_mmio_read32(state->bar[0].real, offset);
     goto end;
 
 end:
-    NVC0_LOG("read 0x%"PRIx64" => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)ret);
+    NVC0_LOG(state, "read 0x%"PRIx64" => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)ret);
 
     return ret;
 }
@@ -277,7 +278,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
-    NVC0_LOG("write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
+    NVC0_LOG(state, "write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
 
     switch (offset) {
     case 0x00000000:
@@ -287,7 +288,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         } else if (val == 0xDEAFBEEF) {
             state->log = 0;
         } else if (val == 0xDEADFACE) {
-            NVC0_LOG("DEADFACE\n");
+            NVC0_LOG(state, "DEADFACE\n");
         }
         // state->log = val;
         break;
@@ -307,29 +308,25 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             // 0x1700 (NV50) PMC_BAR0_PRAMIN
             //
             // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
-            state->vm_engine.pramin = val;
+            ctx->set_pramin(val);
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.pramin << 16);
+            NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", ctx->pramin() << 16);
             return;
         }
 
     case 0x001704: {
             // BAR1 channel RAMIN
-            const nvc0_vm_addr_t shifted = nvc0::bit_mask<30>(val);
-            state->vm_engine.bar1 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            ctx->bar1_table()->refresh(state, val);
-            NVC0_PRINTF("BAR1 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar1);
+            ctx->bar1_table()->refresh(ctx, val);
+            NVC0_PRINTF("BAR1 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
             return;
         }
 
     case 0x001714: {
             // BAR3 channel RAMIN
-            const nvc0_vm_addr_t shifted = nvc0::bit_mask<30>(val);
-            state->vm_engine.bar3 = shifted << 12;  // offset
             nvc0_mmio_write32(state->bar[0].real, offset, val);
-            ctx->bar3_table()->refresh(state, val);
-            NVC0_PRINTF("BAR3 base addr set 0x%"PRIx64"\n", (uint64_t)state->vm_engine.bar3);
+            ctx->bar3_table()->refresh(ctx, val);
+            NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
             return;
         }
 
@@ -337,7 +334,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     // PRAMIN
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        nvc0::pramin_write32(state, state->vm_engine.pramin + nvc0::bit_mask<16>(offset - 0x700000), val);
+        nvc0::pramin_write32(ctx, (ctx->pramin() << 16) + nvc0::bit_mask<16>(offset - 0x700000), val);
         return;
     }
 
@@ -361,7 +358,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             } else {
                 const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
                 const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                NVC0_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
+                NVC0_LOG(state, "channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
                 nvc0_mmio_write32(state->bar[0].real, adjusted, val);
             }
             return;
@@ -398,14 +395,14 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
         if (offset == 0x002274) {
             state->pfifo.playlist_count = val & 0x2f;  // 0x2f == 127
-            nvc0::fifo_playlist_update(state, state->pfifo.playlist, state->pfifo.playlist_count);
+            nvc0::fifo_playlist_update(ctx, state->pfifo.playlist, state->pfifo.playlist_count);
             nvc0_mmio_write32(state->bar[0].real, 0x2270, state->pfifo.playlist >> 12);
             nvc0_mmio_write32(state->bar[0].real, 0x2274, val);
             return;
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
-        NVC0_LOG("channel table access 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
+        NVC0_LOG(state, "channel table access 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
     }
 
     // fallback

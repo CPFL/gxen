@@ -42,10 +42,9 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
 
 // TODO(Yusuke Suzuki)
 // Handling shadow page table when TLB cache is flushed is better?
-bool shadow_page_table::refresh(nvc0_state_t* state, uint32_t value) {
+bool shadow_page_table::refresh(context* ctx, uint32_t value) {
     // construct shadow page table from real data
-    pramin_accessor pramin(state);
-    context* ctx = context::extract(state);
+    pramin_accessor pramin(ctx);
 
     ctx->barrier()->clear(channel_id());
 
