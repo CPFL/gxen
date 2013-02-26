@@ -287,15 +287,25 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     switch (offset) {
     case 0x00000000:
-        NVC0_PRINTF("write call 0x%X\n", val);
-        if (val == 0xDEADBEEF) {
-            state->log = 1;
-        } else if (val == 0xDEAFBEEF) {
-            state->log = 0;
-        } else if (val == 0xDEADFACE) {
-            NVC0_LOG(state, "DEADFACE\n");
+        switch (val) {
+            case 0xDEADBEEF:
+                state->log = 1;
+                return;
+            case 0xDEAFBEEF:
+                state->log = 0;
+                return;
+            case 0xDEADFACE:
+                NVC0_LOG(state, "DEADFACE\n");
+                return;
+            case 0xDEADAAAA:
+                // dump BAR1 VM command
+                ctx->bar1_table()->dump();
+                return;
+            case 0xDEADAAAB:
+                // dump BAR3 VM command
+                ctx->bar3_table()->dump();
+                return;
         }
-        // state->log = val;
         break;
 
     case NV04_PTIMER_NUMERATOR:
