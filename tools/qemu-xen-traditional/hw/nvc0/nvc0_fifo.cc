@@ -27,21 +27,23 @@
 #include "nvc0_fifo.h"
 #include "nvc0_pramin.h"
 #include "nvc0_mmio.h"
+#include "nvc0_context.h"
 namespace nvc0 {
 
-void fifo_playlist_update(nvc0_state_t* state, uint64_t vm_addr, uint32_t count) {
+void fifo_playlist_update(context* ctx, uint64_t address, uint32_t count) {
     // scan fifo and update values
+    pramin_accessor pramin(ctx);
     uint32_t i;
-    NVC0_LOG("FIFO playlist update %u\n", count);
+    NVC0_LOG(ctx->state(), "FIFO playlist update %u\n", count);
     for (i = 0; i < count; ++i) {
-        const uint32_t cid = pramin_read32(state, vm_addr + i * 0x8);
-        NVC0_LOG("FIFO playlist cid %u => %u\n", cid, nvc0_channel_get_phys_id(state, cid));
-        pramin_write32(state, vm_addr + i * 0x8, nvc0_channel_get_phys_id(state, cid));
-        pramin_write32(state, vm_addr + i * 0x8 + 0x4, 0x4);
+        const uint32_t cid = pramin.read32(address + i * 0x8);
+        NVC0_LOG(ctx->state(), "FIFO playlist cid %u => %u\n", cid, nvc0_channel_get_phys_id(ctx->state(), cid));
+        pramin.write32(address + i * 0x8, nvc0_channel_get_phys_id(ctx->state(), cid));
+        pramin.write32(address + i * 0x8 + 0x4, 0x4);
     }
 
     // FIXME(Yusuke Suzuki): BAR flush wait code is needed?
-    nvc0_mmio_write32(state->bar[0].real, 0x70000, 1);
+    nvc0_mmio_write32(ctx->state()->bar[0].real, 0x70000, 1);
     usleep(1000);
 }
 

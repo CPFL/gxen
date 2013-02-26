@@ -7,10 +7,13 @@ namespace nvc0 {
 
 class context {
  public:
-    context(nvc0_state_t* state);
+    explicit context(nvc0_state_t* state);
+    nvc0_state_t* state() const { return state_; }
     shadow_page_table* bar1_table() { return &bar1_table_; }
     shadow_page_table* bar3_table() { return &bar3_table_; }
     mmio_barrier* barrier() { return &barrier_; }
+    uint64_t pramin() const { return pramin_; }
+    void set_pramin(uint64_t pramin) { pramin_ = pramin; }
 
     static context* extract(nvc0_state_t* state);
 
@@ -19,6 +22,7 @@ class context {
     shadow_page_table bar1_table_;
     shadow_page_table bar3_table_;
     mmio_barrier barrier_;
+    uint64_t pramin_;  // 16bit shifted
 };
 
 }  // namespace nvc0

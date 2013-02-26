@@ -28,48 +28,46 @@
 #include "nvc0_bit_mask.h"
 namespace nvc0 {
 
-uint32_t pramin_read32(nvc0_state_t* state, uint64_t addr) {
-    pramin_accessor accessor(state);
+uint32_t pramin_read32(context* ctx, uint64_t addr) {
+    pramin_accessor accessor(ctx);
     return accessor.read32(addr);
 }
 
-void pramin_write32(nvc0_state_t* state, uint64_t addr, uint32_t val) {
-    pramin_accessor accessor(state);
+void pramin_write32(context* ctx, uint64_t addr, uint32_t val) {
+    pramin_accessor accessor(ctx);
     accessor.write32(addr, val);
 }
 
-pramin_accessor::pramin_accessor(nvc0_state_t* state)
-    : state_(state)
-    , old_(state->vm_engine.pramin) {
+pramin_accessor::pramin_accessor(context* ctx)
+    : ctx_(ctx)
+    , old_(ctx->pramin()) {
 }
 
 pramin_accessor::~pramin_accessor() {
-    if (state_->vm_engine.pramin != old_) {
-        state_->vm_engine.pramin = old_;
-        nvc0_mmio_write32(state_->bar[0].real, 0x1700, old_);
+    if (ctx_->pramin() != old_) {
+        ctx_->set_pramin(old_);
+        nvc0_mmio_write32(ctx_->state()->bar[0].real, 0x1700, old_);
     }
 }
 
 uint32_t pramin_accessor::read32(uint64_t addr) {
     change_current(addr);
-    nvc0::context* ctx = nvc0::context::extract(state_);
-    ctx->barrier()->handle(addr);
-    const uint32_t result = nvc0_mmio_read32(state_->bar[0].real + 0x700000, bit_mask<16>(addr));
+    ctx_->barrier()->handle(addr);
+    const uint32_t result = nvc0_mmio_read32(ctx_->state()->bar[0].real + 0x700000, bit_mask<16>(addr));
     return result;
 }
 
 void pramin_accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
-    nvc0::context* ctx = nvc0::context::extract(state_);
-    ctx->barrier()->handle(addr);
-    nvc0_mmio_write32(state_->bar[0].real + 0x700000, bit_mask<16>(addr), val);
+    ctx_->barrier()->handle(addr);
+    nvc0_mmio_write32(ctx_->state()->bar[0].real + 0x700000, bit_mask<16>(addr), val);
 }
 
 void pramin_accessor::change_current(uint64_t addr) {
     const uint64_t shifted = (addr >> 16);
-    if (state_->vm_engine.pramin != shifted) {
-        state_->vm_engine.pramin = shifted;
-        nvc0_mmio_write32(state_->bar[0].real, 0x1700, shifted);
+    if (ctx_->pramin() != shifted) {
+        ctx_->set_pramin(shifted);
+        nvc0_mmio_write32(ctx_->state()->bar[0].real, 0x1700, shifted);
     }
 }
 
