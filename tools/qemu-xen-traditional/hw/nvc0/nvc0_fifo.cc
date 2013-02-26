@@ -34,10 +34,10 @@ void fifo_playlist_update(context* ctx, uint64_t address, uint32_t count) {
     // scan fifo and update values
     pramin_accessor pramin(ctx);
     uint32_t i;
-    NVC0_LOG(ctx->state(), "FIFO playlist update %u\n", count);
+    NVC0_PRINTF("FIFO playlist update %u\n", count);
     for (i = 0; i < count; ++i) {
         const uint32_t cid = pramin.read32(address + i * 0x8);
-        NVC0_LOG(ctx->state(), "FIFO playlist cid %u => %u\n", cid, nvc0_channel_get_phys_id(ctx->state(), cid));
+        NVC0_PRINTF("FIFO playlist cid %u => %u\n", cid, nvc0_channel_get_phys_id(ctx->state(), cid));
         pramin.write32(address + i * 0x8, nvc0_channel_get_phys_id(ctx->state(), cid));
         pramin.write32(address + i * 0x8 + 0x4, 0x4);
     }
