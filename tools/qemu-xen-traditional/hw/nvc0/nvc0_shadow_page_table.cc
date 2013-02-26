@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <stdint.h>
+#include "nvc0_inttypes.h"
 #include "nvc0_shadow_page_table.h"
 #include "nvc0_pramin.h"
 #include "nvc0_bit_mask.h"
@@ -94,6 +96,14 @@ void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
 }
 
+uint64_t shadow_page_table::resolve(uint64_t virtual_address) {
+    const uint32_t index = virtual_address / kPAGE_DIRECTORY_COVERED_SIZE;
+    if (directories_.size() <= index) {
+        return UINT64_MAX;
+    }
+    return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE);
+}
+
 void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address) {
     struct page_directory virt = { };
     virt.word0 = pramin->read32(page_directory_address);
@@ -142,8 +152,8 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
 
             if (it->present()) {
                 NVC0_PRINTF("PTE 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                            it->virt().address,
-                            it->virt().address + kSMALL_PAGE_SIZE - 1,
+                            (it->virt().address << 12),
+                            (it->virt().address << 12) + kSMALL_PAGE_SIZE - 1,
                             it->virt().read_only ? "RO" : "RW",
                             it->virt().target);
             }
@@ -160,6 +170,36 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
     // TODO(Yusuke Suzuki)
     // Calculate physical page address
     phys_ = virt;
+}
+
+uint64_t shadow_page_directory::resolve(uint64_t offset) {
+    if (virt_.large_page_table_present) {
+        const uint64_t index = offset >> kLARGE_PAGE_SHIFT;
+        if (large_entries_.size() <= index) {
+            return UINT64_MAX;
+        }
+        const struct shadow_page_entry& entry = large_entries_[index];
+        if (!entry.present()) {
+            return UINT64_MAX;
+        }
+        const uint64_t rest = offset - (index * kLARGE_PAGE_SIZE);
+        return (entry.virt().address << 12) + rest;
+    }
+
+    if (virt_.small_page_table_present) {
+        const uint64_t index = offset >> kSMALL_PAGE_SHIFT;
+        if (small_entries_.size() <= index) {
+            return UINT64_MAX;
+        }
+        const struct shadow_page_entry& entry = small_entries_[index];
+        if (!entry.present()) {
+            return UINT64_MAX;
+        }
+        const uint64_t rest = offset - (index * kSMALL_PAGE_SIZE);
+        return (entry.virt().address << 12) + rest;
+    }
+
+    return UINT64_MAX;
 }
 
 bool shadow_page_entry::refresh(pramin_accessor* pramin, uint64_t page_entry_address) {

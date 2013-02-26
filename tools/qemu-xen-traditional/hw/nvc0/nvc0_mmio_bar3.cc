@@ -56,7 +56,7 @@ extern "C" uint32_t nvc0_mmio_bar3_readw(void *opaque, target_phys_addr_t addr) 
 extern "C" uint32_t nvc0_mmio_bar3_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
-    return nvc0_vm_bar3_read(state, offset);
+    return nvc0::vm_bar3_read(state, offset);
 }
 
 extern "C" void nvc0_mmio_bar3_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
@@ -76,6 +76,6 @@ extern "C" void nvc0_mmio_bar3_writew(void *opaque, target_phys_addr_t addr, uin
 extern "C" void nvc0_mmio_bar3_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
-    nvc0_vm_bar3_write(state, offset, val);
+    nvc0::vm_bar3_write(state, offset, val);
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

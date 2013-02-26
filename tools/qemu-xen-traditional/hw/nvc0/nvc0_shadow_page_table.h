@@ -130,6 +130,7 @@ class shadow_page_directory {
     void refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
+    uint64_t resolve(uint64_t offset);
 
  private:
     struct page_directory virt_;
@@ -148,6 +149,7 @@ class shadow_page_table {
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
     uint32_t channel_id() const { return channel_id_; }
+    uint64_t resolve(uint64_t virtual_address);
 
  private:
     shadow_page_directories directories_;

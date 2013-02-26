@@ -34,7 +34,6 @@
 #include "nvc0_channel.h"
 #include "nvc0_ioport.h"
 #include "nvc0_mmio.h"
-#include "nvc0_vm.h"
 
 long nvc0_guest_id = -1;
 
@@ -218,9 +217,6 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
 
     // init I/O ports
     nvc0_ioport_init(state);
-
-    // init VM
-    nvc0_vm_init(state);
 
     // init C++ nvc0 context
     nvc0_context_init(state);
