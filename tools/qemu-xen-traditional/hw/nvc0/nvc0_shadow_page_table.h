@@ -131,6 +131,8 @@ class shadow_page_directory {
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
     uint64_t resolve(uint64_t offset);
+    const shadow_page_entries& large_entries() const { return large_entries_; }
+    const shadow_page_entries& small_entries() const { return small_entries_; }
 
  private:
     struct page_directory virt_;
@@ -150,6 +152,7 @@ class shadow_page_table {
     uint64_t size() const { return size_; }
     uint32_t channel_id() const { return channel_id_; }
     uint64_t resolve(uint64_t virtual_address);
+    void dump();
 
  private:
     shadow_page_directories directories_;
@@ -160,6 +163,7 @@ class shadow_page_table {
         };
         uint64_t size_ : 40;
     };
+    uint64_t page_directory_address_;
     uint32_t channel_id_;
 };
 

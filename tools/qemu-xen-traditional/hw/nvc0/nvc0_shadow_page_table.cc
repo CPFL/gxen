@@ -68,8 +68,8 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
         return false;
     }
 
-    // store size
     size_ = vspace_size;
+    page_directory_address_ = descriptor.page_directory_address;
 
     directories_.resize(page_directory_size);
     std::size_t i = 0;
@@ -84,6 +84,7 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
             descriptor.page_directory_address,
             descriptor.page_directory_address + 0x8 * i));
 
+    dump();
     NVC0_PRINTF("scan page table done 0x%" PRIX64 "\n", ramin);
 }
 
@@ -103,16 +104,56 @@ uint64_t shadow_page_table::resolve(uint64_t virtual_address) {
     return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE);
 }
 
+void shadow_page_table::dump() {
+    std::size_t i = 0;
+    for (shadow_page_directories::const_iterator it = directories_.begin(),
+         iz = directories_.end(); it != iz; ++it, ++i) {
+        const struct shadow_page_directory& dir = *it;
+        NVC0_PRINTF("PDE 0x%" PRIX64 " : large %d / small %d\n",
+                    page_directory_address_ + 0x8 * i,
+                    dir.virt().large_page_table_present,
+                    dir.virt().small_page_table_present);
+
+        if (dir.virt().large_page_table_present) {
+            std::size_t j = 0;
+            for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.large_entries().begin(),
+                 jz = dir.large_entries().end(); jt != jz; ++jt, ++j) {
+                if (jt->present()) {
+                    NVC0_PRINTF("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
+                                kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
+                                kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
+                                (jt->virt().address << 12),
+                                (jt->virt().address << 12) + kLARGE_PAGE_SIZE - 1,
+                                jt->virt().read_only ? "RO" : "RW",
+                                jt->virt().target);
+                }
+            }
+        }
+
+        if (dir.virt().small_page_table_present) {
+            std::size_t j = 0;
+            for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.small_entries().begin(),
+                 jz = dir.small_entries().end(); jt != jz; ++jt, ++j) {
+                if (jt->present()) {
+                    NVC0_PRINTF("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
+                                kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
+                                kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,
+                                (jt->virt().address << 12),
+                                (jt->virt().address << 12) + kSMALL_PAGE_SIZE - 1,
+                                jt->virt().read_only ? "RO" : "RW",
+                                jt->virt().target);
+                }
+            }
+        }
+    }
+}
+
 void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address) {
     struct page_directory virt = { };
     virt.word0 = pramin->read32(page_directory_address);
     virt.word1 = pramin->read32(page_directory_address + 0x4);
     virt_ = virt;
 
-    NVC0_PRINTF("PDE 0x%" PRIX64 " : large %d / small %d\n",
-                page_directory_address,
-                virt.large_page_table_present,
-                virt.small_page_table_present);
     if (virt.large_page_table_present) {
         const uint64_t address = static_cast<uint64_t>(virt.large_page_table_address) << 12;
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
@@ -121,14 +162,6 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
         for (shadow_page_entries::iterator it = large_entries_.begin(),
              last = large_entries_.end(); it != last; ++it, ++i) {
             it->refresh(pramin, address + 0x8 * i);
-
-            if (it->present()) {
-                NVC0_PRINTF("PTE 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                            it->virt().address,
-                            it->virt().address + kLARGE_PAGE_SIZE - 1,
-                            it->virt().read_only ? "RO" : "RW",
-                            it->virt().target);
-            }
         }
         ctx->barrier()->register_barrier(
             channel_id,
@@ -148,14 +181,6 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
         for (shadow_page_entries::iterator it = small_entries_.begin(),
              last = small_entries_.end(); it != last; ++it, ++i) {
             it->refresh(pramin, address + 0x8 * i);
-
-            if (it->present()) {
-                NVC0_PRINTF("PTE 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                            (it->virt().address << 12),
-                            (it->virt().address << 12) + kSMALL_PAGE_SIZE - 1,
-                            it->virt().read_only ? "RO" : "RW",
-                            it->virt().target);
-            }
         }
         ctx->barrier()->register_barrier(
             channel_id,
