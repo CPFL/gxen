@@ -29,22 +29,12 @@
 #include "nvc0_context.h"
 namespace nvc0 {
 
-static inline uint64_t nvc0_get_bar1_addr(nvc0_state_t* state, target_phys_addr_t offset) {
-    return offset;
-    // return state->vm_engine.bar1 + offset;
-}
-
-static inline uint64_t nvc0_get_bar3_addr(nvc0_state_t* state, target_phys_addr_t offset) {
-    return offset;
-    // return state->vm_engine.bar3 + offset;
-}
-
 static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
     return cid < NVC0_CHANNELS_SHIFT;
 }
 
 // from is only used for debug...
-static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, uint64_t vm_addr, const char* from) {
+static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, const char* from) {
     // tracking user_vma
 //    if (state->pfifo.user_vma_enabled) {
 //        if (state->pfifo.user_vma <= vm_addr &&
@@ -66,11 +56,11 @@ static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, targ
 //        }
 //    }
     const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), ((uint64_t)vm_addr), result);
+    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), result);
     return result;
 }
 
-static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, uint64_t vm_addr, uint32_t value, const char* from) {
+static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, uint32_t value, const char* from) {
     // tracking user_vma
 //    if (state->pfifo.user_vma_enabled) {
 //        if (state->pfifo.user_vma <= vm_addr &&
@@ -92,7 +82,7 @@ static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_
 //            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
 //        }
 //    }
-    NVC0_LOG(state, ":%s: write offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, (uint64_t)vm_addr, value);
+    NVC0_LOG(state, ":%s: write offset 0x%" PRIx64 " addr 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, value);
     nvc0_mmio_write32(real, offset, value);
 }
 
@@ -101,7 +91,7 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
             state,
             state->bar[1].real,
             state->bar[1].space,
-            offset, nvc0_get_bar1_addr(state, offset),
+            offset,
             "BAR1");
 }
 
@@ -110,7 +100,8 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
             state,
             state->bar[1].real,
             state->bar[1].space,
-            offset, nvc0_get_bar1_addr(state, offset), value,
+            offset,
+            value,
             "BAR1");
 }
 
@@ -119,7 +110,7 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
             state,
             state->bar[3].real,
             state->bar[3].space,
-            offset, nvc0_get_bar3_addr(state, offset),
+            offset,
             "BAR3");
 }
 
@@ -128,7 +119,8 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
             state,
             state->bar[3].real,
             state->bar[3].space,
-            offset, nvc0_get_bar3_addr(state, offset), value,
+            offset,
+            value,
             "BAR3");
 }
 

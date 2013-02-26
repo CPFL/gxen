@@ -3,6 +3,13 @@
 #include "nvc0.h"
 namespace nvc0 {
 
+class virtual_memory_manager {
+ public:
+    explicit virtual_memory_manager(uint32_t bar);
+ private:
+    uint32_t bar_;
+};
+
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset);
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value);
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset);
