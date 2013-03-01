@@ -28,41 +28,14 @@
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 #include "nvc0_context.h"
+#include "nvc0_remapping.h"
 namespace nvc0 {
 
 static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
     return cid < NVC0_CHANNELS_SHIFT;
 }
 
-// from is only used for debug...
-static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, const char* from) {
-    // tracking user_vma
-//    if (state->pfifo.user_vma_enabled) {
-//        if (state->pfifo.user_vma <= vm_addr &&
-//                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
-//            // channel id
-//            const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-//            NVC0_LOG(state, ":%s: cid 0x%X\n", from, (uint32_t)cid);
-//
-//            // check valid cid
-//            if (!is_valid_cid(state, cid)) {
-//                // invalid cid read
-//                return nvc0_mmio_read32(virt, offset);
-//            }
-//
-//            // TODO(Yusuke Suzuki) check window overflow
-//            NVC0_LOG(state, ":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, ((uint64_t)vm_addr), ((uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12))));
-//            offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-//            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-//        }
-//    }
-    const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), result);
-    return result;
-}
-
-static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, uint32_t value, const char* from) {
-    // tracking user_vma
+// tracking user_vma
 //    if (state->pfifo.user_vma_enabled) {
 //        if (state->pfifo.user_vma <= vm_addr &&
 //                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
@@ -83,11 +56,29 @@ static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_
 //            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
 //        }
 //    }
+
+// from is only used for debug...
+static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, const char* from) {
+    const uint32_t result = nvc0_mmio_read32(real, offset);
+    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), result);
+    return result;
+}
+
+static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, uint32_t value, const char* from) {
     NVC0_LOG(state, ":%s: write offset 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, value);
     nvc0_mmio_write32(real, offset, value);
 }
 
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
+    context* ctx = context::extract(state);
+    const uint64_t gphys = ctx->bar1_table()->resolve(offset);
+    if (gphys != UINT64_MAX) {
+        // resolved
+        remapping::page_entry entry;
+        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+            NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+        }
+    }
     return vm_read(
             state,
             state->bar[1].real,
@@ -97,6 +88,15 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
 }
 
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+    context* ctx = context::extract(state);
+    const uint64_t gphys = ctx->bar1_table()->resolve(offset);
+    if (gphys != UINT64_MAX) {
+        // resolved
+        remapping::page_entry entry;
+        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+            NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+        }
+    }
     vm_write(
             state,
             state->bar[1].real,
@@ -111,7 +111,10 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     const uint64_t gphys = ctx->bar3_table()->resolve(offset);
     if (gphys != UINT64_MAX) {
         // resolved
-        ctx->barrier()->handle(gphys);
+        remapping::page_entry entry;
+        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+            NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
+        }
     }
     return vm_read(
             state,
@@ -126,7 +129,10 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
     const uint64_t gphys = ctx->bar3_table()->resolve(offset);
     if (gphys != UINT64_MAX) {
         // resolved
-        ctx->barrier()->handle(gphys);
+        remapping::page_entry entry;
+        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+            NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
+        }
     }
     vm_write(
             state,

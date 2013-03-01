@@ -46,7 +46,9 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
     // construct shadow page table from real data
     pramin_accessor pramin(ctx);
 
-    ctx->barrier()->clear(channel_id());
+    // TODO(Yusuke Suzuki)
+    // clear remapping table
+    // ctx->barrier()->clear(channel_id());
 
     const uint64_t ramin = static_cast<uint64_t>(bit_mask<30>(value)) << 12;
 
@@ -56,14 +58,16 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
     descriptor.page_limit_low = pramin.read32(ramin + 0x208);
     descriptor.page_limit_high = pramin.read32(ramin + 0x20c);
 
-    ctx->barrier()->register_barrier(channel_id(), mmio_barrier::interval(ramin, ramin + 0x1000));
+    // exactly one page
+    ctx->remapping()->map(ramin, 0, true);
 
     NVC0_PRINTF("ramin 0x%" PRIX64 " page directory address 0x%" PRIX64 " and size %" PRIu64 "\n",
                 ramin, descriptor.page_directory_address, descriptor.page_limit);
 
     const uint64_t vspace_size = descriptor.page_limit + 1;
 
-    const std::size_t page_directory_size = round_up(vspace_size, kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE;
+    const std::size_t page_directory_size =
+        round_up(vspace_size, kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE;
     if (page_directory_size > kMAX_PAGE_DIRECTORIES) {
         return false;
     }
@@ -78,11 +82,9 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
         it->refresh(ctx, channel_id(), &pramin, descriptor.page_directory_address + 0x8 * i);
     }
 
-    ctx->barrier()->register_barrier(
-        channel_id(),
-        mmio_barrier::interval(
-            descriptor.page_directory_address,
-            descriptor.page_directory_address + 0x8 * i));
+    // TODO(Yusuke Suzuki)
+    // handle it precisely
+    ctx->remapping()->map(descriptor.page_directory_address, 0, true);
 
     dump();
     NVC0_PRINTF("scan page table done 0x%" PRIX64 "\n", ramin);
@@ -163,11 +165,9 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
              last = large_entries_.end(); it != last; ++it, ++i) {
             it->refresh(pramin, address + 0x8 * i);
         }
-        ctx->barrier()->register_barrier(
-            channel_id,
-            mmio_barrier::interval(
-                address,
-                address + 0x8 * i));
+        for (uint64_t it = address, end = address + 0x8 * count; it < end; it += 0x1000) {
+            ctx->remapping()->map(it, 0, true);
+        }
     } else {
         large_entries_.clear();
     }
@@ -182,11 +182,9 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
              last = small_entries_.end(); it != last; ++it, ++i) {
             it->refresh(pramin, address + 0x8 * i);
         }
-        ctx->barrier()->register_barrier(
-            channel_id,
-            mmio_barrier::interval(
-                address,
-                address + 0x8 * i));
+        for (uint64_t it = address, end = address + 0x8 * count; it < end; it += 0x1000) {
+            ctx->remapping()->map(it, 0, true);
+        }
     } else {
         small_entries_.clear();
     }

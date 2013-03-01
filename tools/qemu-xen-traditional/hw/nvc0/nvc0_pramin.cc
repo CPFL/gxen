@@ -25,6 +25,7 @@
 #include "nvc0_pramin.h"
 #include "nvc0_mmio.h"
 #include "nvc0_context.h"
+#include "nvc0_remapping.h"
 #include "nvc0_bit_mask.h"
 namespace nvc0 {
 
@@ -52,7 +53,9 @@ pramin_accessor::~pramin_accessor() {
 
 uint32_t pramin_accessor::read32(uint64_t addr) {
     change_current(addr);
-    if (ctx_->barrier()->handle(addr)) {
+    remapping::page_entry entry;
+    if (ctx_->remapping()->lookup(addr, &entry) && entry.read_only) {
+        NVC0_PRINTF("handling 0x%" PRIX64 " access\n", addr);
         // TODO(Yusuke Suzuki)
         // memory separation
         // currently do nothing
@@ -63,7 +66,9 @@ uint32_t pramin_accessor::read32(uint64_t addr) {
 
 void pramin_accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
-    if (ctx_->barrier()->handle(addr)) {
+    remapping::page_entry entry;
+    if (ctx_->remapping()->lookup(addr, &entry) && entry.read_only) {
+        NVC0_PRINTF("handling 0x%" PRIX64 " access\n", addr);
         // TODO(Yusuke Suzuki)
         // reconstruct page table entry
 //        if (ctx_->bar1_table()->handle(addr)) {
