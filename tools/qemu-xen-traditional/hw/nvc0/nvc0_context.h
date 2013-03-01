@@ -3,6 +3,7 @@
 #include "nvc0.h"
 #include "nvc0_shadow_page_table.h"
 #include "nvc0_mmio_barrier.h"
+#include "nvc0_remapping.h"
 namespace nvc0 {
 
 class context {
