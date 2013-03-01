@@ -25,6 +25,7 @@ static const unsigned kLARGE_PAGE_SIZE = 0x1 << kLARGE_PAGE_SHIFT;
 
 struct page_descriptor {
     union {
+        uint64_t dword0;
         struct {
             uint32_t page_directory_address_low;
             uint32_t page_directory_address_high : 8;
@@ -32,9 +33,9 @@ struct page_descriptor {
         struct {
             uint64_t page_directory_address : 40;
         };
-        uint64_t dword0;
     };
     union {
+        uint64_t dword1;
         struct {
             uint32_t page_limit_low;
             uint32_t page_limit_high : 8;
@@ -42,7 +43,6 @@ struct page_descriptor {
         struct {
             uint64_t page_limit : 40;
         };
-        uint64_t dword1;
     };
 };
 
@@ -56,6 +56,7 @@ struct page_entry {
     };
 
     union {
+        uint32_t word0;
         struct {
             unsigned present : 1;
             unsigned supervisor_only : 1;
@@ -63,9 +64,9 @@ struct page_entry {
             unsigned encrypted : 1;        // only used by SYSRAM
             unsigned address: 28;
         };
-        uint32_t word0;
     };
     union {
+        uint32_t word1;
         struct {
             unsigned unknown0 : 1;
             unsigned target : 2;
@@ -74,7 +75,6 @@ struct page_entry {
             unsigned tag : 17;
             unsigned unknown2 : 3;
         };
-        uint32_t word1;
     };
 };
 
@@ -101,15 +101,16 @@ struct page_directory {
     };
 
     union {
+        uint32_t word0;
         struct {
             unsigned large_page_table_present : 1;
             unsigned unknown0 : 1;
             unsigned size_type : 2;
             unsigned large_page_table_address : 28;  // 12bit shifted
         };
-        uint32_t word0;
     };
     union {
+        uint32_t word1;
         struct {
             unsigned small_page_table_present : 1;
             unsigned unknown1 : 1;
@@ -117,7 +118,6 @@ struct page_directory {
             unsigned unknown3 : 1;
             unsigned small_page_table_address : 28;  // 12bit shifted
         };
-        uint32_t word1;
     };
 };
 

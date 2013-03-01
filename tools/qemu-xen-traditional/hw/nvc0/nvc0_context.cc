@@ -26,11 +26,12 @@
 #include "nvc0_context.h"
 namespace nvc0 {
 
-context::context(nvc0_state_t* state)
+context::context(nvc0_state_t* state, uint64_t memory_size)
     : state_(state)
     , bar1_table_(0x10001)
     , bar3_table_(0x10003)
     , barrier_()
+    , remapping_(memory_size)
     , pramin_() {
 }
 
@@ -41,6 +42,7 @@ context* context::extract(nvc0_state_t* state) {
 }  // namespace nvc0
 
 extern "C" void nvc0_context_init(nvc0_state_t* state) {
-    state->priv = static_cast<void*>(new nvc0::context(state));
+    // currenty, 3GB
+    state->priv = static_cast<void*>(new nvc0::context(state, 3 * 1024 * 1024 * 1024));
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
