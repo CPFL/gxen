@@ -31,7 +31,6 @@
 #include "nvc0_inttypes.h"
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar0.h"
-#include "nvc0_channel.h"
 #include "nvc0_context.h"
 #include "nvc0_fifo.h"
 #include "nvc0_pramin.h"

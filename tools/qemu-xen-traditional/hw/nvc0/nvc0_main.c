@@ -31,7 +31,6 @@
 #include "pci/pci.h"
 #include "pass-through.h"
 #include "nvc0.h"
-#include "nvc0_channel.h"
 #include "nvc0_ioport.h"
 #include "nvc0_mmio.h"
 
