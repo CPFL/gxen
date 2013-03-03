@@ -235,5 +235,5 @@ bool shadow_page_entry::refresh(pramin_accessor* pramin, uint64_t page_entry_add
     phys_ = virt;
 }
 
-}  // namespace nvc
+}  // namespace nvc0
 /* vim: set sw=4 ts=4 et tw=80 : */

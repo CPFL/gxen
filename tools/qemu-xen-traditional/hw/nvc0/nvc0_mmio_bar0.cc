@@ -183,16 +183,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         // return 0x80000001;
         break;
 
-    // nvc0_vm.c
-    case 0x100cb8:
-        break;
-    case 0x100cbc:
-        break;
-    case 0x100c80:
-        // used in nvc0_vm.c nvc0_vm_flush
-        // return 0x00ff8000;
-        break;
-
     // peephole
     // these are write port
     case 0x00155c:  // PEEPHOLE_W_CTRL
@@ -227,6 +217,23 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     // we should shift channel id
     case 0x002634:  // channel kill
         ret = nvc0_channel_get_virt_id(state, nvc0_mmio_read32(state->bar[0].real, offset));
+        goto end;
+
+    case 0x100cb4: {
+            // TLB_FLUSH_PAGE
+            // FIXME(Yusuke Suzuki)
+            // we don't use this
+            break;
+        }
+
+    case 0x100cb8:
+        // TLB_FLUSH_VSPACE
+        ret = ctx->tlb()->vspace();
+        goto end;
+
+    case 0x100cbc:
+        // TLB_FLUSH_TRIGGER
+        ret = ctx->tlb()->trigger();
         goto end;
     }
 
@@ -344,6 +351,26 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
             return;
         }
+
+    case 0x100c80:
+        // TLB CFG
+        break;
+
+    case 0x100cb4:
+        // TLB_FLUSH_PAGE
+        // FIXME(Yusuke Suzuki)
+        // we don't use this
+        break;
+
+    case 0x100cb8:
+        // TLB_FLUSH_VSPACE
+        ctx->tlb()->set_vspace(val);
+        break;
+
+    case 0x100cbc:
+        // TLB_FLUSH_TRIGGER
+        ctx->tlb()->trigger(ctx, val);
+        break;
 
     }
 
