@@ -4,9 +4,9 @@
 #include <pciaccess.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stddef.h>
 #include "nvc0/nvreg.h"
 #include "nvc0/nouveau_reg.h"
-#include "nvc0/nvc0_channel.h"
 #include "nvc0/nvc0_static_assert.h"
 
 #ifdef __cplusplus
@@ -18,6 +18,10 @@ extern "C" {
 #define NVC0_COMMAND 0x07
 #define NVC0_REVISION 0xA3
 #define NVC0_REG0 0x0C0C00A3UL
+
+#define NVC0_CHANNELS 128
+#define NVC0_CHANNELS_SHIFT 64
+#define NVC0_USER_VMA_CHANNEL 0x1000
 
 #define NVC0_PRINTF(fmt, args...) do {\
     printf("[NVC0] %s:%d - " fmt, __func__, __LINE__, ##args);\
@@ -34,7 +38,6 @@ typedef uint64_t target_phys_addr_t;
 
 typedef struct nvc0_pfifo {
     size_t size;
-    nvc0_channel_t channels[NVC0_CHANNELS];
     uint32_t user_vma_enabled;
     uint64_t user_vma;        // user_vma channel vm addr value
     uint64_t playlist;
