@@ -1,5 +1,5 @@
 /*
- * NVIDIA NVC0 Context
+ * NVIDIA NVC0 TLB flush
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -22,28 +22,22 @@
  * THE SOFTWARE.
  */
 
-#include "nvc0.h"
+#include <stdint.h>
+#include "nvc0_inttypes.h"
+#include "nvc0_mmio.h"
+#include "nvc0_pramin.h"
+#include "nvc0_bit_mask.h"
 #include "nvc0_context.h"
+#include "nvc0_tlb_flush.h"
 namespace nvc0 {
 
-context::context(nvc0_state_t* state, uint64_t memory_size)
-    : state_(state)
-    , bar1_table_(0x10001)
-    , bar3_table_(0x10003)
-    , barrier_()
-    , tlb_()
-    , remapping_(memory_size)
-    , pramin_() {
-}
-
-context* context::extract(nvc0_state_t* state) {
-    return static_cast<context*>(state->priv);
+void tlb_flush::trigger(context* ctx, uint32_t val) {
+    trigger_ = val;
+    nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cb8, vspace());
+    nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cbc, trigger());
+    const uint64_t page_directory = bit_mask<28, uint64_t>(vspace() >> 4) << 12;
+    NVC0_PRINTF("page directory 0x%" PRIX64 " is flushed\n", page_directory);
 }
 
 }  // namespace nvc0
-
-extern "C" void nvc0_context_init(nvc0_state_t* state) {
-    // currenty, 3GB
-    state->priv = static_cast<void*>(new nvc0::context(state, 3 * 1024 * 1024 * 1024));
-}
 /* vim: set sw=4 ts=4 et tw=80 : */

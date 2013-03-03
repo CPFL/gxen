@@ -4,6 +4,7 @@
 #include "nvc0_shadow_page_table.h"
 #include "nvc0_mmio_barrier.h"
 #include "nvc0_remapping.h"
+#include "nvc0_tlb_flush.h"
 namespace nvc0 {
 
 class context {
@@ -14,6 +15,7 @@ class context {
     shadow_page_table* bar3_table() { return &bar3_table_; }
     mmio_barrier* barrier() { return &barrier_; }
     nvc0::remapping::table* remapping() { return &remapping_; }
+    tlb_flush* tlb() { return &tlb_; }
     uint64_t pramin() const { return pramin_; }
     void set_pramin(uint64_t pramin) { pramin_ = pramin; }
 
@@ -25,6 +27,7 @@ class context {
     shadow_page_table bar3_table_;
     mmio_barrier barrier_;
     nvc0::remapping::table remapping_;
+    tlb_flush tlb_;
     uint64_t pramin_;  // 16bit shifted
 };
 
