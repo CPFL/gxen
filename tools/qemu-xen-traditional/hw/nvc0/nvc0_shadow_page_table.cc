@@ -121,11 +121,12 @@ void shadow_page_table::dump() const {
             for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.large_entries().begin(),
                  jz = dir.large_entries().end(); jt != jz; ++jt, ++j) {
                 if (jt->present()) {
+                    const uint64_t address = jt->virt().address;
                     NVC0_PRINTF("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
                                 kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
                                 kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
-                                (jt->virt().address << 12),
-                                (jt->virt().address << 12) + kLARGE_PAGE_SIZE - 1,
+                                (address << 12),
+                                (address << 12) + kLARGE_PAGE_SIZE - 1,
                                 jt->virt().read_only ? "RO" : "RW",
                                 jt->virt().target);
                 }
@@ -137,11 +138,12 @@ void shadow_page_table::dump() const {
             for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.small_entries().begin(),
                  jz = dir.small_entries().end(); jt != jz; ++jt, ++j) {
                 if (jt->present()) {
+                    const uint64_t address = jt->virt().address;
                     NVC0_PRINTF("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
                                 kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
                                 kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,
-                                (jt->virt().address << 12),
-                                (jt->virt().address << 12) + kSMALL_PAGE_SIZE - 1,
+                                (address << 12),
+                                (address << 12) + kSMALL_PAGE_SIZE - 1,
                                 jt->virt().read_only ? "RO" : "RW",
                                 jt->virt().target);
                 }

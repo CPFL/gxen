@@ -55,7 +55,7 @@ uint32_t pramin_accessor::read32(uint64_t addr) {
     change_current(addr);
     remapping::page_entry entry;
     if (ctx_->remapping()->lookup(addr, &entry) && entry.read_only) {
-        NVC0_PRINTF("handling 0x%" PRIX64 " access\n", addr);
+        // NVC0_PRINTF("handling 0x%" PRIX64 " access\n", addr);
         // TODO(Yusuke Suzuki)
         // memory separation
         // currently do nothing
@@ -68,7 +68,7 @@ void pramin_accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
     remapping::page_entry entry;
     if (ctx_->remapping()->lookup(addr, &entry) && entry.read_only) {
-        NVC0_PRINTF("handling 0x%" PRIX64 " access\n", addr);
+        // NVC0_PRINTF("handling 0x%" PRIX64 " access\n", addr);
         // TODO(Yusuke Suzuki)
         // reconstruct page table entry
 //        if (ctx_->bar1_table()->handle(addr)) {

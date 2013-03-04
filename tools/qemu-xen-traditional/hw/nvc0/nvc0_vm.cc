@@ -29,6 +29,7 @@
 #include "nvc0_mmio.h"
 #include "nvc0_context.h"
 #include "nvc0_remapping.h"
+#include "nvc0_pramin.h"
 namespace nvc0 {
 
 static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
@@ -76,7 +77,7 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
         // resolved
         remapping::page_entry entry;
         if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
         }
     }
     return vm_read(
@@ -94,7 +95,7 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         // resolved
         remapping::page_entry entry;
         if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
         }
     }
     vm_write(
@@ -113,15 +114,17 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
         // resolved
         remapping::page_entry entry;
         if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
+            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
         }
+        pramin_accessor pramin(ctx);
+        return pramin.read32(gphys);
     }
-    return vm_read(
-            state,
-            state->bar[3].real,
-            state->bar[3].space,
-            offset,
-            "BAR3");
+//    return vm_read(
+//            state,
+//            state->bar[3].real,
+//            state->bar[3].space,
+//            offset,
+//            "BAR3");
 }
 
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
@@ -131,16 +134,18 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         // resolved
         remapping::page_entry entry;
         if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
+            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
         }
+        pramin_accessor pramin(ctx);
+        pramin.write32(gphys, value);
     }
-    vm_write(
-            state,
-            state->bar[3].real,
-            state->bar[3].space,
-            offset,
-            value,
-            "BAR3");
+//    vm_write(
+//            state,
+//            state->bar[3].real,
+//            state->bar[3].space,
+//            offset,
+//            value,
+//            "BAR3");
 }
 
 }  // namespace nvc0
