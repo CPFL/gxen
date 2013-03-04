@@ -30,10 +30,6 @@
 #include "nvc0_context.h"
 namespace nvc0 {
 
-static uint64_t round_up(uint64_t x, uint64_t y) {
-    return (((x) + (y - 1)) & ~(y - 1));
-}
-
 shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
@@ -66,28 +62,32 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
 
     const uint64_t vspace_size = descriptor.page_limit + 1;
 
-    const std::size_t page_directory_size =
-        round_up(vspace_size, kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE;
-    if (page_directory_size > kMAX_PAGE_DIRECTORIES) {
+    size_ = vspace_size;
+    if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
         return false;
     }
 
-    size_ = vspace_size;
-    page_directory_address_ = descriptor.page_directory_address;
+    return refresh_page_directories(ctx, descriptor.page_directory_address);
+}
 
-    directories_.resize(page_directory_size);
+bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
+    pramin_accessor pramin(ctx);
+    page_directory_address_ = address;
+
+    directories_.resize(page_directory_size());
     std::size_t i = 0;
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
-        it->refresh(ctx, channel_id(), &pramin, descriptor.page_directory_address + 0x8 * i);
+        it->refresh(ctx, channel_id(), &pramin, page_directory_address() + 0x8 * i);
     }
 
     // TODO(Yusuke Suzuki)
     // handle it precisely
-    ctx->remapping()->map(descriptor.page_directory_address, 0, true);
+    ctx->remapping()->map(page_directory_address(), 0, true);
 
     dump();
-    NVC0_PRINTF("scan page table done 0x%" PRIX64 "\n", ramin);
+    NVC0_PRINTF("scan page table done 0x%" PRIX64 "\n", page_directory_address());
+    return false;
 }
 
 void shadow_page_table::set_low_size(uint32_t value) {
