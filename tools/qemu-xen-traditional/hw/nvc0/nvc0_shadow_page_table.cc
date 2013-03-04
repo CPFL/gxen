@@ -81,8 +81,7 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         it->refresh(ctx, channel_id(), &pramin, page_directory_address() + 0x8 * i);
     }
 
-    // TODO(Yusuke Suzuki)
-    // handle it precisely
+    // max page directories size is 1 page
     ctx->remapping()->map(page_directory_address(), 0, true);
 
     dump();
