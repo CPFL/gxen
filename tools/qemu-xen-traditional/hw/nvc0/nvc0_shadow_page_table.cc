@@ -81,7 +81,7 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         it->refresh(ctx, channel_id(), &pramin, page_directory_address() + 0x8 * i);
     }
 
-    // max page directories size is 1 page
+    // max page directories size is page
     ctx->remapping()->map(page_directory_address(), 0, true);
 
     dump();
@@ -196,30 +196,28 @@ void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_ac
 }
 
 uint64_t shadow_page_directory::resolve(uint64_t offset) {
-    if (virt_.large_page_table_present) {
-        const uint64_t index = offset >> kLARGE_PAGE_SHIFT;
-        if (large_entries_.size() <= index) {
-            return UINT64_MAX;
+    if (virt().large_page_table_present) {
+        const uint64_t index = offset / kLARGE_PAGE_SIZE;
+        const uint64_t rest = offset % kLARGE_PAGE_SIZE;
+        if (large_entries_.size() > index) {
+            const struct shadow_page_entry& entry = large_entries_[index];
+            if (entry.present()) {
+                const uint64_t address = entry.virt().address;
+                return (address << 12) + rest;
+            }
         }
-        const struct shadow_page_entry& entry = large_entries_[index];
-        if (!entry.present()) {
-            return UINT64_MAX;
-        }
-        const uint64_t rest = offset - (index * kLARGE_PAGE_SIZE);
-        return (entry.virt().address << 12) + rest;
     }
 
-    if (virt_.small_page_table_present) {
-        const uint64_t index = offset >> kSMALL_PAGE_SHIFT;
-        if (small_entries_.size() <= index) {
-            return UINT64_MAX;
+    if (virt().small_page_table_present) {
+        const uint64_t index = offset / kSMALL_PAGE_SIZE;
+        const uint64_t rest = offset % kSMALL_PAGE_SIZE;
+        if (small_entries_.size() > index) {
+            const struct shadow_page_entry& entry = small_entries_[index];
+            if (entry.present()) {
+                const uint64_t address = entry.virt().address;
+                return (address << 12) + rest;
+            }
         }
-        const struct shadow_page_entry& entry = small_entries_[index];
-        if (!entry.present()) {
-            return UINT64_MAX;
-        }
-        const uint64_t rest = offset - (index * kSMALL_PAGE_SIZE);
-        return (entry.virt().address << 12) + rest;
     }
 
     return UINT64_MAX;
