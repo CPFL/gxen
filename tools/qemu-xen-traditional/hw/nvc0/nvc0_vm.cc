@@ -32,32 +32,6 @@
 #include "nvc0_pramin.h"
 namespace nvc0 {
 
-static inline int is_valid_cid(nvc0_state_t* state, uint8_t cid) {
-    return cid < NVC0_CHANNELS_SHIFT;
-}
-
-// tracking user_vma
-//    if (state->pfifo.user_vma_enabled) {
-//        if (state->pfifo.user_vma <= vm_addr &&
-//                vm_addr < (NVC0_USER_VMA_CHANNEL * NVC0_CHANNELS + state->pfifo.user_vma)) {
-//            // channel id
-//            const uint8_t cid = (vm_addr - state->pfifo.user_vma) / NVC0_USER_VMA_CHANNEL;
-//            NVC0_LOG(state, ":%s: cid 0x%X => 0x%X\n", from, (uint32_t)cid, value);
-//
-//            // check valid cid
-//            if (!is_valid_cid(state, cid)) {
-//                // invalid cid read
-//                nvc0_mmio_write32(virt, offset, value);
-//                return;
-//            }
-//
-//            // TODO(Yusuke Suzuki) check window overflow
-//            NVC0_LOG(state, ":%s: offset shift 0x%"PRIx64" to 0x%"PRIx64"\n", from, (uint64_t)vm_addr, (uint64_t)(vm_addr + ((state->guest * NVC0_CHANNELS_SHIFT) << 12)));
-//            offset += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-//            vm_addr += ((state->guest * NVC0_CHANNELS_SHIFT) * NVC0_USER_VMA_CHANNEL);
-//        }
-//    }
-
 // from is only used for debug...
 static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, const char* from) {
     const uint32_t result = nvc0_mmio_read32(real, offset);
@@ -75,7 +49,6 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     uint32_t first = 0xFFFFFFFF;
     const uint64_t gphys = ctx->bar1_table()->resolve(offset);
     if (!ctx->poll()->in_range(offset)) {
-        NVC0_PRINTF("BAR1 %"PRIX64" => %"PRIX64"\n", offset, gphys);
         if (gphys != UINT64_MAX) {
             // resolved
             remapping::page_entry entry;
@@ -85,7 +58,7 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
             pramin_accessor pramin(ctx);
             first = pramin.read32(gphys);
         }
-//        return first;
+        return first;
     }
     const uint32_t second = vm_read(
             state,
@@ -103,16 +76,15 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
     context* ctx = context::extract(state);
     if (!ctx->poll()->in_range(offset)) {
         const uint64_t gphys = ctx->bar1_table()->resolve(offset);
-        NVC0_PRINTF("BAR1 %"PRIX64" => %"PRIX64"\n", offset, gphys);
         if (gphys != UINT64_MAX) {
             // resolved
             remapping::page_entry entry;
             if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
                 // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
             }
-            // pramin_accessor pramin(ctx);
-            // pramin.write32(gphys, value);
-            // return;
+            pramin_accessor pramin(ctx);
+            pramin.write32(gphys, value);
+            return;
         }
     }
     vm_write(
