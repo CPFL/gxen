@@ -5,6 +5,7 @@
 #include "nvc0_mmio_barrier.h"
 #include "nvc0_remapping.h"
 #include "nvc0_tlb_flush.h"
+#include "nvc0_poll_area.h"
 namespace nvc0 {
 
 class context {
@@ -16,6 +17,7 @@ class context {
     mmio_barrier* barrier() { return &barrier_; }
     nvc0::remapping::table* remapping() { return &remapping_; }
     tlb_flush* tlb() { return &tlb_; }
+    poll_area* poll() { return &poll_; }
     uint64_t pramin() const { return pramin_; }
     void set_pramin(uint64_t pramin) { pramin_ = pramin; }
 
@@ -28,6 +30,7 @@ class context {
     mmio_barrier barrier_;
     nvc0::remapping::table remapping_;
     tlb_flush tlb_;
+    poll_area poll_;
     uint64_t pramin_;  // 16bit shifted
 };
 

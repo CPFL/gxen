@@ -268,7 +268,8 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
                 goto end;
             }
         } else if (offset == 0x002254) {
-            // see nvc0_fifo.c
+//            ret = ctx->poll()->offset();
+//            goto end;
         }
     } else if (0x800000 <= offset) {
         // PFIFO channel table
@@ -417,14 +418,8 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         }
 
         if (offset == 0x002254) {
-            // see nvc0_fifo.c
-            if (val >= 0x10000000) {
-                // FIXME we should scan values...
-                state->pfifo.user_vma = (val & (0x10000000 - 1));  // offset
-                state->pfifo.user_vma_enabled = 1;
-                NVC0_PRINTF("user_vma... 0x%"PRIx64"\n", (uint64_t)state->pfifo.user_vma);
-            }
-            nvc0_mmio_write32(state->bar[0].real, offset, val);
+            const uint64_t addr = nvc0::bit_mask<28, uint64_t>(val) << 12;
+            ctx->poll()->set_offset(ctx, addr);
             return;
         }
 
