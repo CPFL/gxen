@@ -1,5 +1,5 @@
 /*
- * NVIDIA NVC0 Context
+ * NVIDIA NVC0 poll area controller
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -22,29 +22,29 @@
  * THE SOFTWARE.
  */
 
+#include <stdint.h>
 #include "nvc0.h"
+#include "nvc0_inttypes.h"
 #include "nvc0_context.h"
+#include "nvc0_poll_area.h"
+#include "nvc0_bit_mask.h"
+#include "nvc0_mmio.h"
 namespace nvc0 {
 
-context::context(nvc0_state_t* state, uint64_t memory_size)
-    : state_(state)
-    , bar1_table_(0x10001)
-    , bar3_table_(0x10003)
-    , barrier_()
-    , tlb_()
-    , poll_()
-    , remapping_(memory_size)
-    , pramin_() {
+poll_area::poll_area()
+    : offset_(0) {
 }
 
-context* context::extract(nvc0_state_t* state) {
-    return static_cast<context*>(state->priv);
+
+void poll_area::set_offset(context* ctx, uint64_t offset) {
+    offset_ = offset;
+
+    NVC0_PRINTF("POLL_AREA 0x%" PRIX64 "\n", offset);
+
+    // TODO(Yusuke Suzuki)
+    // virtualized BAR1 is required
+    nvc0_mmio_write32(ctx->state()->bar[0].real, 0x2254, 0x10000000 | bit_mask<28>(offset >> 12));
 }
 
 }  // namespace nvc0
-
-extern "C" void nvc0_context_init(nvc0_state_t* state) {
-    // currenty, 3GB
-    state->priv = static_cast<void*>(new nvc0::context(state, 3 * 1024 * 1024 * 1024));
-}
 /* vim: set sw=4 ts=4 et tw=80 : */
