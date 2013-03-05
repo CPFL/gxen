@@ -72,30 +72,47 @@ static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_
 
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
+    uint32_t first = 0xFFFFFFFF;
     const uint64_t gphys = ctx->bar1_table()->resolve(offset);
-    if (gphys != UINT64_MAX) {
-        // resolved
-        remapping::page_entry entry;
-        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+    if (!ctx->poll()->in_range(offset)) {
+        NVC0_PRINTF("BAR1 %"PRIX64" => %"PRIX64"\n", offset, gphys);
+        if (gphys != UINT64_MAX) {
+            // resolved
+            remapping::page_entry entry;
+            if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+                // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+            }
+            pramin_accessor pramin(ctx);
+            first = pramin.read32(gphys);
         }
+//        return first;
     }
-    return vm_read(
+    const uint32_t second = vm_read(
             state,
             state->bar[1].real,
             state->bar[1].space,
             offset,
             "BAR1");
+    if (first != second) {
+        NVC0_PRINTF("BAR1 0x%"PRIX64" => 0x%"PRIX64" and value 0x%"PRIX32" <> 0x%"PRIX32"\n", offset, gphys, first, second);
+    }
+    return second;
 }
 
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
-    const uint64_t gphys = ctx->bar1_table()->resolve(offset);
-    if (gphys != UINT64_MAX) {
-        // resolved
-        remapping::page_entry entry;
-        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+    if (!ctx->poll()->in_range(offset)) {
+        const uint64_t gphys = ctx->bar1_table()->resolve(offset);
+        NVC0_PRINTF("BAR1 %"PRIX64" => %"PRIX64"\n", offset, gphys);
+        if (gphys != UINT64_MAX) {
+            // resolved
+            remapping::page_entry entry;
+            if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+                // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+            }
+            // pramin_accessor pramin(ctx);
+            // pramin.write32(gphys, value);
+            // return;
         }
     }
     vm_write(
