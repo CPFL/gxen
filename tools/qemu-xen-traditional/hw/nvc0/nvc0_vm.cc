@@ -119,12 +119,7 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
         pramin_accessor pramin(ctx);
         return pramin.read32(gphys);
     }
-//    return vm_read(
-//            state,
-//            state->bar[3].real,
-//            state->bar[3].space,
-//            offset,
-//            "BAR3");
+    return 0xFFFFFFFF;
 }
 
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
@@ -138,14 +133,8 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         }
         pramin_accessor pramin(ctx);
         pramin.write32(gphys, value);
+        return;
     }
-//    vm_write(
-//            state,
-//            state->bar[3].real,
-//            state->bar[3].space,
-//            offset,
-//            value,
-//            "BAR3");
 }
 
 }  // namespace nvc0
