@@ -108,6 +108,7 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
         pramin_accessor pramin(ctx);
         return pramin.read32(gphys);
     }
+    NVC0_PRINTF("VM BAR3 invalid read 0x%" PRIX64 " access\n", offset);
     return 0xFFFFFFFF;
 }
 
@@ -124,6 +125,7 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         pramin.write32(gphys, value);
         return;
     }
+    NVC0_PRINTF("VM BAR3 invalid write 0x%" PRIX64 " access\n", offset);
 }
 
 }  // namespace nvc0
