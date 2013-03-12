@@ -3,13 +3,19 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
+#include <boost/type_traits/aligned_storage.hpp>
+#include <boost/type_traits/alignment_of.hpp>
 #include <unistd.h>
 #include "cross.h"
 namespace cross {
 
 class session {
  public:
-    static const int kMaxLength = 1024;
+    static const int kCommandSize = sizeof(command);
+
+    ~session() {
+        std::cout << "END" << std::endl;
+    }
 
     session(boost::asio::io_service& io_service)
         : socket_(io_service) {
@@ -20,9 +26,10 @@ class session {
     }
 
     void start() {
+        std::cout << "START" << std::endl;
         boost::asio::async_read(
             socket_,
-            boost::asio::buffer(buffer_, buffer_.size()),
+            boost::asio::buffer(&buffer_, kCommandSize),
               boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
     }
 
@@ -32,14 +39,13 @@ class session {
             delete this;
             return;
         }
-        command command;
-        std::memcpy(reinterpret_cast<void*>(&command), buffer_.data(), buffer_.size());
+        const command command(*reinterpret_cast<cross::command*>(&buffer_));
         handle(command);
 
         // handle command
         boost::asio::async_write(
             socket_,
-            boost::asio::buffer(buffer_, buffer_.size()),
+            boost::asio::buffer(&buffer_, kCommandSize),
             boost::bind(&session::handle_write, this, boost::asio::placeholders::error));
     }
 
@@ -51,20 +57,20 @@ class session {
 
         boost::asio::async_read(
             socket_,
-            boost::asio::buffer(buffer_, buffer_.size()),
+            boost::asio::buffer(&buffer_, kCommandSize),
             boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
     }
 
     void handle(const command& command) {
         std::cout
-            << "type    : " << command.type() << std::endl
-            << "value   : " << command.value() << std::endl
-            << "offset  : " << command.offset() << std::endl
-            << "payload : " << command.payload() << std::endl;
+            << "type    : " << command.type << std::endl
+            << "value   : " << command.value << std::endl
+            << "offset  : " << command.offset << std::endl
+            << "payload : " << command.payload << std::endl;
     }
 
     boost::asio::local::stream_protocol::socket socket_;
-    boost::array<char, sizeof(command)> buffer_;
+    boost::aligned_storage<kCommandSize, boost::alignment_of<command>::value>::type buffer_;
 };
 
 class server {
