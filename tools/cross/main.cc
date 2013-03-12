@@ -2,11 +2,15 @@
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <boost/array.hpp>
 #include <unistd.h>
 #include "cross.h"
+namespace cross {
 
 class session {
-public:
+ public:
+    static const int kMaxLength = 1024;
+
     session(boost::asio::io_service& io_service)
         : socket_(io_service) {
     }
@@ -16,40 +20,51 @@ public:
     }
 
     void start() {
-        socket_.async_read_some(
-          boost::asio::buffer(data_, max_length),
-            boost::bind(&session::handle_read, this,
-              boost::asio::placeholders::error,
-              boost::asio::placeholders::bytes_transferred));
+        boost::asio::async_read(
+            socket_,
+            boost::asio::buffer(buffer_, buffer_.size()),
+              boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
     }
 
  private:
-    void handle_read(const boost::system::error_code& error, size_t bytes_transferred) {
-      if (!error) {
-          boost::asio::async_write(socket_,
-              boost::asio::buffer(data_, bytes_transferred),
-              boost::bind(&session::handle_write, this,
-                boost::asio::placeholders::error));
-      } else {
-          delete this;
-      }
+    void handle_read(const boost::system::error_code& error) {
+        if (error) {
+            delete this;
+            return;
+        }
+        command command;
+        std::memcpy(reinterpret_cast<void*>(&command), buffer_.data(), buffer_.size());
+        handle(command);
+
+        // handle command
+        boost::asio::async_write(
+            socket_,
+            boost::asio::buffer(buffer_, buffer_.size()),
+            boost::bind(&session::handle_write, this, boost::asio::placeholders::error));
     }
 
     void handle_write(const boost::system::error_code& error) {
-      if (!error) {
-          socket_.async_read_some(
-              boost::asio::buffer(data_, max_length),
-              boost::bind(&session::handle_read, this,
-                boost::asio::placeholders::error,
-                boost::asio::placeholders::bytes_transferred));
-      } else {
-          delete this;
-      }
+        if (error) {
+            delete this;
+            return;
+        }
+
+        boost::asio::async_read(
+            socket_,
+            boost::asio::buffer(buffer_, buffer_.size()),
+            boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
+    }
+
+    void handle(const command& command) {
+        std::cout
+            << "type    : " << command.type() << std::endl
+            << "value   : " << command.value() << std::endl
+            << "offset  : " << command.offset() << std::endl
+            << "payload : " << command.payload() << std::endl;
     }
 
     boost::asio::local::stream_protocol::socket socket_;
-    enum { max_length = 1024 };
-    char data_[max_length];
+    boost::array<char, sizeof(command)> buffer_;
 };
 
 class server {
@@ -81,12 +96,13 @@ class server {
     boost::asio::local::stream_protocol::acceptor acceptor_;
 };
 
+}  // namespace cross
+
 int main(int argc, char** argv) {
     ::unlink(CROSS_ENDPOINT);
-
     try {
         boost::asio::io_service io_service;
-        server s(io_service, CROSS_ENDPOINT);
+        cross::server s(io_service, CROSS_ENDPOINT);
         io_service.run();
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";

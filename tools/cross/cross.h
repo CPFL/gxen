@@ -7,10 +7,16 @@ namespace cross {
 class command {
  public:
     struct container {
-        uint32_t command;
+        uint32_t type;
         uint32_t value;
         uint32_t offset;
+        uint32_t payload;
     };
+
+    uint32_t type() const { return data_.type; }
+    uint32_t value() const { return data_.value; }
+    uint32_t offset() const { return data_.offset; }
+    uint32_t payload() const { return data_.payload; }
 
  private:
     container data_;
