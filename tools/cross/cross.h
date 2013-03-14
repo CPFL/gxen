@@ -18,6 +18,17 @@ class command {
     uint32_t payload;
 };
 
+// Assuming little endianess
+struct bdf {
+    union {
+        struct {
+            uint16_t func : 3;
+            uint16_t dev  : 5;
+            uint16_t bus  : 8;
+        };
+        uint16_t raw;
+    };
+};
 
 }  // namespace cross
 #endif  // CROSS_H_
