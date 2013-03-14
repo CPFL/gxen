@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
             socket,
             boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(cross::command)));
 
+        sleep(60);
+
         boost::asio::read(
             socket,
             boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(cross::command)));
