@@ -14,6 +14,14 @@ context::context(boost::asio::io_service& io_service)
 }
 
 void context::handle(const command& cmd) {
+    switch (cmd.type) {
+        case command::TYPE_INIT:
+            break;
+        case command::TYPE_WRITE:
+            break;
+        case command::TYPE_READ:
+            break;
+    }
 }
 
 }  // namespace cross
