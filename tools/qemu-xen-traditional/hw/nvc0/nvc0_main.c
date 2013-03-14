@@ -71,6 +71,10 @@ nvc0_state_t* nvc0_state(void* opaque) {
     return &(((struct pt_dev_with_state*)opaque)->state);
 }
 
+uint32_t nvc0_domid(void) {
+    return domid;
+}
+
 // This code is ported from pass-through.c
 static struct pci_dev* nvc0_find_real_device(uint8_t r_bus, uint8_t r_dev, uint8_t r_func, struct pci_access *pci_access) {
     /* Find real device structure */

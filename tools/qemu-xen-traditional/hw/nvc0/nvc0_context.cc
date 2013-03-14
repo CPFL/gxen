@@ -38,7 +38,18 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     , pramin_()
     , io_service_()
     , socket_(io_service_) {
+
+    // initialize connection
     socket_.connect(boost::asio::local::stream_protocol::endpoint(CROSS_ENDPOINT));
+
+    // send guest id to cross
+    cross::command cmd = {
+        cross::command::TYPE_INIT,
+        nvc0_domid(),
+        0,
+        0
+    };
+    boost::asio::write(socket_, boost::asio::buffer(reinterpret_cast<char*>(&cmd), sizeof(cross::command)));
 }
 
 context* context::extract(nvc0_state_t* state) {
