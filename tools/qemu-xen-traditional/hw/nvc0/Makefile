@@ -23,3 +23,6 @@ OBJS += nvc0_poll_area.o
 
 # link pciaccess and boost libraries
 LIBS += -lpciaccess -lboost_thread -lboost_system -lboost_date_time
+
+# for cross.h
+CPPFLAGS += -I$(XEN_ROOT)/tools/cross

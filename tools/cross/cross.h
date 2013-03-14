@@ -6,6 +6,12 @@ namespace cross {
 
 class command {
  public:
+    enum type_t {
+        TYPE_INIT,
+        TYPE_WRITE,
+        TYPE_READ
+    };
+
     uint32_t type;
     uint32_t value;
     uint32_t offset;
