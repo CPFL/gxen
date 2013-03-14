@@ -43,11 +43,41 @@ void context::handle(const command& cmd) {
             break;
 
         case command::TYPE_WRITE:
+            switch (cmd.payload) {
+                case command::BAR0:
+                    write_bar0(cmd);
+                    break;
+                case command::BAR1:
+                    write_bar1(cmd);
+                    break;
+                case command::BAR3:
+                    write_bar3(cmd);
+                    break;
+            }
             break;
+
         case command::TYPE_READ:
+            switch (cmd.payload) {
+                case command::BAR0:
+                    read_bar0(cmd);
+                    break;
+                case command::BAR1:
+                    read_bar1(cmd);
+                    break;
+                case command::BAR3:
+                    read_bar3(cmd);
+                    break;
+            }
             break;
     }
 }
+
+void write_bar0(uint32_t offset, uint32_t value);
+void write_bar1(uint32_t offset, uint32_t value);
+void write_bar3(uint32_t offset, uint32_t value);
+void read_bar0(uint32_t offset);
+void read_bar1(uint32_t offset);
+void read_bar3(uint32_t offset);
 
 }  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */

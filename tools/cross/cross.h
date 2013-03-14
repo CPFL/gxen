@@ -12,6 +12,12 @@ class command {
         TYPE_READ
     };
 
+    enum bar_t {
+        BAR0,
+        BAR1,
+        BAR3
+    };
+
     uint32_t type;
     uint32_t value;
     uint32_t offset;
