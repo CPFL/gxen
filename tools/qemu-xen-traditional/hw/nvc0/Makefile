@@ -21,5 +21,5 @@ OBJS += nvc0_remapping.o
 OBJS += nvc0_tlb_flush.o
 OBJS += nvc0_poll_area.o
 
-# link pciaccess
-LIBS += -lpciaccess
+# link pciaccess and boost libraries
+LIBS += -lpciaccess -lboost_thread -lboost_system -lboost_date_time

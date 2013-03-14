@@ -24,6 +24,7 @@
 
 #include "nvc0.h"
 #include "nvc0_context.h"
+#include "cross.h"
 namespace nvc0 {
 
 context::context(nvc0_state_t* state, uint64_t memory_size)
@@ -34,7 +35,10 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     , tlb_()
     , poll_()
     , remapping_(memory_size)
-    , pramin_() {
+    , pramin_()
+    , io_service_()
+    , socket_(io_service_) {
+    socket_.connect(boost::asio::local::stream_protocol::endpoint(CROSS_ENDPOINT));
 }
 
 context* context::extract(nvc0_state_t* state) {
