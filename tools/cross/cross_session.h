@@ -60,11 +60,11 @@ class session {
     }
 
     void handle(const command& command) {
-        std::cout
-            << "type    : " << command.type << std::endl
-            << "value   : " << command.value << std::endl
-            << "offset  : " << command.offset << std::endl
-            << "payload : " << command.payload << std::endl;
+        // std::cout
+        //     << "type    : " << command.type << std::endl
+        //     << "value   : " << command.value << std::endl
+        //     << "offset  : " << command.offset << std::endl
+        //     << "payload : " << command.payload << std::endl;
         static_cast<Derived*>(this)->handle(command);
     }
 

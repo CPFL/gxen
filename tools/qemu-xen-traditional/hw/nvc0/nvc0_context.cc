@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <unistd.h>
+#include <signal.h>
 #include "nvc0.h"
 #include "nvc0_context.h"
 #include "cross.h"
@@ -37,7 +39,8 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     , remapping_(memory_size)
     , pramin_()
     , io_service_()
-    , socket_(io_service_) {
+    , socket_(io_service_)
+    , socket_mutex_() {
 
     // initialize connection
     socket_.connect(boost::asio::local::stream_protocol::endpoint(CROSS_ENDPOINT));
@@ -53,14 +56,36 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
 }
 
 cross::command context::send(const cross::command& cmd) {
+    boost::mutex::scoped_lock lock(socket_mutex_);
     cross::command result = {
         0,
         0,
         0,
         0
     };
-    boost::asio::write(socket_, boost::asio::buffer(reinterpret_cast<const char*>(&cmd), sizeof(cross::command)));
-    boost::asio::read(socket_, boost::asio::buffer(reinterpret_cast<char*>(&result), sizeof(cross::command)));
+    while (true) {
+        boost::system::error_code error;
+        boost::asio::write(
+            socket_,
+            boost::asio::buffer(reinterpret_cast<const char*>(&cmd), sizeof(cross::command)),
+            boost::asio::transfer_all(),
+            error);
+        if (error != boost::asio::error::make_error_code(boost::asio::error::interrupted)) {
+            break;
+        }
+        // retry
+    }
+    while (true) {
+        boost::system::error_code error;
+        boost::asio::read(
+            socket_,
+            boost::asio::buffer(reinterpret_cast<char*>(&result), sizeof(cross::command)),
+            boost::asio::transfer_all(),
+            error);
+        if (error != boost::asio::error::make_error_code(boost::asio::error::interrupted)) {
+            break;
+        }
+    }
     return result;
 }
 

@@ -41,6 +41,7 @@ class context {
     // ASIO
     boost::asio::io_service io_service_;
     boost::asio::local::stream_protocol::socket socket_;
+    boost::mutex socket_mutex_;
 };
 
 }  // namespace nvc0
