@@ -28,48 +28,28 @@
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_context.h"
+#include "cross_allocator.h"
 namespace cross {
 
-
-context::context(boost::asio::io_service& io_service)
-    : session(io_service) {
+// very naive way
+allocator::allocator(uint64_t start, uint64_t end)
+    : start_(start)
+    , size_(end - start)
+    , vector_(size_ / kPageSize, -1) {
 }
 
-void context::handle(const command& cmd) {
-    switch (cmd.type) {
-        case command::TYPE_INIT:
-            domid_ = cmd.value;
-            std::cout << "INIT domid " << domid_ << std::endl;
-            break;
-
-        case command::TYPE_WRITE:
-            switch (cmd.payload) {
-                case command::BAR0:
-                    write_bar0(cmd);
-                    break;
-                case command::BAR1:
-                    write_bar1(cmd);
-                    break;
-                case command::BAR3:
-                    write_bar3(cmd);
-                    break;
-            }
-            break;
-
-        case command::TYPE_READ:
-            switch (cmd.payload) {
-                case command::BAR0:
-                    read_bar0(cmd);
-                    break;
-                case command::BAR1:
-                    read_bar1(cmd);
-                    break;
-                case command::BAR3:
-                    read_bar3(cmd);
-                    break;
-            }
-            break;
+uint64_t allocator::allocate() {
+    const boost::dynamic_bitset<>::size_type pos = vector_.find_first();
+    if (pos == vector_.npos) {
+        assert(0);
+        return 0;  // invaid
     }
+    vector_.set(pos, false);
+    return pos * kPageSize + start_;
+}
+
+void allocator::deallocate(uint64_t addr) {
+    vector_.set(((addr - start_) / kPageSize), true);
 }
 
 }  // namespace cross
