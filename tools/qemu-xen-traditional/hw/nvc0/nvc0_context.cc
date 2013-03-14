@@ -49,7 +49,19 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
         0,
         0
     };
-    boost::asio::write(socket_, boost::asio::buffer(reinterpret_cast<char*>(&cmd), sizeof(cross::command)));
+    send(cmd);
+}
+
+cross::command context::send(const cross::command& cmd) {
+    cross::command result = {
+        0,
+        0,
+        0,
+        0
+    };
+    boost::asio::write(socket_, boost::asio::buffer(reinterpret_cast<const char*>(&cmd), sizeof(cross::command)));
+    boost::asio::read(socket_, boost::asio::buffer(reinterpret_cast<char*>(&result), sizeof(cross::command)));
+    return result;
 }
 
 context* context::extract(nvc0_state_t* state) {
