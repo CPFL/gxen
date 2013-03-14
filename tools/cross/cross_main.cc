@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include "cross.h"
 #include "cross_context.h"
+#include "cross_device.h"
 namespace cross {
 
 class server {
@@ -62,6 +63,22 @@ class server {
 }  // namespace cross
 
 int main(int argc, char** argv) {
+    cross::bdf bdf = { { { 0, 0, 0 } } };
+
+    if (argc <= 1) {
+        fprintf(stderr, "Usage: cross bdf\n");
+        return 1;
+    }
+
+    if ((bdf.raw = strtol(argv[1], NULL, 16)) == 0) {
+        fprintf(stderr, "Usage: cross bdf\n");
+        return 1;
+    }
+
+    printf("BDF: %02x:%02x.%01x\n", bdf.bus, bdf.dev, bdf.func);
+
+    cross::device::instance()->initialize(bdf);
+
     ::unlink(CROSS_ENDPOINT);
     try {
         boost::asio::io_service io_service;
