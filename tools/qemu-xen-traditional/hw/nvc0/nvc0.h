@@ -117,6 +117,8 @@ static inline uint32_t nvc0_channel_get_virt_id(nvc0_state_t* state, uint32_t ph
     return phys - state->guest * NVC0_CHANNELS_SHIFT;
 }
 
+uint32_t nvc0_domid(void);
+
 #ifdef __cplusplus
 }
 #endif

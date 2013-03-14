@@ -8,6 +8,9 @@ class context : public session<context> {
  public:
     context(boost::asio::io_service& io_service);
     void handle(const command& command);
+
+ private:
+    int domid_;
 };
 
 }  // namespace cross
