@@ -1,5 +1,8 @@
 #ifndef HW_NVC0_NVC0_CONTEXT_H_
 #define HW_NVC0_NVC0_CONTEXT_H_
+#include <boost/bind.hpp>
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include "nvc0.h"
 #include "nvc0_shadow_page_table.h"
 #include "nvc0_mmio_barrier.h"
@@ -32,6 +35,10 @@ class context {
     tlb_flush tlb_;
     poll_area poll_;
     uint64_t pramin_;  // 16bit shifted
+
+    // ASIO
+    boost::asio::io_service io_service_;
+    boost::asio::local::stream_protocol::socket socket_;
 };
 
 }  // namespace nvc0
