@@ -4,6 +4,7 @@
 #include <boost/thread.hpp>
 #include "cross.h"
 #include "cross_session.h"
+#include "cross_allocator.h"
 namespace cross {
 
 class device {
@@ -16,6 +17,7 @@ class device {
 
  private:
     struct pci_device* device_;
+    allocator memory_;
     boost::mutex mutex_;
 };
 
