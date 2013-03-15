@@ -97,6 +97,6 @@ context* context::extract(nvc0_state_t* state) {
 
 extern "C" void nvc0_context_init(nvc0_state_t* state) {
     // currenty, 3GB
-    state->priv = static_cast<void*>(new nvc0::context(state, 3 * 1024 * 1024 * 1024));
+    state->priv = static_cast<void*>(new nvc0::context(state, 2 * 1024 * 1024 * 1024));
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
