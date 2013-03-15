@@ -37,7 +37,7 @@ class session {
             return;
         }
         const command command(*reinterpret_cast<cross::command*>(&buffer_));
-        handle(command);
+        static_cast<Derived*>(this)->handle(command);
 
         // handle command
         boost::asio::async_write(
@@ -56,15 +56,6 @@ class session {
             socket_,
             boost::asio::buffer(&buffer_, kCommandSize),
             boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
-    }
-
-    void handle(const command& command) {
-        // std::cout
-        //     << "type    : " << command.type << std::endl
-        //     << "value   : " << command.value << std::endl
-        //     << "offset  : " << command.offset << std::endl
-        //     << "payload : " << command.payload << std::endl;
-        static_cast<Derived*>(this)->handle(command);
     }
 
     boost::asio::local::stream_protocol::socket socket_;
