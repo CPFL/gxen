@@ -31,6 +31,7 @@
 #include <pciaccess.h>
 #include "cross.h"
 #include "cross_device.h"
+#include "cross_mmio.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -44,7 +45,9 @@ device::device()
     : device_()
     , virts_(2, -1)
     , memory_(0x100000000ULL, 0x180000000ULL)  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
-    , mutex_() {
+    , mutex_handle_()
+    , pramin_()
+    , bars_() {
 }
 
 // not thread safe
@@ -87,6 +90,18 @@ void device::initialize(const bdf& bdf) {
     pci_device_cfg_write_u16(dev, NVC0_COMMAND, PCI_COMMAND);
     device_ = dev;
 
+    // init BARs
+    void* addr;
+    ret = pci_device_map_range(dev, dev->regions[0].base_addr, dev->regions[0].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
+    bars_[0].addr = addr;
+    bars_[0].size = dev->regions[0].size;
+    ret = pci_device_map_range(dev, dev->regions[1].base_addr, dev->regions[1].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
+    bars_[1].addr = addr;
+    bars_[1].size = dev->regions[1].size;
+    ret = pci_device_map_range(dev, dev->regions[3].base_addr, dev->regions[3].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
+    bars_[3].addr = addr;
+    bars_[3].size = dev->regions[3].size;
+
     if (!initialized()) {
         pci_system_cleanup();
     } else {
@@ -101,7 +116,7 @@ device::~device() {
 }
 
 uint32_t device::acquire_virt() {
-    boost::mutex::scoped_lock lock(mutex_);
+    mutex::scoped_lock lock(mutex_handle_);
     const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
     if (pos != virts_.npos) {
         virts_.set(pos, 0);
@@ -110,8 +125,16 @@ uint32_t device::acquire_virt() {
 }
 
 void device::release_virt(uint32_t virt) {
-    boost::mutex::scoped_lock lock(mutex_);
+    mutex::scoped_lock lock(mutex_handle_);
     virts_.set(virt, 1);
+}
+
+uint32_t device::read(int bar, uint32_t offset) {
+    return mmio::read32(bars_[bar].addr, offset);
+}
+
+void device::write(int bar, uint32_t offset, uint32_t val) {
+    mmio::write32(bars_[bar].addr, offset, val);
 }
 
 device* device::instance() {
