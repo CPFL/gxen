@@ -44,12 +44,12 @@ uint64_t allocator::allocate() {
         assert(0);
         return 0;  // invaid
     }
-    vector_.set(pos, false);
+    vector_.reset(pos);
     return pos * kPageSize + start_;
 }
 
 void allocator::deallocate(uint64_t addr) {
-    vector_.set(((addr - start_) / kPageSize), true);
+    vector_.set(((addr - start_) / kPageSize));
 }
 
 }  // namespace cross
