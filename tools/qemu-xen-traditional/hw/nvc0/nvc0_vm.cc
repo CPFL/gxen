@@ -98,6 +98,14 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
 
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
+
+//    const cross::command cmd = {
+//        cross::command::TYPE_READ,
+//        0,
+//        offset,
+//        cross::command::BAR3
+//    };
+//    return ctx->send(cmd).value;
     const uint64_t gphys = ctx->bar3_table()->resolve(offset);
     if (gphys != UINT64_MAX) {
         // resolved
@@ -115,14 +123,13 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
 
-    const cross::command cmd = {
-        cross::command::TYPE_WRITE,
-        value,
-        offset,
-        cross::command::BAR3
-    };
-    ctx->send(cmd);
-
+//    const cross::command cmd = {
+//        cross::command::TYPE_WRITE,
+//        value,
+//        offset,
+//        cross::command::BAR3
+//    };
+//    ctx->send(cmd);
     const uint64_t gphys = ctx->bar3_table()->resolve(offset);
     if (gphys != UINT64_MAX) {
         // resolved

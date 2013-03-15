@@ -9,7 +9,8 @@ class command {
     enum type_t {
         TYPE_INIT,
         TYPE_WRITE,
-        TYPE_READ
+        TYPE_READ,
+        TYPE_TLB_FLUSH
     };
 
     enum bar_t {

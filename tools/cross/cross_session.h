@@ -30,13 +30,17 @@ class session {
               boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
     }
 
+    command* buffer() {
+        return reinterpret_cast<cross::command*>(&buffer_);
+    }
+
  private:
     void handle_read(const boost::system::error_code& error) {
         if (error) {
             delete this;
             return;
         }
-        const command command(*reinterpret_cast<cross::command*>(&buffer_));
+        const command command(*buffer());
         static_cast<Derived*>(this)->handle(command);
 
         // handle command

@@ -310,7 +310,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
                 return;
             case 0xDEADAAAB:
                 // dump BAR3 VM command
-                ctx->bar3_table()->dump();
+                // ctx->bar3_table()->dump();
                 return;
         }
         break;
@@ -347,6 +347,13 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
     case 0x001714: {
             // BAR3 channel RAMIN
             // nvc0_mmio_write32(state->bar[0].real, offset, val);
+            const cross::command cmd = {
+                cross::command::TYPE_WRITE,
+                val,
+                offset,
+                cross::command::BAR0
+            };
+            ctx->send(cmd);
             ctx->bar3_table()->refresh(ctx, val);
             NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
             return;

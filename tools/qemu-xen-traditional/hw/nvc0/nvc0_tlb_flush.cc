@@ -33,10 +33,18 @@ namespace nvc0 {
 
 void tlb_flush::trigger(context* ctx, uint32_t val) {
     trigger_ = val;
-    nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cb8, vspace());
-    nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cbc, trigger());
+    const cross::command cmd = {
+        cross::command::TYPE_TLB_FLUSH,
+        vspace(),
+        trigger(),
+        0
+    };
+    ctx->send(cmd);
+
+    // nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cb8, vspace());
+    // nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cbc, trigger());
     const uint64_t page_directory = bit_mask<28, uint64_t>(vspace() >> 4) << 12;
-    NVC0_PRINTF("page directory 0x%" PRIX64 " is flushed\n", page_directory);
+    // NVC0_PRINTF("page directory 0x%" PRIX64 " is flushed\n", page_directory);
 
     // rescan page tables
     if (ctx->bar1_table()->page_directory_address() == page_directory) {
