@@ -23,6 +23,7 @@ class session {
 
     void start() {
         std::cout << "START" << std::endl;
+        static_cast<Derived*>(this)->accept();
         boost::asio::async_read(
             socket_,
             boost::asio::buffer(&buffer_, kCommandSize),

@@ -34,12 +34,20 @@ namespace cross {
 
 context::context(boost::asio::io_service& io_service)
     : session(io_service)
-    , id_(device::instance()->acquire_virt()) {
+    , accepted_(false)
+    , id_() {
 }
 
 context::~context() {
-    device::instance()->release_virt(id_);
-    std::cout << "END and release GPU id " << id_ << std::endl;
+    if (accepted_) {
+        device::instance()->release_virt(id_);
+        std::cout << "END and release GPU id " << id_ << std::endl;
+    }
+}
+
+void context::accept() {
+    accepted_ = true;
+    id_ = device::instance()->acquire_virt();
 }
 
 void context::handle(const command& cmd) {

@@ -8,6 +8,7 @@ class context : public session<context> {
  public:
     context(boost::asio::io_service& io_service);
     virtual ~context();
+    void accept();
     void handle(const command& command);
     void write_bar0(const command& command);
     void write_bar1(const command& command);
@@ -17,6 +18,7 @@ class context : public session<context> {
     void read_bar3(const command& command);
 
  private:
+    bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
 };
