@@ -41,6 +41,7 @@ namespace cross {
 
 device::device()
     : device_()
+    , memory_(0x100000000ULL, 0x180000000ULL)  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , mutex_() {
 }
 
