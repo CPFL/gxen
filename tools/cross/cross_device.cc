@@ -26,6 +26,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include <boost/pool/detail/singleton.hpp>
 #include <pciaccess.h>
 #include "cross.h"
@@ -41,6 +42,7 @@ namespace cross {
 
 device::device()
     : device_()
+    , virts_(2, -1)
     , memory_(0x100000000ULL, 0x180000000ULL)  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , mutex_() {
 }
@@ -96,6 +98,20 @@ device::~device() {
     if (initialized()) {
         pci_system_cleanup();
     }
+}
+
+uint32_t device::acquire_virt() {
+    boost::mutex::scoped_lock lock(mutex_);
+    const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
+    if (pos != virts_.npos) {
+        virts_.set(pos, 0);
+    }
+    return pos;
+}
+
+void device::release_virt(uint32_t virt) {
+    boost::mutex::scoped_lock lock(mutex_);
+    virts_.set(virt, 1);
 }
 
 device* device::instance() {

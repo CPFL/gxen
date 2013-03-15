@@ -11,9 +11,7 @@ class session {
  public:
     static const int kCommandSize = sizeof(command);
 
-    ~session() {
-        std::cout << "END" << std::endl;
-    }
+    virtual ~session() { }
 
     session(boost::asio::io_service& io_service)
         : socket_(io_service) {
