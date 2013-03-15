@@ -21,18 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdlib>
-#include <iostream>
-#include <boost/asio.hpp>
-#include <unistd.h>
+#include <stdint.h>
 #include "cross.h"
 #include "cross_context.h"
+#include "cross_pramin.h"
+#include "cross_shadow_page_table.h"
 namespace cross {
 
 void context::write_bar3(const command& cmd) {
+    const uint64_t gphys = bar3_table()->resolve(cmd.offset);
+    if (gphys != UINT64_MAX) {
+        // resolved
+//        remapping::page_entry entry;
+//        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+//            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
+//        }
+        pramin_accessor pramin;
+        pramin.write32(gphys, cmd.value);
+        return;
+    }
+
+    printf("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
 }
 
 void context::read_bar3(const command& cmd) {
+    const uint64_t gphys = bar3_table()->resolve(cmd.offset);
+    if (gphys != UINT64_MAX) {
+        // resolved
+//        remapping::page_entry entry;
+//        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
+//            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
+//        }
+        pramin_accessor pramin;
+        buffer()->value = pramin.read32(gphys);
+        return;
+    }
+
+    printf("VM BAR3 invalid read 0x%" PRIX32 " access\n", cmd.offset);
+    buffer()->value = 0xFFFFFFFF;
+
 }
 
 }  // namespace cross

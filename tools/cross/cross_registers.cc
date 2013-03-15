@@ -1,5 +1,5 @@
 /*
- * Cross Context BAR0
+ * Cross NVC0 registers accessor
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,34 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdlib>
-#include <iostream>
-#include <boost/asio.hpp>
-#include <unistd.h>
-#include "cross.h"
-#include "cross_context.h"
-#include "cross_shadow_page_table.h"
+#include "cross_registers.h"
+#include "cross_device.h"
 namespace cross {
 
-void context::write_bar0(const command& cmd) {
-    std::cout << "BAR0!" << std::endl;
-    switch (cmd.offset) {
-    case 0x001704: {
-            // BAR1 VM
-            bar1_table_->refresh(this, cmd.value);
-            break;
-        }
-    case 0x001714: {
-            // BAR3 VM
-            bar3_table_->refresh(this, cmd.value);
-            break;
-        }
-    }
+registers_accessor::registers_accessor()
+    : lock_(cross::device::instance()->mutex_handle()) {
 }
 
-void context::read_bar0(const command& cmd) {
-    switch (cmd.offset) {
-    }
+uint32_t registers_accessor::read32(uint32_t offset) {
+    return cross::device::instance()->read(0, offset);
+}
+
+void registers_accessor::write32(uint32_t offset, uint32_t val) {
+    cross::device::instance()->write(0, offset, val);
 }
 
 }  // namespace cross
