@@ -30,9 +30,17 @@
 namespace cross {
 
 void context::write_bar0(const command& cmd) {
+    switch (cmd.offset) {
+    case 0x001704: {
+            // BAR3 VM
+            break;
+        }
+    }
 }
 
 void context::read_bar0(const command& cmd) {
+    switch (cmd.offset) {
+    }
 }
 
 }  // namespace cross

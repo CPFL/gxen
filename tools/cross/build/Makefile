@@ -1,7 +1,7 @@
 SRCDIR=../
 VPATH+=:$(SRCDIR)
 
-CPPFLAGS= -g -W -Wall -Wextra -Wno-unused-parameter
+CPPFLAGS= -g -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 LDFLAGS=
 TARGET=cross
 LIBS= -lpciaccess -lrt -lboost_system -lboost_thread -lpthread
@@ -21,7 +21,7 @@ $(TARGET): $(OBJS)
 	$(LINK)
 
 clean:
-	@rm -rf $(OBJS) $(DEPENDS)
+	@rm -rf $(OBJS) $(DEPENDS) $(TARGET)
 
 quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
 
