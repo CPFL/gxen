@@ -28,18 +28,25 @@
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_context.h"
+#include "cross_device.h"
 namespace cross {
 
 
 context::context(boost::asio::io_service& io_service)
-    : session(io_service) {
+    : session(io_service)
+    , id_(device::instance()->acquire_virt()) {
+}
+
+context::~context() {
+    device::instance()->release_virt(id_);
+    std::cout << "END and release GPU id " << id_ << std::endl;
 }
 
 void context::handle(const command& cmd) {
     switch (cmd.type) {
         case command::TYPE_INIT:
             domid_ = cmd.value;
-            std::cout << "INIT domid " << domid_ << std::endl;
+            std::cout << "INIT domid " << domid_ << " & GPU id " << id_ << std::endl;
             break;
 
         case command::TYPE_WRITE:

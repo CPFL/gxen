@@ -2,6 +2,7 @@
 #define CROSS_DEVICE_H_
 #include <pciaccess.h>
 #include <boost/thread.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_allocator.h"
@@ -14,9 +15,12 @@ class device {
     void initialize(const bdf& bdf);
     static device* instance();
     bool initialized() const { return device_; }
+    uint32_t acquire_virt();
+    void release_virt(uint32_t virt);
 
  private:
     struct pci_device* device_;
+    boost::dynamic_bitset<> virts_;
     allocator memory_;
     boost::mutex mutex_;
 };

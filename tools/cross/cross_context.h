@@ -7,6 +7,7 @@ namespace cross {
 class context : public session<context> {
  public:
     context(boost::asio::io_service& io_service);
+    virtual ~context();
     void handle(const command& command);
     void write_bar0(const command& command);
     void write_bar1(const command& command);
@@ -17,6 +18,7 @@ class context : public session<context> {
 
  private:
     int domid_;
+    uint32_t id_;  // virtualized GPU id
 };
 
 }  // namespace cross
