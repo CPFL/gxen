@@ -1,5 +1,5 @@
 /*
- * Cross Context BAR0
+ * Cross Context BAR3
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -40,7 +40,6 @@ void context::write_bar3(const command& cmd) {
         pramin.write32(gphys, cmd.value);
         return;
     }
-
     printf("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
 }
 
@@ -55,13 +54,11 @@ void context::read_bar3(const command& cmd) {
         pramin_accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
         buffer()->value = ret;
-        printf("VM BAR3 0x%" PRIX32 "(0x%" PRIX64 "): 0x%" PRIX32 "\n", cmd.offset, gphys, ret);
         return;
     }
 
     printf("VM BAR3 invalid read 0x%" PRIX32 " access\n", cmd.offset);
     buffer()->value = 0xFFFFFFFF;
-
 }
 
 }  // namespace cross

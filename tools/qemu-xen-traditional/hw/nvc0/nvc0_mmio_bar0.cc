@@ -330,16 +330,29 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             // 0x1700 (NV50) PMC_BAR0_PRAMIN
             //
             // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
+            const cross::command cmd = {
+                cross::command::TYPE_WRITE,
+                val,
+                offset,
+                cross::command::BAR0
+            };
+            ctx->send(cmd);
             ctx->set_pramin(val);
-            nvc0_mmio_write32(state->bar[0].real, offset, val);
             NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", ctx->pramin() << 16);
             return;
         }
 
     case 0x001704: {
             // BAR1 channel RAMIN
-            nvc0_mmio_write32(state->bar[0].real, offset, val);
+            const cross::command cmd = {
+                cross::command::TYPE_WRITE,
+                val,
+                offset,
+                cross::command::BAR0
+            };
+            ctx->send(cmd);
             ctx->bar1_table()->refresh(ctx, val);
+            nvc0_mmio_write32(state->bar[0].real, offset, val);
             NVC0_PRINTF("BAR1 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
             return;
         }
