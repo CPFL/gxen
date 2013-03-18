@@ -4,7 +4,6 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include "nvc0.h"
-#include "nvc0_mmio_barrier.h"
 #include "nvc0_remapping.h"
 #include "nvc0_tlb_flush.h"
 #include "nvc0_poll_area.h"
@@ -15,7 +14,6 @@ class context {
  public:
     explicit context(nvc0_state_t* state, uint64_t memory_size);
     nvc0_state_t* state() const { return state_; }
-    mmio_barrier* barrier() { return &barrier_; }
     nvc0::remapping::table* remapping() { return &remapping_; }
     tlb_flush* tlb() { return &tlb_; }
     poll_area* poll() { return &poll_; }
@@ -27,7 +25,6 @@ class context {
 
  private:
     nvc0_state_t* state_;
-    mmio_barrier barrier_;
     nvc0::remapping::table remapping_;
     tlb_flush tlb_;
     poll_area poll_;
