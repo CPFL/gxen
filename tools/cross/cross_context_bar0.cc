@@ -35,6 +35,8 @@ void context::write_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700: {
             // PRAMIN
+            // TODO(Yusuke Suzuki)
+            // This value should not be set by device models
             registers_accessor regs;
             regs.write32(0x1700, cmd.value);
             break;
@@ -42,6 +44,10 @@ void context::write_bar0(const command& cmd) {
     case 0x001704: {
             // BAR1 VM
             bar1_table_->refresh(this, cmd.value);
+            // TODO(Yusuke Suzuki)
+            // This value should not be set by device models
+            registers_accessor regs;
+            regs.write32(0x1704, cmd.value);
             break;
         }
     case 0x001714: {
