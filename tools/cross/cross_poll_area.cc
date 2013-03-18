@@ -24,5 +24,5 @@
 #include "cross_poll_area.h"
 namespace cross {
 
-} }  // namespace cross
+}  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */
