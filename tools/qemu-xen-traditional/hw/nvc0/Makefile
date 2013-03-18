@@ -12,7 +12,6 @@ OBJS += nvc0_mmio_bar0.o
 OBJS += nvc0_mmio_bar1.o
 OBJS += nvc0_mmio_bar3.o
 OBJS += nvc0_vm.o
-OBJS += nvc0_pramin.o
 OBJS += nvc0_context.o
 OBJS += nvc0_remapping.o
 
