@@ -98,50 +98,24 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
 
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
-
-//    const cross::command cmd = {
-//        cross::command::TYPE_READ,
-//        0,
-//        offset,
-//        cross::command::BAR3
-//    };
-//    return ctx->send(cmd).value;
-    const uint64_t gphys = ctx->bar3_table()->resolve(offset);
-    if (gphys != UINT64_MAX) {
-        // resolved
-        remapping::page_entry entry;
-        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
-        }
-        pramin_accessor pramin(ctx);
-        return pramin.read32(gphys);
-    }
-    NVC0_PRINTF("VM BAR3 invalid read 0x%" PRIX64 " access\n", offset);
-    return 0xFFFFFFFF;
+    const cross::command cmd = {
+        cross::command::TYPE_READ,
+        0,
+        offset,
+        cross::command::BAR3
+    };
+    return ctx->send(cmd).value;
 }
 
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
-
-//    const cross::command cmd = {
-//        cross::command::TYPE_WRITE,
-//        value,
-//        offset,
-//        cross::command::BAR3
-//    };
-//    ctx->send(cmd);
-    const uint64_t gphys = ctx->bar3_table()->resolve(offset);
-    if (gphys != UINT64_MAX) {
-        // resolved
-        remapping::page_entry entry;
-        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
-        }
-        pramin_accessor pramin(ctx);
-        pramin.write32(gphys, value);
-        return;
-    }
-    NVC0_PRINTF("VM BAR3 invalid write 0x%" PRIX64 " access\n", offset);
+    const cross::command cmd = {
+        cross::command::TYPE_WRITE,
+        value,
+        offset,
+        cross::command::BAR3
+    };
+    ctx->send(cmd);
 }
 
 }  // namespace nvc0
