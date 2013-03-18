@@ -47,7 +47,6 @@ static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
     uint32_t first = 0xFFFFFFFF;
-    const uint64_t gphys = ctx->bar1_table()->resolve(offset);
     if (!ctx->poll()->in_range(offset)) {
         context* ctx = context::extract(state);
         const cross::command cmd = {
@@ -64,9 +63,6 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
             state->bar[1].space,
             offset,
             "BAR1");
-    if (first != second) {
-        NVC0_PRINTF("BAR1 0x%"PRIX64" => 0x%"PRIX64" and value 0x%"PRIX32" <> 0x%"PRIX32"\n", offset, gphys, first, second);
-    }
     return second;
 }
 

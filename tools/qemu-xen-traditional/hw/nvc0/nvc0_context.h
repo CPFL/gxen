@@ -16,7 +16,6 @@ class context {
  public:
     explicit context(nvc0_state_t* state, uint64_t memory_size);
     nvc0_state_t* state() const { return state_; }
-    shadow_page_table* bar1_table() { return &bar1_table_; }
     mmio_barrier* barrier() { return &barrier_; }
     nvc0::remapping::table* remapping() { return &remapping_; }
     tlb_flush* tlb() { return &tlb_; }
@@ -29,7 +28,6 @@ class context {
 
  private:
     nvc0_state_t* state_;
-    shadow_page_table bar1_table_;
     mmio_barrier barrier_;
     nvc0::remapping::table remapping_;
     tlb_flush tlb_;

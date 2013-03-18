@@ -40,17 +40,6 @@ void tlb_flush::trigger(context* ctx, uint32_t val) {
         0
     };
     ctx->send(cmd);
-
-    // nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cb8, vspace());
-    // nvc0_mmio_write32(ctx->state()->bar[0].real, 0x100cbc, trigger());
-    const uint64_t page_directory = bit_mask<28, uint64_t>(vspace() >> 4) << 12;
-    // NVC0_PRINTF("page directory 0x%" PRIX64 " is flushed\n", page_directory);
-
-    // rescan page tables
-    if (ctx->bar1_table()->page_directory_address() == page_directory) {
-        // BAR1
-        ctx->bar1_table()->refresh_page_directories(ctx, page_directory);
-    }
 }
 
 }  // namespace nvc0

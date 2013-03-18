@@ -304,10 +304,6 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
             case 0xDEADFACE:
                 NVC0_LOG(state, "DEADFACE\n");
                 return;
-            case 0xDEADAAAA:
-                // dump BAR1 VM command
-                // ctx->bar1_table()->dump();
-                return;
         }
         break;
 
@@ -347,8 +343,6 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
                 cross::command::BAR0
             };
             ctx->send(cmd);
-            ctx->bar1_table()->refresh(ctx, val);
-            nvc0_mmio_write32(state->bar[0].real, offset, val);
             NVC0_PRINTF("BAR1 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
             return;
         }
