@@ -85,6 +85,17 @@ void context::write_bar0(const command& cmd) {
             reg_channel_kill_ = cmd.value;
             return;
         }
+
+    case 0x100cb8:
+        // TLB vspace
+        reg_tlb_vspace_ = cmd.value;
+        return;
+
+    case 0x100cbc:
+        // TLB flush trigger
+        reg_tlb_trigger_ = cmd.value;
+        flush_tlb(reg_tlb_vspace_, reg_tlb_trigger_);
+        return;
     }
 
     // PRAMIN / PMEM
@@ -153,6 +164,14 @@ void context::read_bar0(const command& cmd) {
     case 0x002634:
         // channel kill
         buffer()->value = reg_channel_kill_;
+        return;
+    case 0x100cb8:
+        // TLB vspace
+        buffer()->value = reg_tlb_vspace_;
+        return;
+    case 0x100cbc:
+        // TLB flush trigger
+        buffer()->value = reg_tlb_trigger_;
         return;
     }
 

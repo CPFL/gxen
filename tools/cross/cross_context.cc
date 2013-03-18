@@ -47,7 +47,9 @@ context::context(boost::asio::io_service& io_service)
     , reg_poll_(0)
     , reg_channel_kill_(0)
     , reg_playlist_(0)
-    , reg_playlist_update_(0) {
+    , reg_playlist_update_(0)
+    , reg_tlb_vspace_(0)
+    , reg_tlb_trigger_(0) {
 }
 
 context::~context() {
@@ -96,24 +98,6 @@ void context::handle(const command& cmd) {
                 break;
         }
         break;
-
-    case command::TYPE_TLB_FLUSH: {
-            const uint64_t page_directory = bit_mask<28, uint64_t>(cmd.value >> 4) << 12;
-            // rescan page tables
-            if (bar1_table()->page_directory_address() == page_directory) {
-                // BAR1
-                bar1_table()->refresh_page_directories(this, page_directory);
-            }
-            if (bar3_table()->page_directory_address() == page_directory) {
-                // BAR3
-                bar3_table()->refresh_page_directories(this, page_directory);
-            }
-
-            registers::accessor registers;
-            registers.write32(0x100cb8, cmd.value);   // vspace
-            registers.write32(0x100cbc, cmd.offset);  // trigger
-        }
-        break;
     }
 }
 
@@ -133,6 +117,22 @@ void context::fifo_playlist_update(uint64_t address, uint32_t count) {
     registers::write32(0x70000, 1);
     // FIXME(Yusuke Suzuki): BAR flush wait code is needed?
     // usleep(1000);
+}
+
+void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
+    const uint64_t page_directory = bit_mask<28, uint64_t>(vspace >> 4) << 12;
+    // rescan page tables
+    if (bar1_table()->page_directory_address() == page_directory) {
+        // BAR1
+        bar1_table()->refresh_page_directories(this, page_directory);
+    }
+    if (bar3_table()->page_directory_address() == page_directory) {
+        // BAR3
+        bar3_table()->refresh_page_directories(this, page_directory);
+    }
+    registers::accessor registers;
+    registers.write32(0x100cb8, vspace);
+    registers.write32(0x100cbc, trigger);
 }
 
 }  // namespace cross

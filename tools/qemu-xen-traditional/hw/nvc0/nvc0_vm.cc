@@ -31,18 +31,6 @@
 #include "nvc0_remapping.h"
 namespace nvc0 {
 
-// from is only used for debug...
-static inline uint32_t vm_read(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, const char* from) {
-    const uint32_t result = nvc0_mmio_read32(real, offset);
-    NVC0_LOG(state, ":%s: read offset 0x%" PRIx64 " => 0x%X\n", from, ((uint64_t)offset), result);
-    return result;
-}
-
-static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_phys_addr_t offset, uint32_t value, const char* from) {
-    NVC0_LOG(state, ":%s: write offset 0x%" PRIx64 " => 0x%X\n", from, (uint64_t)offset, value);
-    nvc0_mmio_write32(real, offset, value);
-}
-
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
     const cross::command cmd = {

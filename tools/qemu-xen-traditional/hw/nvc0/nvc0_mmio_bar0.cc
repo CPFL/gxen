@@ -148,16 +148,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         break;
     case 0x06000c:  // PEEPHOLE_RW_ADDR_HIGH
         break;
-
-    case 0x100cb8:
-        // TLB_FLUSH_VSPACE
-        ret = ctx->tlb()->vspace();
-        goto end;
-
-    case 0x100cbc:
-        // TLB_FLUSH_TRIGGER
-        ret = ctx->tlb()->trigger();
-        goto end;
     }
 
     {
@@ -215,17 +205,6 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
     case 0x001714:
         NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
         break;
-
-    case 0x100cb8:
-        // TLB_FLUSH_VSPACE
-        ctx->tlb()->set_vspace(val);
-        return;
-
-    case 0x100cbc:
-        // TLB_FLUSH_TRIGGER
-        ctx->tlb()->trigger(ctx, val);
-        return;
-
     }
 
     const cross::command cmd = {
