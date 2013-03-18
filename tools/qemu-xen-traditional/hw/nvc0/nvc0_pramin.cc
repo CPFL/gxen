@@ -73,8 +73,6 @@ void pramin_accessor::write32(uint64_t addr, uint32_t val) {
         // reconstruct page table entry
 //        if (ctx_->bar1_table()->handle(addr)) {
 //        }
-//        if (ctx_->bar3_table()->handle(addr)) {
-//        }
     }
     nvc0_mmio_write32(ctx_->state()->bar[0].real + 0x700000, bit_mask<16>(addr), val);
 }
