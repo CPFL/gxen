@@ -4,7 +4,6 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include "nvc0.h"
-#include "nvc0_shadow_page_table.h"
 #include "nvc0_mmio_barrier.h"
 #include "nvc0_remapping.h"
 #include "nvc0_tlb_flush.h"
