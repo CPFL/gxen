@@ -25,14 +25,29 @@ class context : public session<context> {
     const shadow_page_table* bar3_table() const { return bar3_table_.get(); }
 
  private:
+    void fifo_playlist_update(uint64_t address, uint32_t count);
+    uint32_t get_phys_channel_id(uint32_t virt) {
+        return id_ * 64 + virt;
+    }
+
+    bool in_poll_area(uint64_t offset) {
+        return poll_area_ <= offset && offset < poll_area_ + (128 * 0x1000);
+    }
+
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
     boost::scoped_ptr<shadow_page_table> bar1_table_;
     boost::scoped_ptr<shadow_page_table> bar3_table_;
 
+    uint64_t poll_area_;
+
     // register value stores
     uint32_t reg_pramin_;
+    uint32_t reg_poll_;
+    uint32_t reg_channel_kill_;
+    uint32_t reg_playlist_;
+    uint32_t reg_playlist_update_;
 };
 
 }  // namespace cross

@@ -38,7 +38,7 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
 
 bool shadow_page_table::refresh(context* ctx, uint32_t value) {
     // construct shadow page table from real data
-    pramin_accessor pramin;
+    pramin::accessor pramin;
 
     channel_address_ = value;
     const uint64_t ramin = static_cast<uint64_t>(bit_mask<30>(value)) << 12;
@@ -66,7 +66,7 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
 }
 
 bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
-    pramin_accessor pramin;
+    pramin::accessor pramin;
     page_directory_address_ = address;
 
     directories_.resize(page_directory_size());
@@ -146,7 +146,7 @@ void shadow_page_table::dump() const {
     }
 }
 
-void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address) {
+void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin::accessor* pramin, uint64_t page_directory_address) {
     struct page_directory virt = { { } };
     virt.word0 = pramin->read32(page_directory_address);
     virt.word1 = pramin->read32(page_directory_address + 0x4);
@@ -218,7 +218,7 @@ uint64_t shadow_page_directory::resolve(uint64_t offset) {
     return UINT64_MAX;
 }
 
-bool shadow_page_entry::refresh(pramin_accessor* pramin, uint64_t page_entry_address) {
+bool shadow_page_entry::refresh(pramin::accessor* pramin, uint64_t page_entry_address) {
     struct page_entry virt = { };
     virt.word0 = pramin->read32(page_entry_address);
     virt.word1 = pramin->read32(page_entry_address + 0x4);

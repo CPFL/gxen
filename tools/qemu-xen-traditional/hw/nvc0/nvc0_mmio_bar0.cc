@@ -106,11 +106,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     switch (offset) {
-    case NV50_PMC_BOOT_0:  // 0x00000000
-        // return QUADRO6000_REG0;
-        // for debugging, we access to real device
-        break;
-
     case 0x00121c75:  // mem ctrl num
         ret = 0x2;  // 2GB
         goto end;
@@ -124,32 +119,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         // return 0x00000001;  // Expose only 1 parts by Quadro6000 device model
         ret = 0x2;  // 2GB
         goto end;
-
-    case 0x022554:  // pmask
-        // NVC0_PRINTF("MMIO bar0 pmask 0x%X : 0x%X\n", addr, 0);
-        // return 0x00000000;
-        break;
-
-    case 0x10f20c:  // bsize
-        // Quadro6000 has 0x00000400 size vram per part
-        // Actually, because of << 20, VRAM part size is 1GB
-        // NVC0_PRINTF("MMIO bar0 bsize 0x%X : 0x%X\n", addr, 0x400);
-        // return 0x00000400;
-        break;
-
-    case 0x100800:  //  ?
-        // return 0x00000006;
-        break;
-
-    case (0x11020c + 0 * 0x1000):  // part 0 size
-        // return 0x00000400;
-        break;
-
-    case 0x409604:
-        // gpc_nr TODO(Yusuke Suzuki) fix upper bits
-        // gpc_nr(0x4) & rop_nr(0x6)
-        // return 0x00060004;
-        break;
 
     // PTIMER
     // Crystal freq is 27000KHz
@@ -169,19 +138,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         ret = timer_denominator;
         goto end;
 
-    // nvc0_graph.c
-    case 0x40910c:  // write 0
-        break;
-    case 0x409100:  // write 2
-        break;
-    case 0x409800:  // nv_wait
-        // used in nvc0_graph.c nvc0_graph_init_ctxctl
-        // HUB init
-        //
-        // FIXME(Yusuke Suzuki) we should store valid context value...
-        // return 0x80000001;
-        break;
-
     // peephole
     // these are write port
     case 0x00155c:  // PEEPHOLE_W_CTRL
@@ -192,38 +148,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         break;
     case 0x06000c:  // PEEPHOLE_RW_ADDR_HIGH
         break;
-
-    // tp
-    case GPC_UNIT(0, 0x2608):
-        // return 0x3;
-        break;
-    case GPC_UNIT(1, 0x2608):
-        // return 0x4;
-        break;
-    case GPC_UNIT(2, 0x2608):
-        // return 0x3;
-        break;
-    case GPC_UNIT(3, 0x2608):
-        // return 0x4;
-        break;
-
-    // VRAM base address
-    case 0x001700:
-        ret = nvc0_mmio_read32(state->bar[0].real, offset);
-        goto end;
-
-    // PFIFO
-    // we should shift channel id
-    case 0x002634:  // channel kill
-        ret = nvc0_channel_get_virt_id(state, nvc0_mmio_read32(state->bar[0].real, offset));
-        goto end;
-
-    case 0x100cb4: {
-            // TLB_FLUSH_PAGE
-            // FIXME(Yusuke Suzuki)
-            // we don't use this
-            break;
-        }
 
     case 0x100cb8:
         // TLB_FLUSH_VSPACE
@@ -236,8 +160,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         goto end;
     }
 
-    // PRAMIN
-    if (0x700000 <= offset && offset <= 0x7fffff) {
+    {
         const cross::command cmd = {
             cross::command::TYPE_READ,
             0xdeadface,
@@ -245,46 +168,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
             cross::command::BAR0
         };
         ret = ctx->send(cmd).value;
-        goto end;
     }
-
-    // PFIFO
-    if (0x002000 <= offset && offset <= 0x004000) {
-        // 0x003000 + id * 8
-        // see pscnv/nvc0_fifo.c
-        if ((offset - 0x003000) <= NVC0_CHANNELS * 8) {
-            // channel status access
-            // we should shift access target by guest VM
-            const uint32_t virt = (offset - 0x003000) >> 3;
-            if (virt >= NVC0_CHANNELS_SHIFT) {
-                // these channels cannot be used
-                if (virt & 0x4) {
-                    // status
-                } else {
-                    // others
-                }
-                // FIXME(Yusuke Suzuki)
-                // return better value
-                ret = 0;
-                goto end;
-            } else {
-                const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
-                const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                NVC0_LOG(state, "0x%"PRIx64" adjusted to => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)adjusted);
-                ret = nvc0_mmio_read32(state->bar[0].real, adjusted);
-                goto end;
-            }
-        } else if (offset == 0x002254) {
-//            ret = ctx->poll()->offset();
-//            goto end;
-        }
-    } else if (0x800000 <= offset) {
-        // PFIFO channel table
-        NVC0_LOG(state, "channel table access 0x%"PRIx64" => 0x%X\n", (uint64_t)offset, nvc0_mmio_read32(state->bar[0].real, offset));
-    }
-
-    ret = nvc0_mmio_read32(state->bar[0].real, offset);
-    goto end;
 
 end:
     NVC0_LOG(state, "read 0x%"PRIx64" => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)ret);
@@ -324,147 +208,33 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         NVC0_PRINTF("denominator set\n");
         return;
 
-    // VRAM base address
-    case 0x001700: {
-            // 0x1700 (NV50) PMC_BAR0_PRAMIN
-            //
-            // Physical VRAM address of window that PRAMIN points to, shifted right by 16 bits.
-            const cross::command cmd = {
-                cross::command::TYPE_WRITE,
-                val,
-                offset,
-                cross::command::BAR0
-            };
-            ctx->send(cmd);
-            ctx->set_pramin(val);
-            NVC0_PRINTF("PRAMIN base addr set 0x%"PRIx64"\n", ctx->pramin() << 16);
-            return;
-        }
-
-    case 0x001704: {
-            // BAR1 channel RAMIN
-            const cross::command cmd = {
-                cross::command::TYPE_WRITE,
-                val,
-                offset,
-                cross::command::BAR0
-            };
-            ctx->send(cmd);
-            NVC0_PRINTF("BAR1 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
-            return;
-        }
-
-    case 0x001714: {
-            // BAR3 channel RAMIN
-            // nvc0_mmio_write32(state->bar[0].real, offset, val);
-            const cross::command cmd = {
-                cross::command::TYPE_WRITE,
-                val,
-                offset,
-                cross::command::BAR0
-            };
-            ctx->send(cmd);
-            NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
-            return;
-        }
-
-    case 0x100c80:
-        // TLB CFG
+    case 0x001704:
+        NVC0_PRINTF("BAR1 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
         break;
 
-    case 0x100cb4:
-        // TLB_FLUSH_PAGE
-        // FIXME(Yusuke Suzuki)
-        // we don't use this
+    case 0x001714:
+        NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
         break;
 
     case 0x100cb8:
         // TLB_FLUSH_VSPACE
         ctx->tlb()->set_vspace(val);
-        break;
+        return;
 
     case 0x100cbc:
         // TLB_FLUSH_TRIGGER
         ctx->tlb()->trigger(ctx, val);
-        break;
-
-    }
-
-    // PRAMIN
-    if (0x700000 <= offset && offset <= 0x7fffff) {
-        const cross::command cmd = {
-            cross::command::TYPE_WRITE,
-            val,
-            offset,
-            cross::command::BAR0
-        };
-        ctx->send(cmd);
         return;
+
     }
 
-    // PFIFO
-    if (0x002000 <= offset && offset <= 0x004000) {
-        // 0x003000 + id * 8
-        // see pscnv/nvc0_fifo.c
-        if ((offset - 0x003000) <= NVC0_CHANNELS * 8) {
-            // channel status access
-            // we should shift access target by guest VM
-            const uint32_t virt = (offset - 0x003000) / 0x8;
-            if (virt >= NVC0_CHANNELS_SHIFT) {
-                // these channels cannot be used
-                if (virt & 0x4) {
-                    // status
-                } else {
-                    // others
-                }
-                // FIXME(Yusuke Suzuki)
-                // write better value
-            } else {
-                const uint32_t phys = nvc0_channel_get_phys_id(state, virt);
-                const uint32_t adjusted = (offset - virt * 8) + (phys * 8);
-                NVC0_LOG(state, "channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
-                nvc0_mmio_write32(state->bar[0].real, adjusted, val);
-            }
-            return;
-        }
-
-
-        if (offset == 0x002634) {
-            // kill
-            if (val >= NVC0_CHANNELS_SHIFT) {
-                return;
-            }
-            const uint32_t id = nvc0_channel_get_phys_id(state, val);
-            nvc0_mmio_write32(state->bar[0].real, offset, id);
-            return;
-        }
-
-        if (offset == 0x002254) {
-            const uint64_t addr = nvc0::bit_mask<28, uint64_t>(val) << 12;
-            ctx->poll()->set_offset(ctx, addr);
-            return;
-        }
-
-        if (offset == 0x002270) {
-            state->pfifo.playlist = val << 12;
-            nvc0_mmio_write32(state->bar[0].real, offset, val);
-            return;
-        }
-
-        if (offset == 0x002274) {
-            state->pfifo.playlist_count = val & 0x2f;  // 0x2f == 127
-            nvc0::fifo_playlist_update(ctx, state->pfifo.playlist, state->pfifo.playlist_count);
-            nvc0_mmio_write32(state->bar[0].real, 0x2270, state->pfifo.playlist >> 12);
-            nvc0_mmio_write32(state->bar[0].real, 0x2274, val);
-            return;
-        }
-    } else if (0x800000 <= offset) {
-        // PFIFO channel table
-        NVC0_LOG(state, "channel table access 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);
-    }
-
-    // fallback
-    // nvc0_mmio_write32(state->bar[0].space, offset, val);
-    nvc0_mmio_write32(state->bar[0].real, offset, val);
+    const cross::command cmd = {
+        cross::command::TYPE_WRITE,
+        val,
+        offset,
+        cross::command::BAR0
+    };
+    ctx->send(cmd);
+    return;
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
