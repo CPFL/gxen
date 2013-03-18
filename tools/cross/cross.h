@@ -3,6 +3,8 @@
 namespace cross {
 
 #define CROSS_ENDPOINT "/tmp/cross_endpoint"
+#define CROSS_CHANNELS 128
+#define CROSS_DOMAIN_CHANNELS (CROSS_CHANNELS / 2)
 
 class command {
  public:

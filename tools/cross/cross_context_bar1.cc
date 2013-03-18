@@ -29,6 +29,13 @@
 namespace cross {
 
 void context::write_bar1(const command& cmd) {
+    if (in_poll_area(cmd.offset)) {
+        // TODO(Yusuke Suzuki) cleanup this code
+        const device::mutex::scoped_lock lock(device::instance()->mutex_handle());
+        device::instance()->write(1, cmd.offset, cmd.value);
+        return;
+    }
+
     const uint64_t gphys = bar1_table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
         // resolved
@@ -36,7 +43,7 @@ void context::write_bar1(const command& cmd) {
 //        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
 //            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
 //        }
-        pramin_accessor pramin;
+        pramin::accessor pramin;
         pramin.write32(gphys, cmd.value);
         return;
     }
@@ -44,6 +51,13 @@ void context::write_bar1(const command& cmd) {
 }
 
 void context::read_bar1(const command& cmd) {
+    if (in_poll_area(cmd.offset)) {
+        // TODO(Yusuke Suzuki) cleanup this code
+        const device::mutex::scoped_lock lock(device::instance()->mutex_handle());
+        buffer()->value = device::instance()->read(1, cmd.offset);
+        return;
+    }
+
     const uint64_t gphys = bar1_table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
         // resolved
@@ -51,7 +65,7 @@ void context::read_bar1(const command& cmd) {
 //        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
 //            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
 //        }
-        pramin_accessor pramin;
+        pramin::accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
         buffer()->value = ret;
         return;

@@ -36,7 +36,7 @@ void context::write_bar3(const command& cmd) {
 //        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
 //            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
 //        }
-        pramin_accessor pramin;
+        pramin::accessor pramin;
         pramin.write32(gphys, cmd.value);
         return;
     }
@@ -51,7 +51,7 @@ void context::read_bar3(const command& cmd) {
 //        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
 //            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
 //        }
-        pramin_accessor pramin;
+        pramin::accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
         buffer()->value = ret;
         return;

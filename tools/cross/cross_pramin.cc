@@ -24,29 +24,29 @@
 #include "cross_pramin.h"
 #include "cross_device.h"
 #include "cross_bit_mask.h"
-// #include "nvc0_remapping.h"
 namespace cross {
+namespace pramin {
 
-pramin_accessor::pramin_accessor()
+accessor::accessor()
     : regs_()
     , old_(regs_.read32(0x1700)) {
 }
 
-pramin_accessor::~pramin_accessor() {
+accessor::~accessor() {
     regs_.write32(0x1700, old_);
 }
 
-uint32_t pramin_accessor::read32(uint64_t addr) {
+uint32_t accessor::read32(uint64_t addr) {
     change_current(addr);
     return regs_.read32(0x700000 + bit_mask<16>(addr));
 }
 
-void pramin_accessor::write32(uint64_t addr, uint32_t val) {
+void accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
     regs_.write32(0x700000 + bit_mask<16>(addr), val);
 }
 
-void pramin_accessor::change_current(uint64_t addr) {
+void accessor::change_current(uint64_t addr) {
     const uint64_t shifted = (addr >> 16);
 //    if (cross::device::instance()->pramin() != shifted) {
 //        cross::device::instance()->set_pramin(shifted);
@@ -54,5 +54,5 @@ void pramin_accessor::change_current(uint64_t addr) {
 //    }
 }
 
-}  // namespace nvc0
+} }  // namespace cross::pramin
 /* vim: set sw=4 ts=4 et tw=80 : */

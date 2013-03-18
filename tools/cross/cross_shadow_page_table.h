@@ -4,8 +4,9 @@
 #include <vector>
 #include <boost/static_assert.hpp>
 namespace cross {
-
-class pramin_accessor;
+namespace pramin {
+class accessor;
+}  // namespace pramin
 class context;
 
 // We assume Little Endianess machine.
@@ -81,7 +82,7 @@ BOOST_STATIC_ASSERT(sizeof(struct page_entry) == sizeof(uint64_t));
 
 class shadow_page_entry {
  public:
-    bool refresh(pramin_accessor* pramin, uint64_t page_entry_address);
+    bool refresh(pramin::accessor* pramin, uint64_t page_entry_address);
     const struct page_entry& virt() const { return virt_; }
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return virt_.present; }
@@ -126,7 +127,7 @@ class shadow_page_directory {
  public:
     typedef std::vector<shadow_page_entry> shadow_page_entries;
 
-    void refresh(context* ctx, uint32_t channel_id, pramin_accessor* pramin, uint64_t page_directory_address);
+    void refresh(context* ctx, uint32_t channel_id, pramin::accessor* pramin, uint64_t page_directory_address);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
     uint64_t resolve(uint64_t offset);

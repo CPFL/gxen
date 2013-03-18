@@ -31,6 +31,7 @@
 #include "cross_device.h"
 #include "cross_bit_mask.h"
 #include "cross_registers.h"
+#include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
 
@@ -41,7 +42,12 @@ context::context(boost::asio::io_service& io_service)
     , id_()
     , bar1_table_(new shadow_page_table(-1))
     , bar3_table_(new shadow_page_table(-3))
-    , reg_pramin_(0) {
+    , poll_area_(0)
+    , reg_pramin_(0)
+    , reg_poll_(0)
+    , reg_channel_kill_(0)
+    , reg_playlist_(0)
+    , reg_playlist_update_(0) {
 }
 
 context::~context() {
@@ -103,12 +109,30 @@ void context::handle(const command& cmd) {
                 bar3_table()->refresh_page_directories(this, page_directory);
             }
 
-            registers_accessor registers;
+            registers::accessor registers;
             registers.write32(0x100cb8, cmd.value);   // vspace
             registers.write32(0x100cbc, cmd.offset);  // trigger
         }
         break;
     }
+}
+
+void context::fifo_playlist_update(uint64_t address, uint32_t count) {
+    // scan fifo and update values
+    {
+        pramin::accessor pramin;
+        uint32_t i;
+        printf("FIFO playlist update %u\n", count);
+        for (i = 0; i < count; ++i) {
+            const uint32_t cid = pramin.read32(address + i * 0x8);
+            printf("FIFO playlist cid %u => %u\n", cid, get_phys_channel_id(cid));
+            pramin.write32(address + i * 0x8, get_phys_channel_id(cid));
+            pramin.write32(address + i * 0x8 + 0x4, 0x4);
+        }
+    }
+    registers::write32(0x70000, 1);
+    // FIXME(Yusuke Suzuki): BAR flush wait code is needed?
+    // usleep(1000);
 }
 
 }  // namespace cross

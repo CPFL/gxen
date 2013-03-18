@@ -24,18 +24,19 @@
 #include "cross_registers.h"
 #include "cross_device.h"
 namespace cross {
+namespace registers {
 
-registers_accessor::registers_accessor()
+accessor::accessor()
     : lock_(cross::device::instance()->mutex_handle()) {
 }
 
-uint32_t registers_accessor::read32(uint32_t offset) {
+uint32_t accessor::read32(uint32_t offset) {
     return cross::device::instance()->read(0, offset);
 }
 
-void registers_accessor::write32(uint32_t offset, uint32_t val) {
+void accessor::write32(uint32_t offset, uint32_t val) {
     cross::device::instance()->write(0, offset, val);
 }
 
-}  // namespace cross
+} }  // namespace cross::registers
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -45,8 +45,7 @@ void context::write_bar0(const command& cmd) {
             bar1_table_->refresh(this, cmd.value);
             // TODO(Yusuke Suzuki)
             // This value should not be set by device models
-            registers_accessor regs;
-            regs.write32(0x1704, cmd.value);
+            registers::write32(0x1704, cmd.value);
             return;
         }
     case 0x001714: {
@@ -54,14 +53,74 @@ void context::write_bar0(const command& cmd) {
             bar3_table_->refresh(this, cmd.value);
             return;
         }
+    case 0x002254: {
+            // POLL_AREA
+            poll_area_ = bit_mask<28, uint64_t>(cmd.value) << 12;
+            reg_poll_ = cmd.value;
+            registers::write32(0x2254, reg_poll_);
+            return;
+        }
+    case 0x002270: {
+            // playlist
+            reg_playlist_ = cmd.value;
+            return;
+        }
+    case 0x002274: {
+            // playlist update
+            reg_playlist_update_ = cmd.value;
+            const uint64_t addr = bit_mask<28, uint64_t>(reg_playlist_) << 12;
+            const uint32_t count = bit_mask<8, uint32_t>(reg_playlist_update_);
+            fifo_playlist_update(addr, count);
+            registers::write32(0x2270, reg_playlist_);
+            registers::write32(0x2274, reg_playlist_update_);
+            return;
+        }
+    case 0x002634: {
+            // channel kill
+            if (cmd.value >= CROSS_DOMAIN_CHANNELS) {
+                return;
+            }
+            const uint32_t phys = get_phys_channel_id(cmd.value);
+            registers::write32(cmd.offset, phys);
+            reg_channel_kill_ = cmd.value;
+            return;
+        }
     }
 
     // PRAMIN / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        pramin_accessor pramin;
-        pramin.write32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000), cmd.value);
+        pramin::write32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000), cmd.value);
         return;
     }
+
+    // PFIFO
+    if (0x002000 <= cmd.offset && cmd.offset <= 0x004000) {
+        // see pscnv/nvc0_fifo.c
+        // 0x003000 + id * 8
+        if ((cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
+            // channel status access
+            // we should shift access target by guest VM
+            const uint32_t virt = (cmd.offset - 0x003000) / 0x8;
+            if (virt >= CROSS_DOMAIN_CHANNELS) {
+                // these channels cannot be used
+                if (virt & 0x4) {
+                    // status
+                } else {
+                    // others
+                }
+                // FIXME(Yusuke Suzuki)
+                // write better value
+                return;
+            }
+            const uint32_t phys = get_phys_channel_id(virt);
+            const uint32_t adjusted = (cmd.offset - virt * 8) + (phys * 8);
+            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
+            registers::write32(adjusted, cmd.value);
+            return;
+        }
+    }
+
+    registers::write32(cmd.offset, cmd.value);
 }
 
 void context::read_bar0(const command& cmd) {
@@ -77,14 +136,60 @@ void context::read_bar0(const command& cmd) {
     case 0x001714:
         buffer()->value = bar3_table_->channel_address();
         return;
+
+    case 0x002254:
+        buffer()->value = reg_poll_;
+        return;
+
+    case 0x002270:
+        buffer()->value = reg_playlist_;
+        return;
+
+    case 0x002274:
+        // buffer()->value = reg_playlist_update_;
+        // return;
+        break;
+
+    case 0x002634:
+        // channel kill
+        buffer()->value = reg_channel_kill_;
+        return;
     }
 
     // PRAMIN / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        pramin_accessor pramin;
-        buffer()->value = pramin.read32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000));
+        buffer()->value = pramin::read32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000));
         return;
     }
+
+    // PFIFO
+    if (0x002000 <= cmd.offset && cmd.offset <= 0x004000) {
+        // see pscnv/nvc0_fifo.c
+        // 0x003000 + id * 8
+        if ((cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
+            // channel status access
+            // we should shift access target by guest VM
+            const uint32_t virt = (cmd.offset - 0x003000) / 0x8;
+            if (virt >= CROSS_DOMAIN_CHANNELS) {
+                // these channels cannot be used
+                if (virt & 0x4) {
+                    // status
+                } else {
+                    // others
+                }
+                // FIXME(Yusuke Suzuki)
+                // write better value
+                return;
+            }
+            const uint32_t phys = get_phys_channel_id(virt);
+            const uint32_t adjusted = (cmd.offset - virt * 8) + (phys * 8);
+            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
+            buffer()->value = registers::read32(adjusted);
+            return;
+        }
+    }
+
+    buffer()->value = registers::read32(cmd.offset);
 }
 
 }  // namespace cross

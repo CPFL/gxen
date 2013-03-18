@@ -45,45 +45,24 @@ static inline void vm_write(nvc0_state_t* state, void* real, void* virt, target_
 
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
-    uint32_t first = 0xFFFFFFFF;
-    if (!ctx->poll()->in_range(offset)) {
-        context* ctx = context::extract(state);
-        const cross::command cmd = {
-            cross::command::TYPE_READ,
-            0,
-            offset,
-            cross::command::BAR1
-        };
-        return ctx->send(cmd).value;
-    }
-    const uint32_t second = vm_read(
-            state,
-            state->bar[1].real,
-            state->bar[1].space,
-            offset,
-            "BAR1");
-    return second;
+    const cross::command cmd = {
+        cross::command::TYPE_READ,
+        0,
+        offset,
+        cross::command::BAR1
+    };
+    return ctx->send(cmd).value;
 }
 
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
-    if (!ctx->poll()->in_range(offset)) {
-        const cross::command cmd = {
-            cross::command::TYPE_WRITE,
-            value,
-            offset,
-            cross::command::BAR1
-        };
-        ctx->send(cmd);
-        return;
-    }
-    vm_write(
-            state,
-            state->bar[1].real,
-            state->bar[1].space,
-            offset,
-            value,
-            "BAR1");
+    const cross::command cmd = {
+        cross::command::TYPE_WRITE,
+        value,
+        offset,
+        cross::command::BAR1
+    };
+    ctx->send(cmd);
 }
 
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
