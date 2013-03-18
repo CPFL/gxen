@@ -28,6 +28,8 @@
 #include "cross.h"
 #include "cross_context.h"
 #include "cross_registers.h"
+#include "cross_bit_mask.h"
+#include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
 
@@ -35,11 +37,8 @@ void context::write_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700: {
             // PRAMIN
-            // TODO(Yusuke Suzuki)
-            // This value should not be set by device models
-            registers_accessor regs;
-            regs.write32(0x1700, cmd.value);
-            break;
+            reg_pramin_ = cmd.value;
+            return;
         }
     case 0x001704: {
             // BAR1 VM
@@ -48,18 +47,43 @@ void context::write_bar0(const command& cmd) {
             // This value should not be set by device models
             registers_accessor regs;
             regs.write32(0x1704, cmd.value);
-            break;
+            return;
         }
     case 0x001714: {
             // BAR3 VM
             bar3_table_->refresh(this, cmd.value);
-            break;
+            return;
         }
+    }
+
+    // PRAMIN / PMEM
+    if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
+        pramin_accessor pramin;
+        pramin.write32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000), cmd.value);
+        return;
     }
 }
 
 void context::read_bar0(const command& cmd) {
     switch (cmd.offset) {
+    case 0x001700:
+        buffer()->value = reg_pramin_;
+        return;
+
+    case 0x001704:
+        buffer()->value = bar1_table_->channel_address();
+        return;
+
+    case 0x001714:
+        buffer()->value = bar3_table_->channel_address();
+        return;
+    }
+
+    // PRAMIN / PMEM
+    if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
+        pramin_accessor pramin;
+        buffer()->value = pramin.read32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000));
+        return;
     }
 }
 

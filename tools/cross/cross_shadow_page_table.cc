@@ -32,6 +32,7 @@ namespace cross {
 shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
+    , channel_address_(0)
     , channel_id_(channel_id) {
 }
 
@@ -39,6 +40,7 @@ bool shadow_page_table::refresh(context* ctx, uint32_t value) {
     // construct shadow page table from real data
     pramin_accessor pramin;
 
+    channel_address_ = value;
     const uint64_t ramin = static_cast<uint64_t>(bit_mask<30>(value)) << 12;
 
     page_descriptor descriptor;

@@ -30,6 +30,9 @@ class context : public session<context> {
     uint32_t id_;  // virtualized GPU id
     boost::scoped_ptr<shadow_page_table> bar1_table_;
     boost::scoped_ptr<shadow_page_table> bar3_table_;
+
+    // register value stores
+    uint32_t reg_pramin_;
 };
 
 }  // namespace cross

@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include "nvc0_inttypes.h"
 #include "nvc0_mmio.h"
-#include "nvc0_pramin.h"
 #include "nvc0_bit_mask.h"
 #include "nvc0_context.h"
 #include "nvc0_tlb_flush.h"
