@@ -49,16 +49,14 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     uint32_t first = 0xFFFFFFFF;
     const uint64_t gphys = ctx->bar1_table()->resolve(offset);
     if (!ctx->poll()->in_range(offset)) {
-        if (gphys != UINT64_MAX) {
-            // resolved
-            remapping::page_entry entry;
-            if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-                // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
-            }
-            pramin_accessor pramin(ctx);
-            first = pramin.read32(gphys);
-        }
-        return first;
+        context* ctx = context::extract(state);
+        const cross::command cmd = {
+            cross::command::TYPE_READ,
+            0,
+            offset,
+            cross::command::BAR1
+        };
+        return ctx->send(cmd).value;
     }
     const uint32_t second = vm_read(
             state,
@@ -75,17 +73,14 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
     if (!ctx->poll()->in_range(offset)) {
-        const uint64_t gphys = ctx->bar1_table()->resolve(offset);
-        if (gphys != UINT64_MAX) {
-            // resolved
-            remapping::page_entry entry;
-            if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-                // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
-            }
-            pramin_accessor pramin(ctx);
-            pramin.write32(gphys, value);
-            return;
-        }
+        const cross::command cmd = {
+            cross::command::TYPE_WRITE,
+            value,
+            offset,
+            cross::command::BAR1
+        };
+        ctx->send(cmd);
+        return;
     }
     vm_write(
             state,

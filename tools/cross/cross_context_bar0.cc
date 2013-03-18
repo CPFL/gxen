@@ -27,12 +27,18 @@
 #include <unistd.h>
 #include "cross.h"
 #include "cross_context.h"
+#include "cross_registers.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
 
 void context::write_bar0(const command& cmd) {
-    std::cout << "BAR0!" << std::endl;
     switch (cmd.offset) {
+    case 0x001700: {
+            // PRAMIN
+            registers_accessor regs;
+            regs.write32(0x1700, cmd.value);
+            break;
+        }
     case 0x001704: {
             // BAR1 VM
             bar1_table_->refresh(this, cmd.value);
