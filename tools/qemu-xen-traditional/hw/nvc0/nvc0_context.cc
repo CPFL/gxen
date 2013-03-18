@@ -32,7 +32,6 @@ namespace nvc0 {
 context::context(nvc0_state_t* state, uint64_t memory_size)
     : state_(state)
     , tlb_()
-    , poll_()
     , remapping_(memory_size)
     , pramin_()
     , io_service_()

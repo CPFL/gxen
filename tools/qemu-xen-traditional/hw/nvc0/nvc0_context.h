@@ -6,7 +6,6 @@
 #include "nvc0.h"
 #include "nvc0_remapping.h"
 #include "nvc0_tlb_flush.h"
-#include "nvc0_poll_area.h"
 #include "cross.h"
 namespace nvc0 {
 
@@ -16,7 +15,6 @@ class context {
     nvc0_state_t* state() const { return state_; }
     nvc0::remapping::table* remapping() { return &remapping_; }
     tlb_flush* tlb() { return &tlb_; }
-    poll_area* poll() { return &poll_; }
     uint64_t pramin() const { return pramin_; }
     void set_pramin(uint64_t pramin) { pramin_ = pramin; }
     cross::command send(const cross::command& cmd);
@@ -27,7 +25,6 @@ class context {
     nvc0_state_t* state_;
     nvc0::remapping::table remapping_;
     tlb_flush tlb_;
-    poll_area poll_;
     uint64_t pramin_;  // 16bit shifted
 
     // ASIO
