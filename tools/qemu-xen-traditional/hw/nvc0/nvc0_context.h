@@ -5,7 +5,6 @@
 #include <boost/thread.hpp>
 #include "nvc0.h"
 #include "nvc0_remapping.h"
-#include "nvc0_tlb_flush.h"
 #include "cross.h"
 namespace nvc0 {
 
@@ -14,7 +13,6 @@ class context {
     explicit context(nvc0_state_t* state, uint64_t memory_size);
     nvc0_state_t* state() const { return state_; }
     nvc0::remapping::table* remapping() { return &remapping_; }
-    tlb_flush* tlb() { return &tlb_; }
     uint64_t pramin() const { return pramin_; }
     void set_pramin(uint64_t pramin) { pramin_ = pramin; }
     cross::command send(const cross::command& cmd);
@@ -24,7 +22,6 @@ class context {
  private:
     nvc0_state_t* state_;
     nvc0::remapping::table remapping_;
-    tlb_flush tlb_;
     uint64_t pramin_;  // 16bit shifted
 
     // ASIO

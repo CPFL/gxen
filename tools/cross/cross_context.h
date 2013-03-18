@@ -27,6 +27,7 @@ class context : public session<context> {
 
  private:
     void fifo_playlist_update(uint64_t address, uint32_t count);
+    void flush_tlb(uint32_t vspace, uint32_t trigger);
     uint32_t get_phys_channel_id(uint32_t virt) {
         return id_ * 64 + virt;
     }
@@ -49,6 +50,8 @@ class context : public session<context> {
     uint32_t reg_channel_kill_;
     uint32_t reg_playlist_;
     uint32_t reg_playlist_update_;
+    uint32_t reg_tlb_vspace_;
+    uint32_t reg_tlb_trigger_;
 };
 
 }  // namespace cross
