@@ -6,6 +6,7 @@
 namespace cross {
 
 class shadow_page_table;
+class poll_area;
 
 class context : public session<context> {
  public:
