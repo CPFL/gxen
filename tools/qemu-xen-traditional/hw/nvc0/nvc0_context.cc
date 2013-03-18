@@ -58,10 +58,10 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
 cross::command context::send(const cross::command& cmd) {
     boost::mutex::scoped_lock lock(socket_mutex_);
     cross::command result = {
-        0,
-        0,
-        0,
-        0
+        0xdeadface,
+        0xdeadface,
+        0xdeadface,
+        0xdeadface
     };
     while (true) {
         boost::system::error_code error;

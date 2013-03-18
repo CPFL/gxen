@@ -53,7 +53,9 @@ void context::read_bar3(const command& cmd) {
 //            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
 //        }
         pramin_accessor pramin;
-        buffer()->value = pramin.read32(gphys);
+        const uint32_t ret = pramin.read32(gphys);
+        buffer()->value = ret;
+        printf("VM BAR3 0x%" PRIX32 "(0x%" PRIX64 "): 0x%" PRIX32 "\n", cmd.offset, gphys, ret);
         return;
     }
 
