@@ -32,7 +32,6 @@ namespace nvc0 {
 context::context(nvc0_state_t* state, uint64_t memory_size)
     : state_(state)
     , bar1_table_(0x10001)
-    , bar3_table_(0x10003)
     , barrier_()
     , tlb_()
     , poll_()

@@ -51,11 +51,6 @@ void tlb_flush::trigger(context* ctx, uint32_t val) {
         // BAR1
         ctx->bar1_table()->refresh_page_directories(ctx, page_directory);
     }
-
-    if (ctx->bar3_table()->page_directory_address() == page_directory) {
-        // BAR3
-        ctx->bar3_table()->refresh_page_directories(ctx, page_directory);
-    }
 }
 
 }  // namespace nvc0
