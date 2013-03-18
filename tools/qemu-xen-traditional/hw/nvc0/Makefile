@@ -15,7 +15,6 @@ OBJS += nvc0_vm.o
 OBJS += nvc0_pramin.o
 OBJS += nvc0_fifo.o
 OBJS += nvc0_context.o
-OBJS += nvc0_mmio_barrier.o
 OBJS += nvc0_remapping.o
 OBJS += nvc0_tlb_flush.o
 OBJS += nvc0_poll_area.o
