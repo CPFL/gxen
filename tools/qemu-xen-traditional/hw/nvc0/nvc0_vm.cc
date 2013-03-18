@@ -29,7 +29,6 @@
 #include "nvc0_mmio.h"
 #include "nvc0_context.h"
 #include "nvc0_remapping.h"
-#include "nvc0_pramin.h"
 namespace nvc0 {
 
 // from is only used for debug...

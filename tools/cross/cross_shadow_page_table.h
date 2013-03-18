@@ -165,6 +165,7 @@ class shadow_page_table {
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
     uint32_t page_directory_size() const { return round_up(size(), kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE; }
+    uint32_t channel_address() const { return channel_address_; }
     uint32_t channel_id() const { return channel_id_; }
     uint64_t resolve(uint64_t virtual_address);
     uint64_t page_directory_address() const { return page_directory_address_; }
@@ -184,6 +185,7 @@ class shadow_page_table {
         uint64_t size_ : 40;
     };
     uint64_t page_directory_address_;
+    uint32_t channel_address_;
     uint32_t channel_id_;
 };
 

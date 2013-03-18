@@ -236,8 +236,15 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         goto end;
     }
 
+    // PRAMIN
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        ret = nvc0::pramin_read32(ctx, (ctx->pramin() << 16) + nvc0::bit_mask<16>(offset - 0x700000));
+        const cross::command cmd = {
+            cross::command::TYPE_READ,
+            0xdeadface,
+            offset,
+            cross::command::BAR0
+        };
+        ret = ctx->send(cmd).value;
         goto end;
     }
 
@@ -385,7 +392,13 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     // PRAMIN
     if (0x700000 <= offset && offset <= 0x7fffff) {
-        nvc0::pramin_write32(ctx, (ctx->pramin() << 16) + nvc0::bit_mask<16>(offset - 0x700000), val);
+        const cross::command cmd = {
+            cross::command::TYPE_WRITE,
+            val,
+            offset,
+            cross::command::BAR0
+        };
+        ctx->send(cmd);
         return;
     }
 

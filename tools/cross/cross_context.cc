@@ -40,7 +40,8 @@ context::context(boost::asio::io_service& io_service)
     , accepted_(false)
     , id_()
     , bar1_table_(new shadow_page_table(-1))
-    , bar3_table_(new shadow_page_table(-3)) {
+    , bar3_table_(new shadow_page_table(-3))
+    , reg_pramin_(0) {
 }
 
 context::~context() {
