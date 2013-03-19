@@ -28,6 +28,7 @@
 #include "cross.h"
 #include "cross_context.h"
 #include "cross_registers.h"
+#include "cross_barrier.h"
 #include "cross_bit_mask.h"
 #include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
@@ -42,15 +43,20 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x001704: {
             // BAR1 VM
-            bar1_table_->refresh(this, cmd.value);
+            barrier()->unmap(bar1_table()->channel_address());
+            bar1_table()->refresh(this, cmd.value);
             // TODO(Yusuke Suzuki)
             // This value should not be set by device models
             registers::write32(0x1704, cmd.value);
+            // channel address barrier
+            barrier()->map(bar1_table()->channel_address());
             return;
         }
     case 0x001714: {
             // BAR3 VM
-            bar3_table_->refresh(this, cmd.value);
+            barrier()->unmap(bar3_table()->channel_address());
+            bar3_table()->refresh(this, cmd.value);
+            barrier()->map(bar3_table()->channel_address());
             return;
         }
     case 0x002254: {
@@ -108,7 +114,13 @@ void context::write_bar0(const command& cmd) {
 
     // PRAMIN / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        pramin::write32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000), cmd.value);
+        const uint64_t addr = (reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000);
+        barrier::page_entry* entry = NULL;
+        if (barrier()->lookup(addr, &entry, false)) {
+            // found
+            write_barrier(addr, cmd.value);
+        }
+        pramin::write32(addr, cmd.value);
         return;
     }
 
@@ -149,11 +161,11 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x001704:
-        buffer()->value = bar1_table_->channel_address();
+        buffer()->value = bar1_table()->channel_address();
         return;
 
     case 0x001714:
-        buffer()->value = bar3_table_->channel_address();
+        buffer()->value = bar3_table()->channel_address();
         return;
 
     case 0x002254:
@@ -197,7 +209,13 @@ void context::read_bar0(const command& cmd) {
 
     // PRAMIN / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        buffer()->value = pramin::read32((reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000));
+        const uint64_t addr = (reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000);
+        barrier::page_entry* entry = NULL;
+        if (barrier()->lookup(addr, &entry, false)) {
+            // found
+            read_barrier(addr);
+        }
+        buffer()->value = pramin::read32(addr);
         return;
     }
 
