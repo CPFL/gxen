@@ -27,16 +27,17 @@
 #include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
 #include "cross_channel.h"
+#include "cross_barrier.h"
 namespace cross {
 
 void context::write_bar3(const command& cmd) {
     const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
-        // resolved
-//        remapping::page_entry entry;
-//        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-//            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
-//        }
+        barrier::page_entry* entry = NULL;
+        if (barrier()->lookup(gphys, &entry, false)) {
+            // found
+            read_barrier(gphys);
+        }
         pramin::accessor pramin;
         pramin.write32(gphys, cmd.value);
         return;
@@ -47,11 +48,12 @@ void context::write_bar3(const command& cmd) {
 void context::read_bar3(const command& cmd) {
     const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
-        // resolved
-//        remapping::page_entry entry;
-//        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-//            // NVC0_PRINTF("VM BAR3 handling 0x%" PRIX64 " access\n", gphys);
-//        }
+        barrier::page_entry* entry = NULL;
+        if (barrier()->lookup(gphys, &entry, false)) {
+            // found
+            read_barrier(gphys);
+        }
+
         pramin::accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
         buffer()->value = ret;
