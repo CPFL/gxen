@@ -36,7 +36,7 @@ void context::write_bar1(const command& cmd) {
         return;
     }
 
-    const uint64_t gphys = bar1_table()->resolve(cmd.offset);
+    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
         // resolved
 //        remapping::page_entry entry;
@@ -58,7 +58,7 @@ void context::read_bar1(const command& cmd) {
         return;
     }
 
-    const uint64_t gphys = bar1_table()->resolve(cmd.offset);
+    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
         // resolved
 //        remapping::page_entry entry;

@@ -26,10 +26,11 @@
 #include "cross_context.h"
 #include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
+#include "cross_channel.h"
 namespace cross {
 
 void context::write_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_table()->resolve(cmd.offset);
+    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
         // resolved
 //        remapping::page_entry entry;
@@ -44,7 +45,7 @@ void context::write_bar3(const command& cmd) {
 }
 
 void context::read_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_table()->resolve(cmd.offset);
+    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
         // resolved
 //        remapping::page_entry entry;
