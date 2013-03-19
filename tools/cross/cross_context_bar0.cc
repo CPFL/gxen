@@ -209,19 +209,34 @@ void context::write_bar0(const command& cmd) {
             const uint32_t virt = (cmd.offset - 0x003000) / 0x8;
             if (virt >= CROSS_DOMAIN_CHANNELS) {
                 // these channels cannot be used
+
                 if (virt & 0x4) {
                     // status
                 } else {
-                    // others
+                    // channel ramin
                 }
+
                 // FIXME(Yusuke Suzuki)
                 // write better value
                 return;
             }
+
             const uint32_t phys = get_phys_channel_id(virt);
             const uint32_t adjusted = (cmd.offset - virt * 8) + (phys * 8);
             printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
-            registers::write32(adjusted, cmd.value);
+
+            if (virt & 0x4) {
+                // status
+                registers::write32(adjusted, cmd.value);
+            } else {
+                // channel ramin
+                // VRAM shift
+                const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
+                const uint64_t phys = get_phys_address(virt);
+                const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
+                registers::write32(adjusted, value);
+                reg_[cmd.offset] = cmd.value;
+            }
             return;
         }
     }
@@ -363,19 +378,30 @@ void context::read_bar0(const command& cmd) {
             const uint32_t virt = (cmd.offset - 0x003000) / 0x8;
             if (virt >= CROSS_DOMAIN_CHANNELS) {
                 // these channels cannot be used
+
                 if (virt & 0x4) {
                     // status
                 } else {
-                    // others
+                    // channel ramin
                 }
+
                 // FIXME(Yusuke Suzuki)
                 // write better value
                 return;
             }
+
             const uint32_t phys = get_phys_channel_id(virt);
             const uint32_t adjusted = (cmd.offset - virt * 8) + (phys * 8);
             printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
-            buffer()->value = registers::read32(adjusted);
+
+            if (virt & 0x4) {
+                // status
+                buffer()->value = registers::read32(adjusted);
+            } else {
+                // channel ramin
+                buffer()->value = reg_[cmd.offset];
+            }
+
             return;
         }
     }
