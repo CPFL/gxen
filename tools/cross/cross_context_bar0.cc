@@ -38,7 +38,7 @@ void context::write_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700: {
             // PRAMIN
-            reg_pramin_ = cmd.value;
+            reg_[cmd.offset] = cmd.value;
             return;
         }
     case 0x001704: {
@@ -191,7 +191,8 @@ void context::write_bar0(const command& cmd) {
 
     // PRAMIN / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        const uint64_t addr = (reg_pramin_ << 16) + bit_mask<16>(cmd.offset - 0x700000);
+        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
+        const uint64_t addr = base + bit_mask<16>(cmd.offset - 0x700000);
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(addr, &entry, false)) {
             // found
@@ -250,7 +251,7 @@ void context::write_bar0(const command& cmd) {
 void context::read_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700:
-        buffer()->value = reg_pramin_;
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x001704:
