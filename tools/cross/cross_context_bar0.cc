@@ -44,10 +44,16 @@ void context::write_bar0(const command& cmd) {
     case 0x001704: {
             // BAR1 VM
             barrier()->unmap(bar1_table()->channel_address());
-            bar1_table()->refresh(this, cmd.value);
+            const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
+            const uint64_t phys = get_phys_address(virt);
+            const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
+            printf("0x1704 => 0x%" PRIX32 "\n", value);
+            bar1_table()->refresh(this, value);
+
             // TODO(Yusuke Suzuki)
             // This value should not be set by device models
-            registers::write32(0x1704, cmd.value);
+            registers::write32(0x1704, value);
+
             // channel address barrier
             barrier()->map(bar1_table()->channel_address());
             return;
@@ -55,7 +61,11 @@ void context::write_bar0(const command& cmd) {
     case 0x001714: {
             // BAR3 VM
             barrier()->unmap(bar3_table()->channel_address());
-            bar3_table()->refresh(this, cmd.value);
+            const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
+            const uint64_t phys = get_phys_address(virt);
+            const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
+            printf("0x1714 => 0x%" PRIX32 "\n", value);
+            bar3_table()->refresh(this, value);
             barrier()->map(bar3_table()->channel_address());
             return;
         }

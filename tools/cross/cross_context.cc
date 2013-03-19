@@ -66,6 +66,7 @@ context::~context() {
 void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
+    id_ = 1;  // FIXME debug id
 }
 
 void context::handle(const command& cmd) {

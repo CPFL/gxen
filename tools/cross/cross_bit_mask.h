@@ -58,6 +58,11 @@ inline typename bit_mask_detail::result_type<N, CharT>::type bit_mask(CharT ch) 
     return bit_mask_detail::values<N, result_type>::lower & ch;
 }
 
+template<std::size_t N, typename CharT>
+inline typename bit_mask_detail::result_type<N, CharT>::type bit_clear(CharT ch) {
+    typedef typename bit_mask_detail::result_type<N, CharT>::type result_type;
+    return bit_mask_detail::values<N, result_type>::upper & ch;
+}
 
 }  // namespace cross
 #endif  // CROSS_BIT_MASK_H_
