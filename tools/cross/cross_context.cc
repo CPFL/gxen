@@ -43,6 +43,7 @@ context::context(boost::asio::io_service& io_service)
     , id_()
     , bar1_channel_(new channel(-1))
     , bar3_channel_(new channel(-3))
+    , channels_()
     , barrier_(new barrier::table(CROSS_2G))
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
@@ -53,6 +54,9 @@ context::context(boost::asio::io_service& io_service)
     , reg_tlb_trigger_(0) {
     barrier()->map(bar1_channel()->table()->channel_address());
     barrier()->map(bar3_channel()->table()->channel_address());
+    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
+        channels_[i].reset(new channel(i));
+    }
 }
 
 context::~context() {
