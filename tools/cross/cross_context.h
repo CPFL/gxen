@@ -1,6 +1,7 @@
 #ifndef CROSS_CONTEXT_H_
 #define CROSS_CONTEXT_H_
 #include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 #include "cross.h"
 #include "cross_session.h"
 namespace cross {
@@ -36,22 +37,25 @@ class context : public session<context> {
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     // TODO(Yusuke Suzuki)
     // channel separation
-    uint32_t get_phys_channel_id(uint32_t virt) {
+    uint32_t get_phys_channel_id(uint32_t virt) const {
         return virt;
         // return virt + id_ * 64;
     }
-    uint32_t get_virt_channel_id(uint32_t phys) {
+    uint32_t get_virt_channel_id(uint32_t phys) const {
         return phys;
         // return phys - id_ * 64;
     }
-    bool in_poll_area(uint64_t offset) {
+    bool in_poll_area(uint64_t offset) const {
         return poll_area_ <= offset && offset < poll_area_ + (128 * 0x1000);
     }
-    uint64_t get_phys_address(uint64_t virt) {
-        return virt + id_ * CROSS_2G;
+    uint64_t get_phys_address(uint64_t virt) const {
+        return virt + get_address_shift();
     }
-    uint64_t get_virt_address(uint64_t phys) {
-        return phys - id_ * CROSS_2G;
+    uint64_t get_virt_address(uint64_t phys) const {
+        return phys - get_address_shift();
+    }
+    uint64_t get_address_shift() const {
+        return id_ * CROSS_2G;
     }
 
     bool accepted_;
@@ -62,6 +66,8 @@ class context : public session<context> {
     boost::scoped_ptr<barrier::table> barrier_;
 
     uint64_t poll_area_;
+
+    boost::scoped_array<uint32_t> reg_;
 
     // register value stores
     uint32_t reg_pramin_;

@@ -64,6 +64,13 @@ inline typename bit_mask_detail::result_type<N, CharT>::type bit_clear(CharT ch)
     return bit_mask_detail::values<N, result_type>::upper & ch;
 }
 
+template<std::size_t N, typename CharT>
+inline bool bit_check(CharT ch) {
+    typedef typename bit_mask_detail::result_type<N, CharT>::type result_type;
+    result_type one = 1;
+    return (one << N) & ch;
+}
+
 }  // namespace cross
 #endif  // CROSS_BIT_MASK_H_
 /* vim: set sw=4 ts=4 et tw=80 : */
