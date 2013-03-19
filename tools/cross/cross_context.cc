@@ -31,6 +31,7 @@
 #include "cross_device.h"
 #include "cross_bit_mask.h"
 #include "cross_registers.h"
+#include "cross_barrier.h"
 #include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
@@ -42,6 +43,7 @@ context::context(boost::asio::io_service& io_service)
     , id_()
     , bar1_table_(new shadow_page_table(-1))
     , bar3_table_(new shadow_page_table(-3))
+    , barrier_(new barrier::table(CROSS_2G))
     , poll_area_(0)
     , reg_pramin_(0)
     , reg_poll_(0)
@@ -50,6 +52,8 @@ context::context(boost::asio::io_service& io_service)
     , reg_playlist_update_(0)
     , reg_tlb_vspace_(0)
     , reg_tlb_trigger_(0) {
+    barrier()->map(bar1_table_->channel_address());
+    barrier()->map(bar3_table_->channel_address());
 }
 
 context::~context() {

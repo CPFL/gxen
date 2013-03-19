@@ -1,5 +1,5 @@
 /*
- * NVIDIA cross remapping table
+ * NVIDIA cross barrier table
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -23,10 +23,10 @@
  */
 
 #include <assert.h>
-#include "cross_remapping.h"
+#include "cross_barrier.h"
 #include "cross_bit_mask.h"
 namespace cross {
-namespace remapping {
+namespace barrier {
 
 table::table(uint64_t memory_size)
     : table_()
@@ -38,68 +38,61 @@ table::table(uint64_t memory_size)
     table_.resize(directories_size);
 }
 
-bool table::map(uint64_t page_start_address, uint64_t result_start_address, bool read_only) {
-    // out of range
-    if (page_start_address >= size_) {
-        return false;
+bool table::map(uint64_t page_start_address) {
+    page_entry* entry = NULL;
+    const bool result = lookup(page_start_address, &entry, true);
+    if (entry) {
+        entry->retain();
     }
-    const uint32_t index = bit_mask<kPAGE_DIRECTORY_BITS>(page_start_address >> (kPAGE_BITS + kPAGE_DIRECTORY_BITS));
-    directory& dir = table_[index];
-    if (!dir) {
-        dir.reset(new page_directory);
-    }
-    assert(dir);
-    return dir->map(page_start_address, result_start_address, read_only);
+    return result;
 }
 
 void table::unmap(uint64_t page_start_address) {
-    // out of range
-    if (page_start_address >= size_) {
-        return;
+    page_entry* entry = NULL;
+    lookup(page_start_address, &entry, false);
+    if (entry) {
+        entry->release();
     }
-    const uint32_t index = bit_mask<kPAGE_DIRECTORY_BITS>(page_start_address >> (kPAGE_BITS + kPAGE_DIRECTORY_BITS));
-    directory& dir = table_[index];
-    if (!dir) {
-        return;
-    }
-    assert(dir);
-    return dir->unmap(page_start_address);
 }
 
-bool table::lookup(uint64_t address, page_entry* entry) const {
+bool table::lookup(uint64_t address, page_entry** entry, bool force_create) {
+    // out of range
     if (address >= size_) {
         return false;
     }
+
     const uint32_t index = bit_mask<kPAGE_DIRECTORY_BITS>(address >> (kPAGE_BITS + kPAGE_DIRECTORY_BITS));
-    const directory& dir = table_[index];
+    directory& dir = table_[index];
     if (!dir) {
-        return false;
+        if (!force_create) {
+            return false;
+        }
+
+        dir.reset(new page_directory);
     }
     assert(dir);
     return dir->lookup(address, entry);
 }
 
-bool page_directory::map(uint64_t page_start_address, uint64_t result_start_address, bool read_only) {
-    const uint32_t index = bit_mask<kPAGE_ENTRY_BITS>(page_start_address >> kPAGE_BITS);
-    page_entry& entry = entries_[index];
-    const bool result = entry.present;
-    entry.present = true;
-    entry.read_only = read_only;
-    entry.target = (result_start_address >> kPAGE_BITS);
+bool page_directory::map(uint64_t page_start_address) {
+    page_entry* entry = NULL;
+    const bool result = lookup(page_start_address, &entry);
+    entry->retain();
     return result;
 }
 
 void page_directory::unmap(uint64_t page_start_address) {
-    const uint32_t index = bit_mask<kPAGE_ENTRY_BITS>(page_start_address >> kPAGE_BITS);
-    page_entry& entry = entries_[index];
-    entry.present = false;
+    page_entry* entry = NULL;
+    if (lookup(page_start_address, &entry)) {
+        entry->release();
+    }
 }
 
-bool page_directory::lookup(uint64_t address, page_entry* entry) const {
+bool page_directory::lookup(uint64_t address, page_entry** entry) {
     const uint32_t index = bit_mask<kPAGE_ENTRY_BITS>(address >> kPAGE_BITS);
-    *entry = entries_[index];
-    return entry->present;
+    *entry = &entries_[index];
+    return (*entry)->present();
 }
 
-} }  // namespace cross::remapping
+} }  // namespace cross::barrier
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -1,5 +1,6 @@
 #ifndef CROSS_H_
 #define CROSS_H_
+#include <stdint.h>
 namespace cross {
 
 #define CROSS_ENDPOINT "/tmp/cross_endpoint"
