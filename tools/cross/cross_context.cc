@@ -52,8 +52,6 @@ context::context(boost::asio::io_service& io_service)
     , reg_channel_kill_(0)
     , reg_tlb_vspace_(0)
     , reg_tlb_trigger_(0) {
-    barrier()->map(bar1_channel()->table()->channel_address());
-    barrier()->map(bar3_channel()->table()->channel_address());
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channels_[i].reset(new channel(i));
     }
