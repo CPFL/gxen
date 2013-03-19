@@ -28,7 +28,6 @@
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 #include "nvc0_context.h"
-#include "nvc0_remapping.h"
 namespace nvc0 {
 
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {

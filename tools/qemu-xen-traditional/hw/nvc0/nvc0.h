@@ -7,7 +7,6 @@
 #include <stddef.h>
 #include "nvc0/nvreg.h"
 #include "nvc0/nouveau_reg.h"
-#include "nvc0/nvc0_static_assert.h"
 
 #ifdef __cplusplus
 extern "C" {

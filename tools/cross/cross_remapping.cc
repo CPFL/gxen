@@ -1,5 +1,5 @@
 /*
- * NVIDIA NVC0 remapping table
+ * NVIDIA cross remapping table
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -23,10 +23,9 @@
  */
 
 #include <assert.h>
-#include "nvc0.h"
-#include "nvc0_remapping.h"
-#include "nvc0_bit_mask.h"
-namespace nvc0 {
+#include "cross_remapping.h"
+#include "cross_bit_mask.h"
+namespace cross {
 namespace remapping {
 
 table::table(uint64_t memory_size)
@@ -102,5 +101,5 @@ bool page_directory::lookup(uint64_t address, page_entry* entry) const {
     return entry->present;
 }
 
-} }  // namespace nvc0::remapping
+} }  // namespace cross::remapping
 /* vim: set sw=4 ts=4 et tw=80 : */
