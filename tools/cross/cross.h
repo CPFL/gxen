@@ -7,6 +7,7 @@ namespace cross {
 #define CROSS_CHANNELS 128
 #define CROSS_DOMAIN_CHANNELS (CROSS_CHANNELS / 2)
 #define CROSS_2G 0x80000000ULL
+#define CROSS_GPC_BCAST(r) (0x418000 + (r))
 
 class command {
  public:

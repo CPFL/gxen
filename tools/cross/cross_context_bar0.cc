@@ -53,9 +53,8 @@ void context::write_bar0(const command& cmd) {
             // TODO(Yusuke Suzuki)
             // This value should not be set by device models
             registers::write32(0x1704, value);
-
-            // channel address barrier
             barrier()->map(bar1_table()->channel_address());
+            reg_[cmd.offset] = cmd.value;
             return;
         }
     case 0x001714: {
@@ -67,6 +66,7 @@ void context::write_bar0(const command& cmd) {
             printf("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_table()->refresh(this, value);
             barrier()->map(bar3_table()->channel_address());
+            reg_[cmd.offset] = cmd.value;
             return;
         }
     case 0x002254: {
@@ -120,6 +120,43 @@ void context::write_bar0(const command& cmd) {
     case 0x121c75:
         // 2GB
         return;
+
+    case 0x409500:
+        // WRCMD_DATA
+        reg_[cmd.offset] = cmd.value;
+        if (bit_check<31>(cmd.value)) {
+            // VRAM address
+            const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
+            const uint64_t phys = get_phys_address(virt);
+            const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
+            registers::write32(0x409500, value);
+            return;
+        }
+        break;
+
+    case 0x409b00:
+        // graph IRQ channel instance
+        return;
+
+    case 0x4188b4: {
+            // GPC_BCAST(0x08b4)
+            reg_[cmd.offset] = cmd.value;
+            const uint64_t virt = (static_cast<uint64_t>(cmd.value) << 8);
+            const uint64_t phys = get_phys_address(virt);
+            const uint32_t value = phys >> 8;
+            registers::write32(0x4188b4, value);
+            return;
+        }
+
+    case 0x4188b8: {
+            // GPC_BCAST(0x08b8)
+            reg_[cmd.offset] = cmd.value;
+            const uint64_t virt = (static_cast<uint64_t>(cmd.value) << 8);
+            const uint64_t phys = get_phys_address(virt);
+            const uint32_t value = phys >> 8;
+            registers::write32(0x4188b8, value);
+            return;
+        }
     }
 
     // PRAMIN / PMEM
@@ -171,11 +208,11 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x001704:
-        buffer()->value = bar1_table()->channel_address();
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x001714:
-        buffer()->value = bar3_table()->channel_address();
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x002254:
@@ -214,6 +251,28 @@ void context::read_bar0(const command& cmd) {
     case 0x121c75:
         // VRAM 2GB (mem ctrl num)
         buffer()->value = 0x2;
+        return;
+
+    case 0x409500:
+        // WRCMD_DATA
+        buffer()->value = reg_[cmd.offset];
+        return;
+
+    case 0x409b00: {
+            // graph IRQ channel instance
+            const uint32_t value = registers::read32(cmd.offset);
+            buffer()->value = value - (get_address_shift() >> 12);
+            return;
+        }
+
+    case 0x4188b4:
+        // GPC_BCAST(0x08b4)
+        buffer()->value = reg_[cmd.offset];
+        return;
+
+    case 0x4188b8:
+        // GPC_BCAST(0x08b8)
+        buffer()->value = reg_[cmd.offset];
         return;
     }
 
