@@ -206,14 +206,15 @@ void context::write_bar0(const command& cmd) {
         if ((cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
-            const uint32_t virt = (cmd.offset - 0x003000) / 0x8;
-            if (virt >= CROSS_DOMAIN_CHANNELS) {
+            const bool ramin_area = ((cmd.offset - 0x003000) % 0x8) == 0;
+            const uint32_t virt_channel_id = (cmd.offset - 0x003000) / 0x8;
+            if (virt_channel_id >= CROSS_DOMAIN_CHANNELS) {
                 // these channels cannot be used
 
-                if (virt & 0x4) {
-                    // status
-                } else {
+                if (ramin_area) {
                     // channel ramin
+                } else {
+                    // status
                 }
 
                 // FIXME(Yusuke Suzuki)
@@ -221,21 +222,21 @@ void context::write_bar0(const command& cmd) {
                 return;
             }
 
-            const uint32_t phys = get_phys_channel_id(virt);
-            const uint32_t adjusted = (cmd.offset - virt * 8) + (phys * 8);
-            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
+            const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
+            const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
+            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
-            if (virt & 0x4) {
-                // status
-                registers::write32(adjusted, cmd.value);
-            } else {
+            if (ramin_area) {
                 // channel ramin
                 // VRAM shift
+                reg_[cmd.offset] = cmd.value;
                 const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
                 const uint64_t phys = get_phys_address(virt);
                 const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-                registers::write32(adjusted, value);
-                reg_[cmd.offset] = cmd.value;
+                registers::write32(adjusted_offset, value);
+            } else {
+                // status
+                registers::write32(adjusted_offset, cmd.value);
             }
             return;
         }
@@ -375,14 +376,15 @@ void context::read_bar0(const command& cmd) {
         if ((cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
-            const uint32_t virt = (cmd.offset - 0x003000) / 0x8;
-            if (virt >= CROSS_DOMAIN_CHANNELS) {
+            const bool ramin_area = ((cmd.offset - 0x003000) % 0x8) == 0;
+            const uint32_t virt_channel_id = (cmd.offset - 0x003000) / 0x8;
+            if (virt_channel_id >= CROSS_DOMAIN_CHANNELS) {
                 // these channels cannot be used
 
-                if (virt & 0x4) {
-                    // status
-                } else {
+                if (ramin_area) {
                     // channel ramin
+                } else {
+                    // status
                 }
 
                 // FIXME(Yusuke Suzuki)
@@ -390,16 +392,16 @@ void context::read_bar0(const command& cmd) {
                 return;
             }
 
-            const uint32_t phys = get_phys_channel_id(virt);
-            const uint32_t adjusted = (cmd.offset - virt * 8) + (phys * 8);
-            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt, (uint64_t)phys);
+            const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
+            const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
+            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
-            if (virt & 0x4) {
-                // status
-                buffer()->value = registers::read32(adjusted);
-            } else {
+            if (ramin_area) {
                 // channel ramin
                 buffer()->value = reg_[cmd.offset];
+            } else {
+                // status
+                buffer()->value = registers::read32(adjusted_offset);
             }
 
             return;
