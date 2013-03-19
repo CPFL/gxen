@@ -4,11 +4,11 @@
 #include <boost/scoped_array.hpp>
 #include "cross.h"
 #include "cross_session.h"
+#include "cross_channel.h"
 namespace cross {
 namespace barrier {
 class table;
 }  // namespace barrier
-class shadow_page_table;
 class poll_area;
 
 class context : public session<context> {
@@ -25,10 +25,10 @@ class context : public session<context> {
     void read_bar3(const command& command);
     void read_barrier(uint64_t addr);
     void write_barrier(uint64_t addr, uint32_t value);
-    shadow_page_table* bar1_table() { return bar1_table_.get(); }
-    const shadow_page_table* bar1_table() const { return bar1_table_.get(); }
-    shadow_page_table* bar3_table() { return bar3_table_.get(); }
-    const shadow_page_table* bar3_table() const { return bar3_table_.get(); }
+    channel* bar1_channel() { return bar1_channel_.get(); }
+    const channel* bar1_channel() const { return bar1_channel_.get(); }
+    channel* bar3_channel() { return bar3_channel_.get(); }
+    const channel* bar3_channel() const { return bar3_channel_.get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
 
@@ -61,8 +61,8 @@ class context : public session<context> {
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    boost::scoped_ptr<shadow_page_table> bar1_table_;
-    boost::scoped_ptr<shadow_page_table> bar3_table_;
+    boost::scoped_ptr<channel> bar1_channel_;
+    boost::scoped_ptr<channel> bar3_channel_;
     boost::scoped_ptr<barrier::table> barrier_;
 
     uint64_t poll_area_;

@@ -41,8 +41,8 @@ context::context(boost::asio::io_service& io_service)
     : session(io_service)
     , accepted_(false)
     , id_()
-    , bar1_table_(new shadow_page_table(-1))
-    , bar3_table_(new shadow_page_table(-3))
+    , bar1_channel_(new channel(-1))
+    , bar3_channel_(new channel(-3))
     , barrier_(new barrier::table(CROSS_2G))
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
@@ -51,8 +51,8 @@ context::context(boost::asio::io_service& io_service)
     , reg_channel_kill_(0)
     , reg_tlb_vspace_(0)
     , reg_tlb_trigger_(0) {
-    barrier()->map(bar1_table_->channel_address());
-    barrier()->map(bar3_table_->channel_address());
+    barrier()->map(bar1_channel()->table()->channel_address());
+    barrier()->map(bar3_channel()->table()->channel_address());
 }
 
 context::~context() {
@@ -126,13 +126,13 @@ void context::fifo_playlist_update(uint64_t address, uint32_t count) {
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     const uint64_t page_directory = bit_mask<28, uint64_t>(vspace >> 4) << 12;
     // rescan page tables
-    if (bar1_table()->page_directory_address() == page_directory) {
+    if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
-        bar1_table()->refresh_page_directories(this, page_directory);
+        bar1_channel()->table()->refresh_page_directories(this, page_directory);
     }
-    if (bar3_table()->page_directory_address() == page_directory) {
+    if (bar3_channel()->table()->page_directory_address() == page_directory) {
         // BAR3
-        bar3_table()->refresh_page_directories(this, page_directory);
+        bar3_channel()->table()->refresh_page_directories(this, page_directory);
     }
     registers::accessor registers;
     registers.write32(0x100cb8, vspace);
