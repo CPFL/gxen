@@ -49,8 +49,6 @@ context::context(boost::asio::io_service& io_service)
     , reg_pramin_(0)
     , reg_poll_(0)
     , reg_channel_kill_(0)
-    , reg_playlist_(0)
-    , reg_playlist_update_(0)
     , reg_tlb_vspace_(0)
     , reg_tlb_trigger_(0) {
     barrier()->map(bar1_table_->channel_address());

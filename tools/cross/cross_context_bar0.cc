@@ -78,17 +78,19 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x002270: {
             // playlist
-            reg_playlist_ = cmd.value;
+            reg_[cmd.offset] = cmd.value;
             return;
         }
     case 0x002274: {
             // playlist update
-            reg_playlist_update_ = cmd.value;
-            const uint64_t addr = bit_mask<28, uint64_t>(reg_playlist_) << 12;
-            const uint32_t count = bit_mask<8, uint32_t>(reg_playlist_update_);
+            reg_[cmd.offset] = cmd.value;
+            const uint32_t reg_playlist = reg_[0x2270];
+            const uint32_t reg_playlist_update = cmd.value;
+            const uint64_t addr = get_phys_address(bit_mask<28, uint64_t>(reg_playlist) << 12);
+            const uint32_t count = bit_mask<8, uint32_t>(reg_playlist_update);
             fifo_playlist_update(addr, count);
-            registers::write32(0x2270, reg_playlist_);
-            registers::write32(0x2274, reg_playlist_update_);
+            registers::write32(0x2270, addr >> 12);
+            registers::write32(0x2274, reg_playlist_update);
             return;
         }
     case 0x002634: {
@@ -264,12 +266,10 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x002270:
-        buffer()->value = reg_playlist_;
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x002274:
-        // buffer()->value = reg_playlist_update_;
-        // return;
         break;
 
     case 0x002634:

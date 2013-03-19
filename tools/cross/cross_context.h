@@ -73,8 +73,6 @@ class context : public session<context> {
     uint32_t reg_pramin_;
     uint32_t reg_poll_;
     uint32_t reg_channel_kill_;
-    uint32_t reg_playlist_;
-    uint32_t reg_playlist_update_;
     uint32_t reg_tlb_vspace_;
     uint32_t reg_tlb_trigger_;
 };
