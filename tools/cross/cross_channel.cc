@@ -22,16 +22,30 @@
  * THE SOFTWARE.
  */
 #include "cross.h"
+#include "cross_context.h"
 #include "cross_channel.h"
 #include "cross_shadow_page_table.h"
+#include "cross_barrier.h"
 namespace cross {
 
 channel::channel(int id)
     : id_(id)
+    , enabled_(false)
+    , ramin_address_()
     , table_(new shadow_page_table(id)) {
 }
 
 channel::~channel() {
+}
+
+void channel::refresh(context* ctx, uint64_t addr) {
+    if (enabled()) {
+        ctx->barrier()->unmap(ramin_address());
+    }
+    enabled_ = true;
+    ramin_address_ = addr;
+    table()->refresh(ctx, addr);
+    ctx->barrier()->map(ramin_address());
 }
 
 }  // namespace cross

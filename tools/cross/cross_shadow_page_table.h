@@ -160,13 +160,12 @@ class shadow_page_table {
     typedef std::vector<shadow_page_directory> shadow_page_directories;
 
     shadow_page_table(uint32_t channel_id);
-    bool refresh(context* ctx, uint32_t value);
+    bool refresh(context* ctx, uint64_t addr);
     bool refresh_page_directories(context* ctx, uint64_t address);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
     uint32_t page_directory_size() const { return round_up(size(), kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE; }
-    uint32_t channel_address() const { return channel_address_; }
     uint32_t channel_id() const { return channel_id_; }
     uint64_t resolve(uint64_t virtual_address);
     uint64_t page_directory_address() const { return page_directory_address_; }
@@ -186,7 +185,6 @@ class shadow_page_table {
         uint64_t size_ : 40;
     };
     uint64_t page_directory_address_;
-    uint32_t channel_address_;
     uint32_t channel_id_;
 };
 
