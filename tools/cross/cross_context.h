@@ -34,11 +34,15 @@ class context : public session<context> {
  private:
     void fifo_playlist_update(uint64_t address, uint32_t count);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
+    // TODO(Yusuke Suzuki)
+    // channel separation
     uint32_t get_phys_channel_id(uint32_t virt) {
-        return virt + id_ * 64;
+        return virt;
+        // return virt + id_ * 64;
     }
     uint32_t get_virt_channel_id(uint32_t phys) {
-        return phys - id_ * 64;
+        return phys;
+        // return phys - id_ * 64;
     }
     bool in_poll_area(uint64_t offset) {
         return poll_area_ <= offset && offset < poll_area_ + (128 * 0x1000);
