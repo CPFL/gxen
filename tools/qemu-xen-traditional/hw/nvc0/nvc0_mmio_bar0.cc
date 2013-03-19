@@ -104,20 +104,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     switch (offset) {
-    case 0x00121c75:  // mem ctrl num
-        ret = 0x2;  // 2GB
-        goto end;
-
-    // see nvc0_vram.c
-    // Part struct starts with 0x11020c (PBFBs)
-    case 0x022438:  // parts
-        // Quadro6000 has 6 parts
-        // return 0x00000006;
-        // NVC0_PRINTF("MMIO bar0 parts 0x%X : 0x%X\n", addr, 1);
-        // return 0x00000001;  // Expose only 1 parts by Quadro6000 device model
-        ret = 0x2;  // 2GB
-        goto end;
-
     // PTIMER
     // Crystal freq is 27000KHz
     // We use CPU clock value instead of crystal of NVIDIA
