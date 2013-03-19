@@ -117,6 +117,26 @@ void context::write_bar0(const command& cmd) {
         flush_tlb(reg_tlb_vspace_, reg_tlb_trigger_);
         return;
 
+    case 0x104050:
+        // PCOPY 0x104000 + 0x050
+        // TODO(Yusuke Suzuki) needs to limit engine
+        break;
+
+    case 0x104054:
+        // PCOPY 0x104000 + 0x054
+        // TODO(Yusuke Suzuki) needs to limit engine
+        break;
+
+    case 0x105050:
+        // PCOPY 0x105000 + 0x050
+        // TODO(Yusuke Suzuki) needs to limit engine
+        break;
+
+    case 0x105054:
+        // PCOPY 0x105000 + 0x054
+        // TODO(Yusuke Suzuki) needs to limit engine
+        break;
+
     case 0x121c75:
         // 2GB
         return;
@@ -255,6 +275,38 @@ void context::read_bar0(const command& cmd) {
         // TLB flush trigger
         buffer()->value = reg_tlb_trigger_;
         return;
+
+    case 0x104050: {
+            // PCOPY 0x104000 + 0x050
+            // TODO(Yusuke Suzuki) needs to limit engine
+            const uint32_t value = registers::read32(cmd.offset);
+            buffer()->value = value - (get_address_shift() >> 12);
+            return;
+        }
+
+    case 0x104054: {
+            // PCOPY 0x104000 + 0x054
+            // TODO(Yusuke Suzuki) needs to limit engine
+            const uint32_t value = registers::read32(cmd.offset);
+            buffer()->value = value - (get_address_shift() >> 12);
+            return;
+        }
+
+    case 0x105050: {
+            // PCOPY 0x105000 + 0x050
+            // TODO(Yusuke Suzuki) needs to limit engine
+            const uint32_t value = registers::read32(cmd.offset);
+            buffer()->value = value - (get_address_shift() >> 12);
+            return;
+        }
+
+    case 0x105054: {
+            // PCOPY 0x105000 + 0x050
+            // TODO(Yusuke Suzuki) needs to limit engine
+            const uint32_t value = registers::read32(cmd.offset);
+            buffer()->value = value - (get_address_shift() >> 12);
+            return;
+        }
 
     case 0x121c75:
         // VRAM 2GB (mem ctrl num)
