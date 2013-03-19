@@ -127,7 +127,7 @@ class shadow_page_directory {
  public:
     typedef std::vector<shadow_page_entry> shadow_page_entries;
 
-    void refresh(context* ctx, uint32_t channel_id, pramin::accessor* pramin, uint64_t page_directory_address);
+    void refresh(context* ctx, pramin::accessor* pramin, uint64_t page_directory_address);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
     uint64_t resolve(uint64_t offset);
