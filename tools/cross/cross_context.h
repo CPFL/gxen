@@ -1,7 +1,8 @@
 #ifndef CROSS_CONTEXT_H_
 #define CROSS_CONTEXT_H_
-#include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/checked_delete.hpp>
+#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_channel.h"
@@ -10,6 +11,11 @@ namespace barrier {
 class table;
 }  // namespace barrier
 class poll_area;
+
+template<class T>
+struct unique_ptr {
+  typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
+};
 
 class context : public session<context> {
  public:
@@ -61,9 +67,10 @@ class context : public session<context> {
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    boost::scoped_ptr<channel> bar1_channel_;
-    boost::scoped_ptr<channel> bar3_channel_;
-    boost::scoped_ptr<barrier::table> barrier_;
+    unique_ptr<channel>::type bar1_channel_;
+    unique_ptr<channel>::type bar3_channel_;
+    boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
+    unique_ptr<barrier::table>::type barrier_;
 
     uint64_t poll_area_;
 
