@@ -129,7 +129,7 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-            registers::write32(0x409500, value);
+            registers::write32(cmd.offset, value);
             return;
         }
         break;
@@ -144,7 +144,7 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (static_cast<uint64_t>(cmd.value) << 8);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = phys >> 8;
-            registers::write32(0x4188b4, value);
+            registers::write32(cmd.offset, value);
             return;
         }
 
@@ -154,7 +154,15 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (static_cast<uint64_t>(cmd.value) << 8);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = phys >> 8;
-            registers::write32(0x4188b8, value);
+            registers::write32(cmd.offset, value);
+            return;
+        }
+
+    case 0x610010: {
+            // NV50 PDISPLAY OBJECTS
+            reg_[cmd.offset] = cmd.value;
+            const uint32_t value = cmd.value + (get_address_shift() >> 8);
+            registers::write32(cmd.offset, value);
             return;
         }
     }
@@ -272,6 +280,11 @@ void context::read_bar0(const command& cmd) {
 
     case 0x4188b8:
         // GPC_BCAST(0x08b8)
+        buffer()->value = reg_[cmd.offset];
+        return;
+
+    case 0x610010:
+        // NV50 PDISPLAY OBJECTS
         buffer()->value = reg_[cmd.offset];
         return;
     }
