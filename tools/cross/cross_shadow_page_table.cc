@@ -69,14 +69,14 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     std::size_t i = 0;
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
-        it->refresh(ctx, channel_id(), &pramin, page_directory_address() + 0x8 * i);
+        it->refresh(ctx, &pramin, page_directory_address() + 0x8 * i);
     }
 
     // max page directories size is page
     // ctx->remapping()->map(page_directory_address(), 0, true);
 
+    printf("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
     dump();
-    printf("scan page table done 0x%" PRIX64 "\n", page_directory_address());
     return false;
 }
 
@@ -142,7 +142,7 @@ void shadow_page_table::dump() const {
     }
 }
 
-void shadow_page_directory::refresh(context* ctx, uint32_t channel_id, pramin::accessor* pramin, uint64_t page_directory_address) {
+void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint64_t page_directory_address) {
     struct page_directory virt = { { } };
     virt.word0 = pramin->read32(page_directory_address);
     virt.word1 = pramin->read32(page_directory_address + 0x4);
