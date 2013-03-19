@@ -136,6 +136,13 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR3
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
     }
+    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
+        if (channels(i)->enabled()) {
+            if (channels(i)->table()->page_directory_address() == page_directory) {
+                channels(i)->table()->refresh_page_directories(this, page_directory);
+            }
+        }
+    }
     registers::accessor registers;
     registers.write32(0x100cb8, vspace);
     registers.write32(0x100cbc, trigger);

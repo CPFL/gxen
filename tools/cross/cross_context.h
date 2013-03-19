@@ -35,6 +35,8 @@ class context : public session<context> {
     const channel* bar1_channel() const { return bar1_channel_.get(); }
     channel* bar3_channel() { return bar3_channel_.get(); }
     const channel* bar3_channel() const { return bar3_channel_.get(); }
+    channel* channels(int id) { return channels_[id].get(); }
+    const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
 
