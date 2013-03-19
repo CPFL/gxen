@@ -24,17 +24,40 @@
 #include "cross_context.h"
 #include "cross_barrier.h"
 #include "cross_inttypes.h"
+#include "cross_bit_mask.h"
 #include <cstdio>
 namespace cross {
 
 void context::write_barrier(uint64_t addr, uint32_t value) {
-    const uint64_t page = addr >> barrier::kPAGE_BITS;
+    const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
+    // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
     std::printf("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, value);
+//    switch (offset) {
+//    case 0x0200: {
+//            // lower 32bit
+//            pramin::accessor pramin;
+//            pramin.write32(addr, value + bit_mask<32>(get_address_shift()));
+//            break;
+//        }
+//    case 0x0204:  // upper 32bit
+//        break;
+//    }
 }
 
 void context::read_barrier(uint64_t addr) {
-    const uint64_t page = addr >> barrier::kPAGE_BITS;
-    std::printf("read barrier 0x%" PRIX64 " : page 0x%" PRIX64 "\n", addr, page);
+    const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
+    // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
+    std::printf("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 "\n", addr, page);
+//    switch (offset) {
+//    case 0x0200: {
+//            // lower 32bit
+//            pramin::accessor pramin;
+//            pramin.read32(addr, value + bit_mask<32>(get_address_shift()));
+//            break;
+//        }
+//    case 0x0204:  // upper 32bit
+//        break;
+//    }
 }
 
 }  // namespace cross
