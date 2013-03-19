@@ -86,6 +86,10 @@ void context::write_bar0(const command& cmd) {
             return;
         }
 
+    case 0x022438:
+        // 2GB
+        return;
+
     case 0x100cb8:
         // TLB vspace
         reg_tlb_vspace_ = cmd.value;
@@ -95,6 +99,10 @@ void context::write_bar0(const command& cmd) {
         // TLB flush trigger
         reg_tlb_trigger_ = cmd.value;
         flush_tlb(reg_tlb_vspace_, reg_tlb_trigger_);
+        return;
+
+    case 0x121c75:
+        // 2GB
         return;
     }
 
@@ -165,13 +173,25 @@ void context::read_bar0(const command& cmd) {
         // channel kill
         buffer()->value = reg_channel_kill_;
         return;
+
+    case 0x022438:
+        // VRAM 2GB
+        buffer()->value = 0x2;
+        return;
+
     case 0x100cb8:
         // TLB vspace
         buffer()->value = reg_tlb_vspace_;
         return;
+
     case 0x100cbc:
         // TLB flush trigger
         buffer()->value = reg_tlb_trigger_;
+        return;
+
+    case 0x121c75:
+        // VRAM 2GB (mem ctrl num)
+        buffer()->value = 0x2;
         return;
     }
 
