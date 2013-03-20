@@ -35,30 +35,14 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
     , channel_id_(channel_id) {
 }
 
-bool shadow_page_table::refresh(context* ctx, uint64_t ramin) {
-    // construct shadow page table from real data
-    pramin::accessor pramin;
-
-    page_descriptor descriptor;
-    descriptor.page_directory_address_low = pramin.read32(ramin + 0x200);
-    descriptor.page_directory_address_high = pramin.read32(ramin + 0x204);
-    descriptor.page_limit_low = pramin.read32(ramin + 0x208);
-    descriptor.page_limit_high = pramin.read32(ramin + 0x20c);
-
-    // exactly one page
-    // ctx->remapping()->map(ramin, 0, true);
-
-    printf("ramin 0x%" PRIX64 " page directory address 0x%" PRIX64 " and size %" PRIu64 "\n",
-           ramin, descriptor.page_directory_address, descriptor.page_limit);
-
-    const uint64_t vspace_size = descriptor.page_limit + 1;
-
+bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
+    const uint64_t vspace_size = page_limit + 1;
     size_ = vspace_size;
     if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
         return false;
     }
 
-    return refresh_page_directories(ctx, descriptor.page_directory_address);
+    return refresh_page_directories(ctx, page_directory_address);
 }
 
 bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {

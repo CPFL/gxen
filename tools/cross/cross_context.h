@@ -39,6 +39,15 @@ class context : public session<context> {
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
+    uint64_t get_address_shift() const {
+        return id_ * CROSS_2G;
+    }
+    uint64_t get_phys_address(uint64_t virt) const {
+        return virt + get_address_shift();
+    }
+    uint64_t get_virt_address(uint64_t phys) const {
+        return phys - get_address_shift();
+    }
 
  private:
     void fifo_playlist_update(uint64_t address, uint32_t count);
@@ -55,15 +64,6 @@ class context : public session<context> {
     }
     bool in_poll_area(uint64_t offset) const {
         return poll_area_ <= offset && offset < poll_area_ + (128 * 0x1000);
-    }
-    uint64_t get_phys_address(uint64_t virt) const {
-        return virt + get_address_shift();
-    }
-    uint64_t get_virt_address(uint64_t phys) const {
-        return phys - get_address_shift();
-    }
-    uint64_t get_address_shift() const {
-        return id_ * CROSS_2G;
     }
 
     bool accepted_;
