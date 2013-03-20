@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "cross.h"
 #include "cross_context.h"
 #include "cross_barrier.h"
 #include "cross_inttypes.h"
@@ -31,7 +32,7 @@ namespace cross {
 void context::write_barrier(uint64_t addr, uint32_t value) {
     const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
     // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
-    std::printf("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, value);
+    CROSS_LOG("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, value);
 //    switch (offset) {
 //    case 0x0200: {
 //            // lower 32bit
@@ -47,7 +48,7 @@ void context::write_barrier(uint64_t addr, uint32_t value) {
 void context::read_barrier(uint64_t addr) {
     const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
     // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
-    std::printf("read barrier 0x%" PRIX64 " : page 0x%" PRIX64 "\n", addr, page);
+    CROSS_LOG("read barrier 0x%" PRIX64 " : page 0x%" PRIX64 "\n", addr, page);
 //    switch (offset) {
 //    case 0x0200: {
 //            // lower 32bit
