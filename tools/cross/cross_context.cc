@@ -44,7 +44,7 @@ context::context(boost::asio::io_service& io_service)
     , bar1_channel_(new channel(-1))
     , bar3_channel_(new channel(-3))
     , channels_()
-    , barrier_(new barrier::table(CROSS_2G))
+    , barrier_()
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
     , reg_poll_(0)
@@ -67,6 +67,7 @@ void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
     id_ = 1;  // FIXME debug id
+    barrier_.reset(new barrier::table(get_address_shift(), CROSS_2G));
 }
 
 void context::handle(const command& cmd) {

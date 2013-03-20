@@ -359,6 +359,8 @@ void context::read_bar0(const command& cmd) {
         const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
         const uint64_t addr = base + bit_mask<16>(cmd.offset - 0x700000);
         barrier::page_entry* entry = NULL;
+        std::printf("read from PMEM 0x%" PRIX64 " 0x%" PRIX32 " 0x%" PRIX64 "\n", base, cmd.offset - 0x700000, addr);
+        std::fflush(stdout);
         if (barrier()->lookup(addr, &entry, false)) {
             // found
             read_barrier(addr);
