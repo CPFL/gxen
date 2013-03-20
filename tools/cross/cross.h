@@ -1,5 +1,6 @@
 #ifndef CROSS_H_
 #define CROSS_H_
+#include <cstdio>
 #include <stdint.h>
 namespace cross {
 
@@ -8,6 +9,11 @@ namespace cross {
 #define CROSS_DOMAIN_CHANNELS (CROSS_CHANNELS / 2)
 #define CROSS_2G 0x80000000ULL
 #define CROSS_GPC_BCAST(r) (0x418000 + (r))
+
+#define CROSS_LOG(fmt, args...) do {\
+    std::printf("[CROSS] %s:%d - " fmt, __func__, __LINE__, ##args);\
+    std::fflush(stdout);\
+} while (0)
 
 class command {
  public:
