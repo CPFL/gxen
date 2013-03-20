@@ -19,6 +19,8 @@ class channel {
     uint64_t ramin_address() const { return ramin_address_; }
 
  private:
+    void detach(context* ctx, uint64_t addr);
+    void attach(context* ctx, uint64_t addr);
     int id_;
     bool enabled_;
     uint64_t ramin_address_;
