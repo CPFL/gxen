@@ -28,14 +28,19 @@
 namespace cross {
 namespace barrier {
 
-table::table(uint64_t memory_size)
+table::table(uint64_t base, uint64_t memory_size)
     : table_()
+    , base_(base)
     , size_(bit_mask<kADDRESS_BITS>(memory_size)) {
     if (memory_size == 0) {
         return;
     }
     const uint32_t directories_size = bit_mask<kPAGE_DIRECTORY_BITS>((size_ - 1) >> (kPAGE_BITS + kPAGE_DIRECTORY_BITS)) + 1;
     table_.resize(directories_size);
+}
+
+bool table::in_range(uint64_t address) const {
+    return base() <= address && address < (base() + size());
 }
 
 bool table::map(uint64_t page_start_address) {
@@ -57,9 +62,12 @@ void table::unmap(uint64_t page_start_address) {
 
 bool table::lookup(uint64_t address, page_entry** entry, bool force_create) {
     // out of range
-    if (address >= size_) {
+    if (!in_range(address)) {
         return false;
     }
+
+    // to virtual address
+    address -= base();
 
     const uint32_t index = bit_mask<kPAGE_DIRECTORY_BITS>(address >> (kPAGE_BITS + kPAGE_DIRECTORY_BITS));
     directory& dir = table_[index];

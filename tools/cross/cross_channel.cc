@@ -21,11 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <cstdio>
 #include "cross.h"
 #include "cross_context.h"
 #include "cross_channel.h"
 #include "cross_shadow_page_table.h"
 #include "cross_barrier.h"
+#include "cross_inttypes.h"
 namespace cross {
 
 channel::channel(int id)
@@ -46,6 +48,7 @@ void channel::refresh(context* ctx, uint64_t addr) {
     ramin_address_ = addr;
     table()->refresh(ctx, addr);
     ctx->barrier()->map(ramin_address());
+    std::printf("mapping 0x%" PRIX64 "\n", ramin_address());
 }
 
 }  // namespace cross

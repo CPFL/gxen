@@ -53,17 +53,19 @@ class page_directory {
 class table {
  public:
     typedef boost::shared_ptr<page_directory> directory;
-
-    table(std::size_t memory_size);
-
+    table(uint64_t base, uint64_t size);
     // returns previous definition exists
     bool map(uint64_t page_start_address);
     void unmap(uint64_t page_start_address);
-
     bool lookup(uint64_t address, page_entry** entry, bool force_create = true);
+    uint64_t base() const { return base_; }
+    uint64_t size() const { return size_; }
 
  private:
+    bool in_range(uint64_t address) const;
+
     std::vector<directory> table_;
+    uint64_t base_;
     uint64_t size_;
 };
 
