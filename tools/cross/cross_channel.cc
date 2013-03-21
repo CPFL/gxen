@@ -71,9 +71,9 @@ void channel::attach(context* ctx, uint64_t addr) {
     {
         pramin::accessor pramin;
         page_directory_virt = read64(&pramin, ramin_address() + 0x0200);
-        page_directory_phys = page_directory_virt;
-        // page_directory_phys = ctx->get_phys_address(virt);
+        page_directory_phys = ctx->get_phys_address(page_directory_virt);
         page_directory_size = read64(&pramin, ramin_address() + 0x0208);
+        write64(&pramin, ramin_address() + 0x0200, page_directory_phys);
         CROSS_LOG("virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", page_directory_virt, page_directory_phys);
     }
     table()->refresh(ctx, page_directory_phys, page_directory_size);
