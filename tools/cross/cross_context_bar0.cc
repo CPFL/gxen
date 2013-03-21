@@ -105,13 +105,13 @@ void context::write_bar0(const command& cmd) {
 
     case 0x100cb8:
         // TLB vspace
-        reg_tlb_vspace_ = cmd.value;
+        reg_[cmd.offset] = cmd.value;
         return;
 
     case 0x100cbc:
         // TLB flush trigger
         reg_tlb_trigger_ = cmd.value;
-        flush_tlb(reg_tlb_vspace_, reg_tlb_trigger_);
+        flush_tlb(reg_[0x100cb8], reg_tlb_trigger_);
         return;
 
     case 0x104050:
@@ -281,7 +281,7 @@ void context::read_bar0(const command& cmd) {
 
     case 0x100cb8:
         // TLB vspace
-        buffer()->value = reg_tlb_vspace_;
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x100cbc:

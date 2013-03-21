@@ -49,7 +49,6 @@ context::context(boost::asio::io_service& io_service)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
     , reg_poll_(0)
     , reg_channel_kill_(0)
-    , reg_tlb_vspace_(0)
     , reg_tlb_trigger_(0) {
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channels_[i].reset(new channel(i));
@@ -126,7 +125,8 @@ void context::fifo_playlist_update(uint64_t address, uint32_t count) {
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
-    const uint64_t page_directory = bit_mask<28, uint64_t>(vspace >> 4) << 12;
+    const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
+    const uint64_t vspace_phys = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
@@ -144,7 +144,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         }
     }
     registers::accessor registers;
-    registers.write32(0x100cb8, vspace);
+    registers.write32(0x100cb8, vspace_phys);
     registers.write32(0x100cbc, trigger);
 }
 
