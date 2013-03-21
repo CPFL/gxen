@@ -57,10 +57,24 @@ void channel::detach(context* ctx, uint64_t addr) {
     ctx->barrier()->unmap(ramin_address());
     {
         pramin::accessor pramin;
+
+        // page directory
         const uint64_t page_directory_phys = read64(&pramin, ramin_address() + 0x0200);
         const uint64_t page_directory_virt = ctx->get_virt_address(page_directory_phys);
         write64(&pramin, ramin_address() + 0x0200, page_directory_virt);
         CROSS_LOG("virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", page_directory_virt, page_directory_phys);
+
+        // fctx
+        const uint64_t fctx_phys = read64(&pramin, ramin_address() + 0x08);
+        const uint64_t fctx_virt = ctx->get_virt_address(fctx_phys);
+        write64(&pramin, ramin_address() + 0x08, fctx_virt);
+
+        const uint64_t mpeg_ctx_limit_phys = pramin.read32(ramin_address() + 0x60 + 0x04);
+        const uint64_t mpeg_ctx_limit_virt = ctx->get_virt_address(mpeg_ctx_limit_phys);
+        pramin.write32(ramin_address() + 0x60 + 0x04, mpeg_ctx_limit_virt);
+        const uint64_t mpeg_ctx_phys = pramin.read32(ramin_address() + 0x60 + 0x08);
+        const uint64_t mpeg_ctx_virt = ctx->get_virt_address(mpeg_ctx_phys);
+        pramin.write32(ramin_address() + 0x60 + 0x08, mpeg_ctx_virt);
     }
 }
 
@@ -70,11 +84,26 @@ void channel::attach(context* ctx, uint64_t addr) {
     uint64_t page_directory_size = 0;
     {
         pramin::accessor pramin;
+
+        // page directory
         page_directory_virt = read64(&pramin, ramin_address() + 0x0200);
         page_directory_phys = ctx->get_phys_address(page_directory_virt);
         page_directory_size = read64(&pramin, ramin_address() + 0x0208);
         write64(&pramin, ramin_address() + 0x0200, page_directory_phys);
         CROSS_LOG("virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", page_directory_virt, page_directory_phys);
+
+        // fctx
+        const uint64_t fctx_virt = read64(&pramin, ramin_address() + 0x08);
+        const uint64_t fctx_phys = ctx->get_phys_address(fctx_virt);
+        write64(&pramin, ramin_address() + 0x08, fctx_phys);
+
+        // mpeg ctx
+        const uint64_t mpeg_ctx_limit_virt = pramin.read32(ramin_address() + 0x60 + 0x04);
+        const uint64_t mpeg_ctx_limit_phys = ctx->get_phys_address(mpeg_ctx_limit_virt);
+        pramin.write32(ramin_address() + 0x60 + 0x04, mpeg_ctx_limit_phys);
+        const uint64_t mpeg_ctx_virt = pramin.read32(ramin_address() + 0x60 + 0x08);
+        const uint64_t mpeg_ctx_phys = ctx->get_phys_address(mpeg_ctx_virt);
+        pramin.write32(ramin_address() + 0x60 + 0x08, mpeg_ctx_phys);
     }
     table()->refresh(ctx, page_directory_phys, page_directory_size);
     ctx->barrier()->map(ramin_address());
