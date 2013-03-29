@@ -54,6 +54,7 @@ channel::~channel() {
 }
 
 void channel::detach(context* ctx, uint64_t addr) {
+    CROSS_LOG("detach from 0x%" PRIX64 " to 0x%" PRIX64 "\n", ramin_address(), addr);
     ctx->barrier()->unmap(ramin_address());
     {
         pramin::accessor pramin;
