@@ -79,13 +79,7 @@ void context::write_bar0(const command& cmd) {
     case 0x002274: {
             // playlist update
             reg_[cmd.offset] = cmd.value;
-            const uint32_t reg_playlist = reg_[0x2270];
-            const uint32_t reg_playlist_update = cmd.value;
-            const uint64_t addr = get_phys_address(bit_mask<28, uint64_t>(reg_playlist) << 12);
-            const uint32_t count = bit_mask<8, uint32_t>(reg_playlist_update);
-            fifo_playlist_update(addr, count);
-            registers::write32(0x2270, addr >> 12);
-            registers::write32(0x2274, reg_playlist_update);
+            fifo_playlist_update(reg_[0x2270], cmd.value);
             return;
         }
     case 0x002634: {
@@ -93,7 +87,8 @@ void context::write_bar0(const command& cmd) {
             if (cmd.value >= CROSS_DOMAIN_CHANNELS) {
                 return;
             }
-            const uint32_t phys = get_phys_channel_id(cmd.value);
+            // const uint32_t phys = get_phys_channel_id(cmd.value);
+            const uint32_t phys = cmd.value;
             registers::write32(cmd.offset, phys);
             reg_channel_kill_ = cmd.value;
             return;
@@ -220,7 +215,8 @@ void context::write_bar0(const command& cmd) {
 //                return;
 //            }
 
-            const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
+            // const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
+            const uint32_t phys_channel_id = virt_channel_id;
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
             printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
@@ -392,7 +388,8 @@ void context::read_bar0(const command& cmd) {
 //                return;
 //            }
 
-            const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
+            // const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
+            const uint32_t phys_channel_id = virt_channel_id;
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
             printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 

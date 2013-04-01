@@ -106,9 +106,13 @@ void context::handle(const command& cmd) {
     }
 }
 
-void context::fifo_playlist_update(uint64_t address, uint32_t count) {
+void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
+    const uint64_t address = get_phys_address(bit_mask<28, uint64_t>(reg_addr) << 12);
+    const uint32_t count = bit_mask<8, uint32_t>(reg_count);
+
     // scan fifo and update values
     {
+        // TODO(Yusuke Suzuki): Virtualized playlist area
         pramin::accessor pramin;
         uint32_t i;
         printf("FIFO playlist update %u\n", count);
@@ -119,9 +123,13 @@ void context::fifo_playlist_update(uint64_t address, uint32_t count) {
             pramin.write32(address + i * 0x8 + 0x4, 0x4);
         }
     }
+
     registers::write32(0x70000, 1);
     // FIXME(Yusuke Suzuki): BAR flush wait code is needed?
     // usleep(1000);
+
+    registers::write32(0x2270, address >> 12);
+    registers::write32(0x2274, reg_count);
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
