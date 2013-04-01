@@ -6,6 +6,7 @@
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_channel.h"
+#include "cross_shadow_bar1.h"
 namespace cross {
 namespace barrier {
 class table;
@@ -31,8 +32,8 @@ class context : public session<context> {
     void read_bar3(const command& command);
     void read_barrier(uint64_t addr);
     void write_barrier(uint64_t addr, uint32_t value);
-    channel* bar1_channel() { return bar1_channel_.get(); }
-    const channel* bar1_channel() const { return bar1_channel_.get(); }
+    shadow_bar1* bar1_channel() { return bar1_channel_.get(); }
+    const shadow_bar1* bar1_channel() const { return bar1_channel_.get(); }
     channel* bar3_channel() { return bar3_channel_.get(); }
     const channel* bar3_channel() const { return bar3_channel_.get(); }
     channel* channels(int id) { return channels_[id].get(); }
@@ -65,7 +66,7 @@ class context : public session<context> {
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    unique_ptr<channel>::type bar1_channel_;
+    unique_ptr<shadow_bar1>::type bar1_channel_;
     unique_ptr<channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
