@@ -30,9 +30,9 @@ namespace cross {
 
 void context::write_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
-        // TODO(Yusuke Suzuki) cleanup this code
-        const device::mutex::scoped_lock lock(device::instance()->mutex_handle());
-        device::instance()->write(1, cmd.offset, cmd.value);
+        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            device::instance()->write(1, cmd.offset, cmd.value);
+        }
         return;
     }
 
@@ -52,9 +52,9 @@ void context::write_bar1(const command& cmd) {
 
 void context::read_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
-        // TODO(Yusuke Suzuki) cleanup this code
-        const device::mutex::scoped_lock lock(device::instance()->mutex_handle());
-        buffer()->value = device::instance()->read(1, cmd.offset);
+        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            buffer()->value = device::instance()->read(1, cmd.offset);
+        }
         return;
     }
 

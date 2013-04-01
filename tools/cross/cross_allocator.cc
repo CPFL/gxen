@@ -28,7 +28,9 @@
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_context.h"
+#include "cross_device.h"
 #include "cross_allocator.h"
+#include "cross_pramin.h"
 namespace cross {
 
 // very naive way
@@ -50,6 +52,27 @@ uint64_t allocator::allocate() {
 
 void allocator::deallocate(uint64_t addr) {
     vector_.set(((addr - start_) / kPageSize));
+}
+
+page::page()
+    : address_() {
+    CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        address_ = device::instance()->memory()->allocate();
+    }
+    clear();
+}
+
+page::~page() {
+    CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        device::instance()->memory()->deallocate(address());
+    }
+}
+
+void page::clear() {
+    pramin::accessor pramin;
+    for (std::size_t i = 0; i < (0x1000 / sizeof(uint32_t)); i += sizeof(uint32_t)) {
+        pramin.write32(address() + i, 0);
+    }
 }
 
 }  // namespace cross
