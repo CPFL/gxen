@@ -12,7 +12,7 @@ class accessor : private boost::noncopyable {
     void write32(uint32_t offset, uint32_t val);
 
  private:
-    device::mutex::scoped_lock lock_;
+    mutex::scoped_lock lock_;
 };
 
 inline uint32_t read32(uint32_t offset) {

@@ -4,9 +4,14 @@
 #include "cross_channel.h"
 namespace cross {
 
+class context;
+
 class shadow_bar1 : public channel {
  public:
-    shadow_bar1();
+    shadow_bar1(context* ctx);
+
+ private:
+    context* ctx_;
 };
 
 }  // namespace cross

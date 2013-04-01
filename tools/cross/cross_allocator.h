@@ -5,6 +5,17 @@
 #include "cross.h"
 namespace cross {
 
+class page {
+ public:
+    page();
+    ~page();
+    void clear();
+    uint64_t address() const { return address_; }
+
+ private:
+    uint64_t address_;
+};
+
 class allocator : private boost::noncopyable {
  public:
     static const uint64_t kPageSize = 0x1000;

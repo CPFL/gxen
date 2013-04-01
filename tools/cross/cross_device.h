@@ -1,17 +1,16 @@
 #ifndef CROSS_DEVICE_H_
 #define CROSS_DEVICE_H_
 #include <pciaccess.h>
-#include <boost/thread.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/noncopyable.hpp>
 #include "cross.h"
+#include "cross_lock.h"
 #include "cross_session.h"
 #include "cross_allocator.h"
 namespace cross {
 
 class device : private boost::noncopyable {
  public:
-    typedef boost::recursive_mutex mutex;
     struct bar_t {
         void* addr;
         std::size_t size;
@@ -28,6 +27,8 @@ class device : private boost::noncopyable {
     void write(int bar, uint32_t offset, uint32_t val);
     uint32_t pramin() const { return pramin_; }
     void set_pramin(uint32_t pramin) { pramin_ = pramin; }
+    allocator* memory() { return &memory_; }
+    const allocator* memory() const { return &memory_; }
 
  private:
     struct pci_device* device_;

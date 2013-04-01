@@ -1,5 +1,5 @@
 /*
- * Cross Shadow BAR1 Channel
+ * Cross device table
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,20 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdio>
-#include "cross.h"
-#include "cross_context.h"
-#include "cross_shadow_bar1.h"
-#include "cross_shadow_page_table.h"
-#include "cross_barrier.h"
-#include "cross_pramin.h"
+
+#include <stdint.h>
 #include "cross_inttypes.h"
 #include "cross_bit_mask.h"
+#include "cross_device_table.h"
+#include "cross_pramin.h"
 namespace cross {
 
-shadow_bar1::shadow_bar1(context* ctx)
-    : channel(-1)
-    , ctx_(ctx) {
+device_table::device_table()
+    : page_directory_() {
+}
+
+device_page_directory::device_page_directory()
+    : page_() {
 }
 
 }  // namespace cross
