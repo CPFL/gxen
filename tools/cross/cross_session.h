@@ -1,5 +1,6 @@
 #ifndef CROSS_SESSION_H_
 #define CROSS_SESSION_H_
+#include <boost/noncopyable.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
@@ -7,7 +8,7 @@
 namespace cross {
 
 template<typename Derived>
-class session {
+class session : private boost::noncopyable {
  public:
     static const int kCommandSize = sizeof(command);
 

@@ -3,12 +3,13 @@
 #include <pciaccess.h>
 #include <boost/thread.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/noncopyable.hpp>
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_allocator.h"
 namespace cross {
 
-class device {
+class device : private boost::noncopyable {
  public:
     typedef boost::recursive_mutex mutex;
     struct bar_t {

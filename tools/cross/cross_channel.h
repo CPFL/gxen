@@ -1,13 +1,14 @@
 #ifndef CROSS_CHANNEL_H_
 #define CROSS_CHANNEL_H_
 #include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
 #include "cross.h"
 #include "cross_session.h"
 namespace cross {
 class shadow_page_table;
 class context;
 
-class channel {
+class channel : private boost::noncopyable {
  public:
     channel(int id);
     ~channel();
