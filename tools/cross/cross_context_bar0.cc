@@ -47,7 +47,7 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-            printf("0x1704 => 0x%" PRIX32 "\n", value);
+            CROSS_LOG("0x1704 => 0x%" PRIX32 "\n", value);
             bar1_channel()->refresh(this, phys);
             // TODO(Yusuke Suzuki)
             // This value should not be set by device models
@@ -60,7 +60,7 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-            printf("0x1714 => 0x%" PRIX32 "\n", value);
+            CROSS_LOG("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_channel()->refresh(this, phys);
             return;
         }
@@ -216,7 +216,7 @@ void context::write_bar0(const command& cmd) {
 
             const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
-            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
+            CROSS_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
             if (ramin_area) {
                 // channel ramin
@@ -353,8 +353,7 @@ void context::read_bar0(const command& cmd) {
         const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
         const uint64_t addr = base + bit_mask<16>(cmd.offset - 0x700000);
         barrier::page_entry* entry = NULL;
-        std::printf("read from PMEM 0x%" PRIX64 " 0x%" PRIX32 " 0x%" PRIX64 "\n", base, cmd.offset - 0x700000, addr);
-        std::fflush(stdout);
+        CROSS_LOG("read from PMEM 0x%" PRIX64 " 0x%" PRIX32 " 0x%" PRIX64 "\n", base, cmd.offset - 0x700000, addr);
         if (barrier()->lookup(addr, &entry, false)) {
             // found
             read_barrier(addr);
@@ -388,7 +387,7 @@ void context::read_bar0(const command& cmd) {
 
             const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
-            printf("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
+            CROSS_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
             if (ramin_area) {
                 // channel ramin

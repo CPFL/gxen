@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    printf("BDF: %02x:%02x.%01x\n", bdf.bus, bdf.dev, bdf.func);
+    CROSS_LOG("BDF: %02x:%02x.%01x\n", bdf.bus, bdf.dev, bdf.func);
 
     cross::device::instance()->initialize(bdf);
 

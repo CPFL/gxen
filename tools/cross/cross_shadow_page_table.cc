@@ -59,7 +59,7 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     // max page directories size is page
     // ctx->remapping()->map(page_directory_address(), 0, true);
 
-    printf("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
+    CROSS_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
     dump();
     return false;
 }
@@ -85,10 +85,10 @@ void shadow_page_table::dump() const {
     for (shadow_page_directories::const_iterator it = directories_.begin(),
          iz = directories_.end(); it != iz; ++it, ++i) {
         const struct shadow_page_directory& dir = *it;
-        printf("PDE 0x%" PRIX64 " : large %d / small %d\n",
-               page_directory_address_ + 0x8 * i,
-               dir.virt().large_page_table_present,
-               dir.virt().small_page_table_present);
+        CROSS_LOG("PDE 0x%" PRIX64 " : large %d / small %d\n",
+                  page_directory_address_ + 0x8 * i,
+                  dir.virt().large_page_table_present,
+                  dir.virt().small_page_table_present);
 
         if (dir.virt().large_page_table_present) {
             std::size_t j = 0;
@@ -96,13 +96,13 @@ void shadow_page_table::dump() const {
                  jz = dir.large_entries().end(); jt != jz; ++jt, ++j) {
                 if (jt->present()) {
                     const uint64_t address = jt->virt().address;
-                    printf("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                           kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
-                           kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
-                           (address << 12),
-                           (address << 12) + kLARGE_PAGE_SIZE - 1,
-                           jt->virt().read_only ? "RO" : "RW",
-                           jt->virt().target);
+                    CROSS_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
+                              (address << 12),
+                              (address << 12) + kLARGE_PAGE_SIZE - 1,
+                              jt->virt().read_only ? "RO" : "RW",
+                              jt->virt().target);
                 }
             }
         }
@@ -113,13 +113,13 @@ void shadow_page_table::dump() const {
                  jz = dir.small_entries().end(); jt != jz; ++jt, ++j) {
                 if (jt->present()) {
                     const uint64_t address = jt->virt().address;
-                    printf("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                           kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
-                           kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,
-                           (address << 12),
-                           (address << 12) + kSMALL_PAGE_SIZE - 1,
-                           jt->virt().read_only ? "RO" : "RW",
-                           jt->virt().target);
+                    CROSS_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,
+                              (address << 12),
+                              (address << 12) + kSMALL_PAGE_SIZE - 1,
+                              jt->virt().read_only ? "RO" : "RW",
+                              jt->virt().target);
                 }
             }
         }

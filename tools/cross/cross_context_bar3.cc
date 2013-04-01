@@ -42,7 +42,7 @@ void context::write_bar3(const command& cmd) {
         pramin.write32(gphys, cmd.value);
         return;
     }
-    printf("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
+    CROSS_LOG("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
 }
 
 void context::read_bar3(const command& cmd) {
@@ -60,7 +60,7 @@ void context::read_bar3(const command& cmd) {
         return;
     }
 
-    printf("VM BAR3 invalid read 0x%" PRIX32 " access\n", cmd.offset);
+    CROSS_LOG("VM BAR3 invalid read 0x%" PRIX32 " access\n", cmd.offset);
     buffer()->value = 0xFFFFFFFF;
 }
 

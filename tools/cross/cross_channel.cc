@@ -111,7 +111,7 @@ void channel::attach(context* ctx, uint64_t addr) {
 }
 
 void channel::refresh(context* ctx, uint64_t addr) {
-    std::printf("mapping 0x%" PRIX64 "\n", addr);
+    CROSS_LOG("mapping 0x%" PRIX64 "\n", addr);
     if (enabled()) {
         if (addr == ramin_address()) {
             // same channel ramin
