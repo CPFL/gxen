@@ -1,10 +1,11 @@
 #ifndef CROSS_ALLOCATOR_H_
 #define CROSS_ALLOCATOR_H_
 #include <boost/dynamic_bitset.hpp>
+#include <boost/noncopyable.hpp>
 #include "cross.h"
 namespace cross {
 
-class allocator {
+class allocator : private boost::noncopyable {
  public:
     static const uint64_t kPageSize = 0x1000;
 
