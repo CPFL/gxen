@@ -115,10 +115,10 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
         // TODO(Yusuke Suzuki): Virtualized playlist area
         pramin::accessor pramin;
         uint32_t i;
-        printf("FIFO playlist update %u\n", count);
+        CROSS_LOG("FIFO playlist update %u\n", count);
         for (i = 0; i < count; ++i) {
             const uint32_t cid = pramin.read32(address + i * 0x8);
-            printf("FIFO playlist cid %u => %u\n", cid, get_phys_channel_id(cid));
+            CROSS_LOG("FIFO playlist cid %u => %u\n", cid, get_phys_channel_id(cid));
             pramin.write32(address + i * 0x8, get_phys_channel_id(cid));
             pramin.write32(address + i * 0x8 + 0x4, 0x4);
         }

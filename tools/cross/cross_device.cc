@@ -105,7 +105,7 @@ void device::initialize(const bdf& bdf) {
     if (!initialized()) {
         pci_system_cleanup();
     } else {
-        printf("device initialized\n");
+        CROSS_LOG("device initialized\n");
     }
 }
 

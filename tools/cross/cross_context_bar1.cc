@@ -41,13 +41,13 @@ void context::write_bar1(const command& cmd) {
         // resolved
 //        remapping::page_entry entry;
 //        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-//            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+//            // NVC0_CROSS_LOG("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
 //        }
         pramin::accessor pramin;
         pramin.write32(gphys, cmd.value);
         return;
     }
-    printf("VM BAR1 invalid write 0x%" PRIX32 " access\n", cmd.offset);
+    CROSS_LOG("VM BAR1 invalid write 0x%" PRIX32 " access\n", cmd.offset);
 }
 
 void context::read_bar1(const command& cmd) {
@@ -63,7 +63,7 @@ void context::read_bar1(const command& cmd) {
         // resolved
 //        remapping::page_entry entry;
 //        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-//            // NVC0_PRINTF("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
+//            // NVC0_CROSS_LOG("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
 //        }
         pramin::accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
@@ -71,7 +71,7 @@ void context::read_bar1(const command& cmd) {
         return;
     }
 
-    printf("VM BAR1 invalid read 0x%" PRIX32 " access\n", cmd.offset);
+    CROSS_LOG("VM BAR1 invalid read 0x%" PRIX32 " access\n", cmd.offset);
     buffer()->value = 0xFFFFFFFF;
 }
 
