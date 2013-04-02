@@ -41,7 +41,7 @@ class context : public session<context> {
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
     uint64_t get_address_shift() const {
-        return id_ * CROSS_2G;
+        return id() * CROSS_2G;
     }
     uint64_t get_phys_address(uint64_t virt) const {
         return virt + get_address_shift();
@@ -50,10 +50,10 @@ class context : public session<context> {
         return phys - get_address_shift();
     }
     uint32_t get_phys_channel_id(uint32_t virt) const {
-        return virt + id_ * CROSS_DOMAIN_CHANNELS;
+        return virt + id() * CROSS_DOMAIN_CHANNELS;
     }
     uint32_t get_virt_channel_id(uint32_t phys) const {
-        return phys - id_ * CROSS_DOMAIN_CHANNELS;
+        return phys - id() * CROSS_DOMAIN_CHANNELS;
     }
     uint32_t id() const { return id_; }
     uint64_t poll_area() const { return poll_area_; }
@@ -62,7 +62,8 @@ class context : public session<context> {
     void fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     bool in_poll_area(uint64_t offset) const {
-        return poll_area() <= offset && offset < poll_area() + (CROSS_CHANNELS * 0x1000);
+        offset -= id() * CROSS_DOMAIN_CHANNELS * 0x1000;
+        return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
     }
 
     bool accepted_;
