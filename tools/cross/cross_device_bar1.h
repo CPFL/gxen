@@ -12,6 +12,7 @@ class device_bar1 : private boost::noncopyable {
  public:
     device_bar1();
     uint64_t address() const { return directory_.address(); }
+    void refresh_channel(context* ctx);
     void refresh_poll_area();
     void shadow(context* ctx);
     void flush();
