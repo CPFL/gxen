@@ -48,7 +48,6 @@ context::context(boost::asio::io_service& io_service)
     , barrier_()
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
-    , reg_poll_(0)
     , reg_channel_kill_(0)
     , reg_tlb_trigger_(0) {
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {

@@ -78,7 +78,6 @@ class context : public session<context> {
     boost::scoped_array<uint32_t> reg_;
 
     // register value stores
-    uint32_t reg_poll_;
     uint32_t reg_channel_kill_;
     uint32_t reg_tlb_trigger_;
 };
