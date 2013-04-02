@@ -65,14 +65,8 @@ device_bar1::device_bar1()
 
 void device_bar1::refresh_channel(context* ctx) {
     // set ramin as BAR1 channel
-    {
-        // TODO(Yusuke Suzuki): Fix this table values
-        pramin::accessor pramin;
-        ramin_.write32(0x0200, lower32(directory_.address()));
-        ramin_.write32(0x0204, upper32(directory_.address()));
-//         ramin_.write32(0x0200, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x200));
-//         ramin_.write32(0x0204, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x204));
-    }
+    ramin_.write32(0x0200, lower32(directory_.address()));
+    ramin_.write32(0x0204, upper32(directory_.address()));
     registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
 
@@ -85,11 +79,8 @@ void device_bar1::refresh_poll_area() {
 
 void device_bar1::shadow(context* ctx) {
     CROSS_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
-    // for (uint32_t vcid = 0; vcid < CROSS_DOMAIN_CHANNELS; ++vcid) {
-    for (uint32_t vcid = 0; vcid < CROSS_CHANNELS; ++vcid) {
-        // TODO(Yusuke Suzuki): remove this shift get_phys_channel_id
-        // const uint64_t offset = (ctx->get_phys_channel_id(vcid) * 0x1000ULL) + ctx->poll_area();
-        const uint64_t offset = (vcid * 0x1000ULL) + ctx->poll_area();
+    for (uint32_t vcid = 0; vcid < CROSS_DOMAIN_CHANNELS; ++vcid) {
+        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area();
         struct shadow_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
@@ -120,6 +111,18 @@ void device_bar1::flush() {
         registers.write32(0x100cbc, engine);
         registers.wait_eq(0x100c80, 0x00008000, 0x00008000);
     }
+}
+
+void device_bar1::write32(context* ctx, const command& cmd) {
+    uint64_t offset = cmd.offset - ctx->poll_area();
+    offset += 0x1000ULL * ctx->id() * CROSS_DOMAIN_CHANNELS;
+    device::instance()->write(1, offset, cmd.value);
+}
+
+uint32_t device_bar1::read32(context* ctx, const command& cmd) {
+    uint64_t offset = cmd.offset - ctx->poll_area();
+    offset += 0x1000ULL * ctx->id() * CROSS_DOMAIN_CHANNELS;
+    return device::instance()->read(1, offset);
 }
 
 }  // namespace cross

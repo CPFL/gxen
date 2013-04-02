@@ -27,13 +27,13 @@
 #include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
 #include "cross_barrier.h"
+#include "cross_device_bar1.h"
 namespace cross {
 
 void context::write_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            const uint64_t offset = cmd.offset - poll_area();
-            device::instance()->write(1, offset, cmd.value);
+            device::instance()->bar1()->write32(this, cmd);
         }
         return;
     }
@@ -55,8 +55,7 @@ void context::write_bar1(const command& cmd) {
 void context::read_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            const uint64_t offset = cmd.offset - poll_area();
-            buffer()->value = device::instance()->read(1, offset);
+            buffer()->value = device::instance()->bar1()->read32(this, cmd);
         }
         return;
     }
