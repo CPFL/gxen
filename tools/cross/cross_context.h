@@ -49,18 +49,20 @@ class context : public session<context> {
     uint64_t get_virt_address(uint64_t phys) const {
         return phys - get_address_shift();
     }
+    uint32_t get_phys_channel_id(uint32_t virt) const {
+        return virt + id_ * CROSS_DOMAIN_CHANNELS;
+    }
+    uint32_t get_virt_channel_id(uint32_t phys) const {
+        return phys - id_ * CROSS_DOMAIN_CHANNELS;
+    }
+    uint32_t id() const { return id_; }
+    uint64_t poll_area() const { return poll_area_; }
 
  private:
     void fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
-    uint32_t get_phys_channel_id(uint32_t virt) const {
-        return virt + id_ * 64;
-    }
-    uint32_t get_virt_channel_id(uint32_t phys) const {
-        return phys - id_ * 64;
-    }
     bool in_poll_area(uint64_t offset) const {
-        return poll_area_ <= offset && offset < poll_area_ + (128 * 0x1000);
+        return poll_area() <= offset && offset < poll_area() + (CROSS_CHANNELS * 0x1000);
     }
 
     bool accepted_;

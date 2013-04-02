@@ -56,9 +56,6 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         it->refresh(ctx, &pramin, page_directory_address() + 0x8 * i);
     }
 
-    // max page directories size is page
-    // ctx->remapping()->map(page_directory_address(), 0, true);
-
     CROSS_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
     dump();
     return false;
@@ -141,9 +138,6 @@ void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint
              last = large_entries_.end(); it != last; ++it, ++i) {
             it->refresh(pramin, address + 0x8 * i);
         }
-        for (uint64_t it = address, end = address + 0x8 * count; it < end; it += 0x1000) {
-            // ctx->remapping()->map(it, 0, true);
-        }
     } else {
         large_entries_.clear();
     }
@@ -151,15 +145,11 @@ void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint
     if (virt.small_page_table_present) {
         const uint64_t address = static_cast<uint64_t>(virt.small_page_table_address) << 12;
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
-        // const uint64_t size = count * sizeof(page_entry);
         small_entries_.resize(count);
         std::size_t i = 0;
         for (shadow_page_entries::iterator it = small_entries_.begin(),
              last = small_entries_.end(); it != last; ++it, ++i) {
             it->refresh(pramin, address + 0x8 * i);
-        }
-        for (uint64_t it = address, end = address + 0x8 * count; it < end; it += 0x1000) {
-            // ctx->remapping()->map(it, 0, true);
         }
     } else {
         small_entries_.clear();

@@ -33,6 +33,7 @@
 #include "cross_registers.h"
 #include "cross_barrier.h"
 #include "cross_pramin.h"
+#include "cross_device_bar1.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
 
@@ -139,6 +140,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
+        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            device::instance()->bar1()->shadow(this);
+        }
     }
     if (bar3_channel()->table()->page_directory_address() == page_directory) {
         // BAR3

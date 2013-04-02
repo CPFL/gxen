@@ -5,12 +5,14 @@
 #include "cross.h"
 namespace cross {
 
-class page {
+class page : private boost::noncopyable {
  public:
     page();
     ~page();
     void clear();
     uint64_t address() const { return address_; }
+    void write32(uint64_t offset, uint32_t value);
+    uint32_t read32(uint64_t offset);
 
  private:
     uint64_t address_;

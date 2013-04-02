@@ -141,20 +141,6 @@ class shadow_page_directory {
     shadow_page_entries small_entries_;
 };
 
-class shadow_page_table;
-
-class shadow_page_table_barrier {
- public:
-    enum event_t {
-        TABLE_CHANGE = 0,
-        DIRECTORY_CHANGE = 1,
-        ENTRY_CHANGE = 2
-    };
-
- private:
-    shadow_page_table* table_;
-};
-
 class shadow_page_table {
  public:
     typedef std::vector<shadow_page_directory> shadow_page_directories;
