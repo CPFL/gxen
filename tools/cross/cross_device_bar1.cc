@@ -96,5 +96,16 @@ void device_bar1::map(uint64_t virt, uint64_t phys) {
     CROSS_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, phys);
 }
 
+void device_bar1::flush() {
+    CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        const uint32_t engine = 1 | 4;
+        registers::accessor registers;
+        registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
+        registers.write32(0x100cb8, directory_.address() >> 8);
+        registers.write32(0x100cbc, engine);
+        registers.wait_eq(0x100c80, 0x00008000, 0x00008000);
+    }
+}
+
 }  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */

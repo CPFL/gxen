@@ -13,6 +13,7 @@ class device_bar1 : private boost::noncopyable {
   device_bar1();
   uint64_t address() const { return directory_.address(); }
   void shadow(context* ctx);
+  void flush();
 
  private:
   void map(uint64_t virt, uint64_t phys);
