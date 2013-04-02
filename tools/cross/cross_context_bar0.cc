@@ -31,6 +31,7 @@
 #include "cross_barrier.h"
 #include "cross_bit_mask.h"
 #include "cross_pramin.h"
+#include "cross_device_bar1.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
 
@@ -68,7 +69,10 @@ void context::write_bar0(const command& cmd) {
             // POLL_AREA
             poll_area_ = bit_mask<28, uint64_t>(cmd.value) << 12;
             reg_[cmd.offset] = cmd.value;
-            registers::write32(0x2254, cmd.value);
+            CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                device::instance()->bar1()->refresh_poll_area();
+            }
+            CROSS_LOG("POLL_AREA %" PRIX32 "\n", cmd.value);
             return;
         }
     case 0x002270: {

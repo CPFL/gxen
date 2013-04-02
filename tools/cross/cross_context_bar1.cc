@@ -26,23 +26,25 @@
 #include "cross_context.h"
 #include "cross_pramin.h"
 #include "cross_shadow_page_table.h"
+#include "cross_barrier.h"
 namespace cross {
 
 void context::write_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            device::instance()->write(1, cmd.offset, cmd.value);
+            const uint64_t offset = cmd.offset - poll_area();
+            device::instance()->write(1, offset, cmd.value);
         }
         return;
     }
 
     const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
-        // resolved
-//        remapping::page_entry entry;
-//        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-//            // NVC0_CROSS_LOG("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
-//        }
+        barrier::page_entry* entry = NULL;
+        if (barrier()->lookup(gphys, &entry, false)) {
+            // found
+            read_barrier(gphys);
+        }
         pramin::accessor pramin;
         pramin.write32(gphys, cmd.value);
         return;
@@ -53,18 +55,19 @@ void context::write_bar1(const command& cmd) {
 void context::read_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            buffer()->value = device::instance()->read(1, cmd.offset);
+            const uint64_t offset = cmd.offset - poll_area();
+            buffer()->value = device::instance()->read(1, offset);
         }
         return;
     }
 
     const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset);
     if (gphys != UINT64_MAX) {
-        // resolved
-//        remapping::page_entry entry;
-//        if (ctx->remapping()->lookup(gphys, &entry) && entry.read_only) {
-//            // NVC0_CROSS_LOG("VM BAR1 handling 0x%" PRIX64 " access\n", gphys);
-//        }
+        barrier::page_entry* entry = NULL;
+        if (barrier()->lookup(gphys, &entry, false)) {
+            // found
+            read_barrier(gphys);
+        }
         pramin::accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
         buffer()->value = ret;

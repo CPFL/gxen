@@ -10,9 +10,9 @@ class accessor : private boost::noncopyable {
     explicit accessor();
     uint32_t read32(uint32_t offset);
     void write32(uint32_t offset, uint32_t val);
+    uint32_t mask32(uint32_t offset, uint32_t mask, uint32_t val);
     bool wait_eq(uint32_t offset, uint32_t mask, uint32_t val);
     bool wait_ne(uint32_t offset, uint32_t mask, uint32_t val);
-
     template<typename Functor>
     bool wait_cb(uint32_t offset, uint32_t mask, uint32_t val, const Functor& func) {
         uint64_t counter = 0;
@@ -40,6 +40,11 @@ inline uint32_t read32(uint32_t offset) {
 inline void write32(uint32_t offset, uint32_t val) {
     accessor regs;
     regs.write32(offset, val);
+}
+
+inline uint32_t mask32(uint32_t offset, uint32_t mask, uint32_t val) {
+    accessor regs;
+    return regs.mask32(offset, mask, val);
 }
 
 inline bool wait_eq(uint32_t offset, uint32_t mask, uint32_t val) {
