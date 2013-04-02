@@ -46,8 +46,13 @@ static uint32_t upper32(uint64_t data) {
 }
 
 device_bar1::device_bar1()
-    : directory_()
+    : ramin_()
+    , directory_()
     , entry_() {
+    // construct channel ramin
+    ramin_.write32(0x0200, lower32(directory_.address()));
+    ramin_.write32(0x0204, lower32(directory_.address()));
+
     // construct minimum page table
     struct page_directory dir = { };
     dir.word0 = 0;
@@ -63,7 +68,8 @@ device_bar1::device_bar1()
 void device_bar1::shadow(context* ctx) {
     CROSS_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
     for (uint32_t vcid = 0; vcid < CROSS_DOMAIN_CHANNELS; ++vcid) {
-        const uint64_t offset = (vcid * 0x1000ULL) + ctx->poll_area();
+        // TODO(Yusuke Suzuki): remove this shift get_phys_channel_id
+        const uint64_t offset = (ctx->get_phys_channel_id(vcid) * 0x1000ULL) + ctx->poll_area();
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset);
         if (gphys != UINT64_MAX) {
             const uint32_t pcid = ctx->get_phys_channel_id(vcid);
@@ -82,6 +88,7 @@ void device_bar1::map(uint64_t virt, uint64_t phys) {
     const uint64_t data = encode_address(phys);
     entry_.write32(0x8 * index, lower32(data));
     entry_.write32(0x8 * index + 0x4, upper32(data));
+    CROSS_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, phys);
 }
 
 }  // namespace cross

@@ -1,5 +1,5 @@
 /*
- * Cross Context
+ * Cross Page
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,50 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdlib>
-#include <iostream>
-#include <boost/asio.hpp>
-#include <unistd.h>
+#include <cstdio>
 #include "cross.h"
-#include "cross_session.h"
-#include "cross_context.h"
-#include "cross_device.h"
-#include "cross_allocator.h"
+#include "cross_page.h"
 #include "cross_pramin.h"
 namespace cross {
 
-// very naive way
-allocator::allocator(uint64_t start, uint64_t end)
-    : start_(start)
-    , size_(end - start)
-    , vector_(size_ / kPageSize, -1) {
-}
-
-uint64_t allocator::allocate() {
-    const boost::dynamic_bitset<>::size_type pos = vector_.find_first();
-    if (pos == vector_.npos) {
-        assert(0);
-        return 0;  // invaid
-    }
-    vector_.reset(pos);
-    return pos * kPageSize + start_;
-}
-
-void allocator::deallocate(uint64_t addr) {
-    vector_.set(((addr - start_) / kPageSize));
-}
-
-page::page()
-    : address_() {
+page::page(std::size_t n)
+    : vram_() {
     CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-        address_ = device::instance()->memory()->allocate();
+        vram_ = device::instance()->malloc(n);
     }
     clear();
 }
 
 page::~page() {
     CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-        device::instance()->memory()->deallocate(address());
+        device::instance()->free(vram_);
     }
 }
 
@@ -84,6 +57,7 @@ uint32_t page::read32(uint64_t offset) {
     assert(offset < 0x1000);
     return pramin::read32(address() + offset);
 }
+
 
 }  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */

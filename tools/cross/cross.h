@@ -1,6 +1,7 @@
 #ifndef CROSS_H_
 #define CROSS_H_
 #include <cstdio>
+#include <cassert>
 #include <stdint.h>
 namespace cross {
 
@@ -14,6 +15,8 @@ namespace cross {
     std::printf("[CROSS] %s:%d - " fmt, __func__, __LINE__, ##args);\
     std::fflush(stdout);\
 } while (0)
+
+#define CROSS_UNREACHABLE() assert(0)
 
 class command {
  public:
