@@ -56,24 +56,29 @@ struct page_entry {
     };
 
     union {
-        uint32_t word0;
+        uint64_t raw;
         struct {
-            unsigned present : 1;
-            unsigned supervisor_only : 1;
-            unsigned read_only : 1;
-            unsigned encrypted : 1;        // only used by SYSRAM
-            unsigned address: 28;
-        };
-    };
-    union {
-        uint32_t word1;
-        struct {
-            unsigned unknown0 : 1;
-            unsigned target : 2;
-            unsigned unknown1 : 1;
-            unsigned storage_type : 8;      // 0 / 0xdb ZETA / 0xfe tiled surface
-            unsigned tag : 17;
-            unsigned unknown2 : 3;
+            union {
+                uint32_t word0;
+                struct {
+                    unsigned present : 1;
+                    unsigned supervisor_only : 1;
+                    unsigned read_only : 1;
+                    unsigned encrypted : 1;        // only used by SYSRAM
+                    unsigned address: 28;
+                };
+            };
+            union {
+                uint32_t word1;
+                struct {
+                    unsigned unknown0 : 1;
+                    unsigned target : 2;
+                    unsigned unknown1 : 1;
+                    unsigned storage_type : 8;      // 0 / 0xdb ZETA / 0xfe tiled surface
+                    unsigned tag : 17;
+                    unsigned unknown2 : 3;
+                };
+            };
         };
     };
 };
@@ -101,22 +106,27 @@ struct page_directory {
     };
 
     union {
-        uint32_t word0;
+        uint64_t raw;
         struct {
-            unsigned large_page_table_present : 1;
-            unsigned unknown0 : 1;
-            unsigned size_type : 2;
-            unsigned large_page_table_address : 28;  // 12bit shifted
-        };
-    };
-    union {
-        uint32_t word1;
-        struct {
-            unsigned small_page_table_present : 1;
-            unsigned unknown1 : 1;
-            unsigned unknown2 : 1;
-            unsigned unknown3 : 1;
-            unsigned small_page_table_address : 28;  // 12bit shifted
+            union {
+                uint32_t word0;
+                struct {
+                    unsigned large_page_table_present : 1;
+                    unsigned unknown0 : 1;
+                    unsigned size_type : 2;
+                    unsigned large_page_table_address : 28;  // 12bit shifted
+                };
+            };
+            union {
+                uint32_t word1;
+                struct {
+                    unsigned small_page_table_present : 1;
+                    unsigned unknown1 : 1;
+                    unsigned unknown2 : 1;
+                    unsigned unknown3 : 1;
+                    unsigned small_page_table_address : 28;  // 12bit shifted
+                };
+            };
         };
     };
 };

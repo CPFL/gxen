@@ -31,12 +31,6 @@
 #include "cross_context.h"
 namespace cross {
 
-static uint64_t encode_address(uint64_t phys) {
-    phys >>= 8;
-    phys |= 0x00000001; /* present */
-    return phys;
-}
-
 static uint32_t lower32(uint64_t data) {
     return bit_mask<32>(data);
 }
@@ -76,11 +70,8 @@ void device_bar1::refresh_channel(context* ctx) {
         pramin::accessor pramin;
         ramin_.write32(0x0200, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x200));
         ramin_.write32(0x0204, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x204));
-        const uint64_t vm_size = 0x1000 * 128;
 //        ramin_.write32(0x0208, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x208));
 //        ramin_.write32(0x020c, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x20c));
-        ramin_.write32(0x0208, lower32(vm_size));
-        ramin_.write32(0x020c, upper32(vm_size));
     }
     registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
@@ -99,25 +90,25 @@ void device_bar1::shadow(context* ctx) {
         // TODO(Yusuke Suzuki): remove this shift get_phys_channel_id
         // const uint64_t offset = (ctx->get_phys_channel_id(vcid) * 0x1000ULL) + ctx->poll_area();
         const uint64_t offset = (vcid * 0x1000ULL) + ctx->poll_area();
-        const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, NULL);
+        struct shadow_page_entry entry;
+        const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
             const uint32_t pcid = ctx->get_phys_channel_id(vcid);
             const uint64_t virt = pcid * 0x1000ULL;
-            map(virt, gphys);
+            map(virt, entry.virt().raw);
         }
     }
 }
 
-void device_bar1::map(uint64_t virt, uint64_t phys) {
+void device_bar1::map(uint64_t virt, uint64_t data) {
     if ((virt / kPAGE_DIRECTORY_COVERED_SIZE) != 0) {
         return;
     }
     const uint64_t index = virt / kSMALL_PAGE_SIZE;
     assert((virt % kSMALL_PAGE_SIZE) == 0);
-    const uint64_t data = encode_address(phys);
     entry_.write32(0x8 * index, lower32(data));
     entry_.write32(0x8 * index + 0x4, upper32(data));
-    CROSS_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, phys);
+    CROSS_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, data);
 }
 
 void device_bar1::flush() {
