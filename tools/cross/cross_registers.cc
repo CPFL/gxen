@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <functional>
 #include "cross_registers.h"
 #include "cross_device.h"
 namespace cross {
@@ -36,6 +37,14 @@ uint32_t accessor::read32(uint32_t offset) {
 
 void accessor::write32(uint32_t offset, uint32_t val) {
     cross::device::instance()->write(0, offset, val);
+}
+
+bool accessor::wait_eq(uint32_t offset, uint32_t mask, uint32_t val) {
+    return wait_cb(offset, mask, val, std::equal_to<uint32_t>());
+}
+
+bool accessor::wait_ne(uint32_t offset, uint32_t mask, uint32_t val) {
+    return wait_cb(offset, mask, val, std::not_equal_to<uint32_t>());
 }
 
 } }  // namespace cross::registers
