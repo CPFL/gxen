@@ -62,7 +62,6 @@ class context : public session<context> {
     void fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     bool in_poll_area(uint64_t offset) const {
-        offset -= id() * CROSS_DOMAIN_CHANNELS * 0x1000;
         return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
     }
 
