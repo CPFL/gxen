@@ -130,7 +130,7 @@ class shadow_page_directory {
     void refresh(context* ctx, pramin::accessor* pramin, uint64_t page_directory_address);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
-    uint64_t resolve(uint64_t offset);
+    uint64_t resolve(uint64_t offset, struct shadow_page_entry* result);
     const shadow_page_entries& large_entries() const { return large_entries_; }
     const shadow_page_entries& small_entries() const { return small_entries_; }
 
@@ -153,7 +153,7 @@ class shadow_page_table {
     uint64_t size() const { return size_; }
     uint32_t page_directory_size() const { return round_up(size(), kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE; }
     uint32_t channel_id() const { return channel_id_; }
-    uint64_t resolve(uint64_t virtual_address);
+    uint64_t resolve(uint64_t virtual_address, struct shadow_page_entry* result);
     uint64_t page_directory_address() const { return page_directory_address_; }
     void dump() const;
 

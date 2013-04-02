@@ -38,7 +38,7 @@ void context::write_bar1(const command& cmd) {
         return;
     }
 
-    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset);
+    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
@@ -61,7 +61,7 @@ void context::read_bar1(const command& cmd) {
         return;
     }
 
-    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset);
+    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
