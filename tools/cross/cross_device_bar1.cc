@@ -46,12 +46,15 @@ static uint32_t upper32(uint64_t data) {
 }
 
 device_bar1::device_bar1()
-    : ramin_()
+    : ramin_(2)
     , directory_()
     , entry_() {
+    const uint64_t vm_size = 0x1000 * 128;
     // construct channel ramin
     ramin_.write32(0x0200, lower32(directory_.address()));
     ramin_.write32(0x0204, lower32(directory_.address()));
+	ramin_.write32(0x0208, lower32(vm_size));
+	ramin_.write32(0x020c, upper32(vm_size));
 
     // construct minimum page table
     struct page_directory dir = { };
@@ -63,6 +66,8 @@ device_bar1::device_bar1()
     dir.small_page_table_address = (entry_.address()) >> 12;
     directory_.write32(0x0, dir.word0);
     directory_.write32(0x4, dir.word1);
+
+    CROSS_LOG("construct shadow BAR1 channel %" PRIX64 " with PDE %" PRIX64 " PTE %" PRIX64 " \n", ramin_.address(), directory_.address(), entry_.address());
 }
 
 void device_bar1::shadow(context* ctx) {
