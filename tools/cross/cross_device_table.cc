@@ -27,15 +27,8 @@
 #include "cross_bit_mask.h"
 #include "cross_device_table.h"
 #include "cross_pramin.h"
+#include "cross_shadow_page_table.h"
 namespace cross {
-
-device_table::device_table()
-    : page_directory_() {
-}
-
-device_page_directory::device_page_directory()
-    : page_() {
-}
 
 }  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */

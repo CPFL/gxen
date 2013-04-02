@@ -75,5 +75,15 @@ void page::clear() {
     }
 }
 
+void page::write32(uint64_t offset, uint32_t value) {
+    assert(offset < 0x1000);
+    pramin::write32(address() + offset, value);
+}
+
+uint32_t page::read32(uint64_t offset) {
+    assert(offset < 0x1000);
+    return pramin::read32(address() + offset);
+}
+
 }  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */

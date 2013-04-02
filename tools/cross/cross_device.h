@@ -3,11 +3,14 @@
 #include <pciaccess.h>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "cross.h"
 #include "cross_lock.h"
 #include "cross_session.h"
 #include "cross_allocator.h"
 namespace cross {
+
+class device_bar1;
 
 class device : private boost::noncopyable {
  public:
@@ -29,6 +32,8 @@ class device : private boost::noncopyable {
     void set_pramin(uint32_t pramin) { pramin_ = pramin; }
     allocator* memory() { return &memory_; }
     const allocator* memory() const { return &memory_; }
+    device_bar1* bar1() { return bar1_.get(); }
+    const device_bar1* bar1() const { return bar1_.get(); }
 
  private:
     struct pci_device* device_;
@@ -37,6 +42,7 @@ class device : private boost::noncopyable {
     mutex mutex_handle_;
     uint32_t pramin_;
     boost::array<bar_t, 5> bars_;
+    boost::scoped_ptr<device_bar1> bar1_;
 };
 
 }  // namespace cross

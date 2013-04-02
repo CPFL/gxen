@@ -32,6 +32,7 @@
 #include "cross.h"
 #include "cross_device.h"
 #include "cross_mmio.h"
+#include "cross_device_bar1.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -47,7 +48,8 @@ device::device()
     , memory_(0x100000000ULL, 0x180000000ULL)  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , mutex_handle_()
     , pramin_()
-    , bars_() {
+    , bars_()
+    , bar1_() {
 }
 
 // not thread safe
@@ -104,9 +106,11 @@ void device::initialize(const bdf& bdf) {
 
     if (!initialized()) {
         pci_system_cleanup();
-    } else {
-        CROSS_LOG("device initialized\n");
+        return;
     }
+
+    bar1_.reset(new device_bar1());
+    CROSS_LOG("device initialized\n");
 }
 
 device::~device() {
