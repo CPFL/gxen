@@ -10,17 +10,18 @@ class context;
 // Only considers first 0x1000 tables
 class device_bar1 : private boost::noncopyable {
  public:
-  device_bar1();
-  uint64_t address() const { return directory_.address(); }
-  void shadow(context* ctx);
-  void flush();
+    device_bar1();
+    uint64_t address() const { return directory_.address(); }
+    void refresh_poll_area();
+    void shadow(context* ctx);
+    void flush();
 
  private:
-  void map(uint64_t virt, uint64_t phys);
+    void map(uint64_t virt, uint64_t phys);
 
-  page ramin_;
-  page directory_;
-  page entry_;
+    page ramin_;
+    page directory_;
+    page entry_;
 };
 
 }  // namespace cross

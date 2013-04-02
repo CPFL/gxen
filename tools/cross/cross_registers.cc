@@ -39,6 +39,12 @@ void accessor::write32(uint32_t offset, uint32_t val) {
     cross::device::instance()->write(0, offset, val);
 }
 
+uint32_t accessor::mask32(uint32_t offset, uint32_t mask, uint32_t val) {
+    const uint32_t tmp = read32(offset);
+    write32(offset, (tmp & ~mask) | val);
+    return tmp;
+}
+
 bool accessor::wait_eq(uint32_t offset, uint32_t mask, uint32_t val) {
     return wait_cb(offset, mask, val, std::equal_to<uint32_t>());
 }
