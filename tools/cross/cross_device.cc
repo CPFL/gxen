@@ -31,6 +31,7 @@
 #include <pciaccess.h>
 #include "cross.h"
 #include "cross_device.h"
+#include "cross_vram.h"
 #include "cross_mmio.h"
 #include "cross_device_bar1.h"
 
@@ -45,11 +46,12 @@ namespace cross {
 device::device()
     : device_()
     , virts_(2, -1)
-    , memory_(0x100000000ULL, 0x180000000ULL)  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , mutex_handle_()
     , pramin_()
     , bars_()
-    , bar1_() {
+    , bar1_()
+    , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+    {
 }
 
 // not thread safe
@@ -143,6 +145,14 @@ void device::write(int bar, uint32_t offset, uint32_t val) {
 
 device* device::instance() {
     return &boost::details::pool::singleton_default<device>::instance();
+}
+
+vram_memory* device::malloc(std::size_t n) {
+    return vram_->malloc(n);
+}
+
+void device::free(vram_memory* mem) {
+    vram_->free(mem);
 }
 
 }  // namespace cross

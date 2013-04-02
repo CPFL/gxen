@@ -2,7 +2,7 @@
 #define CROSS_DEVICE_BAR1_H_
 #include <boost/noncopyable.hpp>
 #include "cross.h"
-#include "cross_allocator.h"
+#include "cross_page.h"
 namespace cross {
 
 class context;
@@ -17,6 +17,7 @@ class device_bar1 : private boost::noncopyable {
  private:
   void map(uint64_t virt, uint64_t phys);
 
+  page ramin_;
   page directory_;
   page entry_;
 };

@@ -7,10 +7,11 @@
 #include "cross.h"
 #include "cross_lock.h"
 #include "cross_session.h"
-#include "cross_allocator.h"
 namespace cross {
 
 class device_bar1;
+class vram;
+class vram_memory;
 
 class device : private boost::noncopyable {
  public:
@@ -30,19 +31,19 @@ class device : private boost::noncopyable {
     void write(int bar, uint32_t offset, uint32_t val);
     uint32_t pramin() const { return pramin_; }
     void set_pramin(uint32_t pramin) { pramin_ = pramin; }
-    allocator* memory() { return &memory_; }
-    const allocator* memory() const { return &memory_; }
     device_bar1* bar1() { return bar1_.get(); }
     const device_bar1* bar1() const { return bar1_.get(); }
+    vram_memory* malloc(std::size_t n);
+    void free(vram_memory* mem);
 
  private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
-    allocator memory_;
     mutex mutex_handle_;
     uint32_t pramin_;
     boost::array<bar_t, 5> bars_;
     boost::scoped_ptr<device_bar1> bar1_;
+    boost::scoped_ptr<vram> vram_;
 };
 
 }  // namespace cross
