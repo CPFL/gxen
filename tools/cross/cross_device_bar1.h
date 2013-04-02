@@ -18,7 +18,7 @@ class device_bar1 : private boost::noncopyable {
     void flush();
 
  private:
-    void map(uint64_t virt, uint64_t phys);
+    void map(uint64_t virt, uint64_t data);
 
     page ramin_;
     page directory_;
