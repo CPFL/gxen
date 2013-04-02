@@ -135,25 +135,41 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
     const uint64_t vspace_phys = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
+
+    bool bar1 = false;
+    bool bar1_only = true;
+
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
+        bar1 = true;
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar1()->shadow(this);
         }
     }
+
     if (bar3_channel()->table()->page_directory_address() == page_directory) {
         // BAR3
+        bar1_only = false;
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
     }
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         if (channels(i)->enabled()) {
             if (channels(i)->table()->page_directory_address() == page_directory) {
+                bar1_only = false;
                 channels(i)->table()->refresh_page_directories(this, page_directory);
             }
         }
     }
+
+    if (bar1) {
+        device::instance()->bar1()->flush();
+        if (bar1_only) {
+            return;
+        }
+    }
+
     registers::accessor registers;
     registers.write32(0x100cb8, vspace_phys);
     registers.write32(0x100cbc, trigger);
