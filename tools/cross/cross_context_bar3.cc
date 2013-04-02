@@ -31,7 +31,7 @@
 namespace cross {
 
 void context::write_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset);
+    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
@@ -46,7 +46,7 @@ void context::write_bar3(const command& cmd) {
 }
 
 void context::read_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset);
+    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {

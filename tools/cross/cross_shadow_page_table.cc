@@ -69,12 +69,12 @@ void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
 }
 
-uint64_t shadow_page_table::resolve(uint64_t virtual_address) {
+uint64_t shadow_page_table::resolve(uint64_t virtual_address, struct shadow_page_entry* result) {
     const uint32_t index = virtual_address / kPAGE_DIRECTORY_COVERED_SIZE;
     if (directories_.size() <= index) {
         return UINT64_MAX;
     }
-    return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE);
+    return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE, result);
 }
 
 void shadow_page_table::dump() const {
@@ -160,13 +160,16 @@ void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint
     phys_ = virt;
 }
 
-uint64_t shadow_page_directory::resolve(uint64_t offset) {
+uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entry* result) {
     if (virt().large_page_table_present) {
         const uint64_t index = offset / kLARGE_PAGE_SIZE;
         const uint64_t rest = offset % kLARGE_PAGE_SIZE;
         if (large_entries_.size() > index) {
             const struct shadow_page_entry& entry = large_entries_[index];
             if (entry.present()) {
+                if (result) {
+                    *result = entry;
+                }
                 const uint64_t address = entry.virt().address;
                 return (address << 12) + rest;
             }
@@ -179,6 +182,9 @@ uint64_t shadow_page_directory::resolve(uint64_t offset) {
         if (small_entries_.size() > index) {
             const struct shadow_page_entry& entry = small_entries_[index];
             if (entry.present()) {
+                if (result) {
+                    *result = entry;
+                }
                 const uint64_t address = entry.virt().address;
                 return (address << 12) + rest;
             }

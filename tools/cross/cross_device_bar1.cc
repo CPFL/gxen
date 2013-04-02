@@ -99,7 +99,7 @@ void device_bar1::shadow(context* ctx) {
         // TODO(Yusuke Suzuki): remove this shift get_phys_channel_id
         // const uint64_t offset = (ctx->get_phys_channel_id(vcid) * 0x1000ULL) + ctx->poll_area();
         const uint64_t offset = (vcid * 0x1000ULL) + ctx->poll_area();
-        const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset);
+        const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, NULL);
         if (gphys != UINT64_MAX) {
             const uint32_t pcid = ctx->get_phys_channel_id(vcid);
             const uint64_t virt = pcid * 0x1000ULL;
