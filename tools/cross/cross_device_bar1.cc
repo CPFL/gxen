@@ -63,9 +63,26 @@ device_bar1::device_bar1()
     directory_.write32(0x0, dir.word0);
     directory_.write32(0x4, dir.word1);
 
+    // refresh_channel();
     refresh_poll_area();
 
     CROSS_LOG("construct shadow BAR1 channel %" PRIX64 " with PDE %" PRIX64 " PTE %" PRIX64 " \n", ramin_.address(), directory_.address(), entry_.address());
+}
+
+void device_bar1::refresh_channel(context* ctx) {
+    // set ramin as BAR1 channel
+    {
+        // TODO(Yusuke Suzuki): Fix this table values
+        pramin::accessor pramin;
+        ramin_.write32(0x0200, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x200));
+        ramin_.write32(0x0204, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x204));
+        const uint64_t vm_size = 0x1000 * 128;
+//        ramin_.write32(0x0208, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x208));
+//        ramin_.write32(0x020c, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x20c));
+        ramin_.write32(0x0208, lower32(vm_size));
+        ramin_.write32(0x020c, upper32(vm_size));
+    }
+    registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
 
 void device_bar1::refresh_poll_area() {
@@ -77,9 +94,11 @@ void device_bar1::refresh_poll_area() {
 
 void device_bar1::shadow(context* ctx) {
     CROSS_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
-    for (uint32_t vcid = 0; vcid < CROSS_DOMAIN_CHANNELS; ++vcid) {
+    // for (uint32_t vcid = 0; vcid < CROSS_DOMAIN_CHANNELS; ++vcid) {
+    for (uint32_t vcid = 0; vcid < CROSS_CHANNELS; ++vcid) {
         // TODO(Yusuke Suzuki): remove this shift get_phys_channel_id
-        const uint64_t offset = (ctx->get_phys_channel_id(vcid) * 0x1000ULL) + ctx->poll_area();
+        // const uint64_t offset = (ctx->get_phys_channel_id(vcid) * 0x1000ULL) + ctx->poll_area();
+        const uint64_t offset = (vcid * 0x1000ULL) + ctx->poll_area();
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset);
         if (gphys != UINT64_MAX) {
             const uint32_t pcid = ctx->get_phys_channel_id(vcid);

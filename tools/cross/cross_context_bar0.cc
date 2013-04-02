@@ -50,9 +50,9 @@ void context::write_bar0(const command& cmd) {
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
             CROSS_LOG("0x1704 => 0x%" PRIX32 "\n", value);
             bar1_channel()->refresh(this, phys);
-            // TODO(Yusuke Suzuki)
-            // This value should not be set by device models
-            registers::write32(0x1704, value);
+            CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                device::instance()->bar1()->refresh_channel(this);
+            }
             return;
         }
     case 0x001714: {
