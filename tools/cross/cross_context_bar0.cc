@@ -67,8 +67,8 @@ void context::write_bar0(const command& cmd) {
     case 0x002254: {
             // POLL_AREA
             poll_area_ = bit_mask<28, uint64_t>(cmd.value) << 12;
-            reg_poll_ = cmd.value;
-            registers::write32(0x2254, reg_poll_);
+            reg_[cmd.offset] = cmd.value;
+            registers::write32(0x2254, cmd.value);
             return;
         }
     case 0x002270: {
@@ -253,7 +253,7 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x002254:
-        buffer()->value = reg_poll_;
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x002270:
