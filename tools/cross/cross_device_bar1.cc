@@ -68,10 +68,10 @@ void device_bar1::refresh_channel(context* ctx) {
     {
         // TODO(Yusuke Suzuki): Fix this table values
         pramin::accessor pramin;
-        ramin_.write32(0x0200, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x200));
-        ramin_.write32(0x0204, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x204));
-//        ramin_.write32(0x0208, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x208));
-//        ramin_.write32(0x020c, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x20c));
+        ramin_.write32(0x0200, lower32(directory_.address()));
+        ramin_.write32(0x0204, upper32(directory_.address()));
+//         ramin_.write32(0x0200, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x200));
+//         ramin_.write32(0x0204, pramin.read32(ctx->bar1_channel()->ramin_address() + 0x204));
     }
     registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
