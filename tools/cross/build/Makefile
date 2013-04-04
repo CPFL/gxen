@@ -4,7 +4,8 @@ VPATH+=:$(SRCDIR)
 CPPFLAGS= -g -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 LDFLAGS=
 TARGET=cross
-LIBS= -lpciaccess -lrt -lboost_system -lboost_thread -lpthread
+LIBS= -lpciaccess -lrt -lboost_system -lboost_thread -lpthread -lxenlight -lxenctrl
+# http://wiki.xen.org/wiki/Choice_of_Toolstacks
 
 SRC=$(notdir $(wildcard $(SRCDIR)*.c) $(wildcard $(SRCDIR)*.cc) $(wildcard $(SRCDIR)*.asm))
 OBJS=$(addsuffix .o, $(basename $(SRC)))
