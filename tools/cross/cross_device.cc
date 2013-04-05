@@ -56,6 +56,7 @@ device::device()
     , xl_ctx_()
     , xl_logger_()
     , xl_device_pci_()
+    , domid_(-1)
     {
     if (!(xl_logger_ = xtl_createlogger_stdiostream(stderr, XTL_PROGRESS,  0))) {
         std::exit(1);
@@ -192,6 +193,12 @@ void device::free(vram_memory* mem) {
 bool device::try_acquire_gpu(context* ctx) {
     CROSS_SYNCHRONIZED(mutex_handle()) {
         // TODO(Yusuke Suzuki): check GPU doesn't work now
+        libxl_device_pci_init(&xl_device_pci_);
+        if (domid_ >= 0) {
+            libxl_device_pci_remove(xl_ctx_, domid_, &xl_device_pci_, 0);
+        }
+        domid_ = ctx->domid();
+        libxl_device_pci_add(xl_ctx_, domid_, &xl_device_pci_, 0);
     }
     return true;
 }

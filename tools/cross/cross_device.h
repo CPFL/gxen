@@ -56,6 +56,7 @@ class device : private boost::noncopyable {
     libxl_ctx* xl_ctx_;
     xentoollog_logger_stdiostream* xl_logger_;
     libxl_device_pci xl_device_pci_;
+    int domid_;
 };
 
 }  // namespace cross
