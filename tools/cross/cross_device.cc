@@ -29,20 +29,12 @@
 #include <boost/thread.hpp>
 #include <boost/pool/detail/singleton.hpp>
 #include <pciaccess.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <libxl.h>
-// #include <xenctrl.h>
-#ifdef __cplusplus
-}
-#endif
-
 #include "cross.h"
+#include "cross_xen.h"
 #include "cross_device.h"
 #include "cross_vram.h"
 #include "cross_mmio.h"
+#include "cross_context.h"
 #include "cross_device_bar1.h"
 
 #define NVC0_VENDOR 0x10DE
@@ -61,7 +53,30 @@ device::device()
     , bars_()
     , bar1_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+    , xl_ctx_()
+    , xl_logger_()
+    , xl_device_pci_()
     {
+    if (!(xl_logger_ = xtl_createlogger_stdiostream(stderr, XTL_PROGRESS,  0))) {
+        std::exit(1);
+    }
+
+    if (libxl_ctx_alloc(&xl_ctx_, LIBXL_VERSION, 0, (xentoollog_logger*)xl_logger_)) {
+        fprintf(stderr, "cannot init xl context\n");
+        exit(1);
+    }
+}
+
+device::~device() {
+    if (xl_ctx_) {
+        libxl_ctx_free(xl_ctx_);
+    }
+    if (xl_logger_) {
+        xtl_logger_destroy((xentoollog_logger*)xl_logger_);
+    }
+    if (initialized()) {
+        pci_system_cleanup();
+    }
 }
 
 // not thread safe
@@ -121,14 +136,23 @@ void device::initialize(const bdf& bdf) {
         return;
     }
 
+    // init bar1 device
     bar1_.reset(new device_bar1());
-    CROSS_LOG("device initialized\n");
-}
 
-device::~device() {
-    if (initialized()) {
-        pci_system_cleanup();
+    // list assignable devices
+    int num = 0;
+    if (libxl_device_pci* pcidevs = libxl_device_pci_assignable_list(xl_ctx_, &num)) {
+        for (int i = 0; i < num; ++i) {
+            libxl_device_pci* pci = (pcidevs + i);
+            CROSS_LOG("PCI device: %02x:%02x.%02x => %d\n", pci->bus, pci->dev, pci->func, pci->domain);
+            if (pci->bus == bdf.bus && pci->dev == bdf.dev && pci->func == bdf.func) {
+                xl_device_pci_ = *pci;
+            }
+        }
+        std::free(pcidevs);
     }
+
+    CROSS_LOG("device initialized\n");
 }
 
 uint32_t device::acquire_virt() {
@@ -163,6 +187,13 @@ vram_memory* device::malloc(std::size_t n) {
 
 void device::free(vram_memory* mem) {
     vram_->free(mem);
+}
+
+bool device::try_acquire_gpu(context* ctx) {
+    CROSS_SYNCHRONIZED(mutex_handle()) {
+        // TODO(Yusuke Suzuki): check GPU doesn't work now
+    }
+    return true;
 }
 
 }  // namespace cross

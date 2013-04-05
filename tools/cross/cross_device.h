@@ -1,10 +1,12 @@
 #ifndef CROSS_DEVICE_H_
 #define CROSS_DEVICE_H_
+#include <vector>
 #include <pciaccess.h>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "cross.h"
+#include "cross_xen.h"
 #include "cross_lock.h"
 #include "cross_session.h"
 namespace cross {
@@ -12,6 +14,7 @@ namespace cross {
 class device_bar1;
 class vram;
 class vram_memory;
+class context;
 
 class device : private boost::noncopyable {
  public:
@@ -19,6 +22,7 @@ class device : private boost::noncopyable {
         void* addr;
         std::size_t size;
     };
+
     device();
     ~device();
     void initialize(const bdf& bdf);
@@ -36,6 +40,10 @@ class device : private boost::noncopyable {
     vram_memory* malloc(std::size_t n);
     void free(vram_memory* mem);
 
+    // VT-d
+    bool try_acquire_gpu(context* ctx);
+    void acquire_gpu(context* ctx);
+
  private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
@@ -44,6 +52,10 @@ class device : private boost::noncopyable {
     boost::array<bar_t, 5> bars_;
     boost::scoped_ptr<device_bar1> bar1_;
     boost::scoped_ptr<vram> vram_;
+    // libxl
+    libxl_ctx* xl_ctx_;
+    xentoollog_logger_stdiostream* xl_logger_;
+    libxl_device_pci xl_device_pci_;
 };
 
 }  // namespace cross

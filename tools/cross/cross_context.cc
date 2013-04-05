@@ -65,8 +65,9 @@ context::~context() {
 void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
-    id_ = 1;  // FIXME debug id
+    // id_ = 1;  // FIXME debug id
     barrier_.reset(new barrier::table(get_address_shift(), CROSS_2G));
+    device::instance()->try_acquire_gpu(this);
 }
 
 void context::handle(const command& cmd) {
