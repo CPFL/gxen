@@ -45,6 +45,17 @@
 
 namespace cross {
 
+static unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
+    unsigned int value;
+
+    value = pcidev->domain << 16;
+    value |= (pcidev->bus & 0xff) << 8;
+    value |= (pcidev->dev & 0x1f) << 3;
+    value |= (pcidev->func & 0x7);
+
+    return value;
+}
+
 device::device()
     : device_()
     , virts_(2, -1)
@@ -193,12 +204,19 @@ void device::free(vram_memory* mem) {
 bool device::try_acquire_gpu(context* ctx) {
     CROSS_SYNCHRONIZED(mutex_handle()) {
         // TODO(Yusuke Suzuki): check GPU doesn't work now
-        libxl_device_pci_init(&xl_device_pci_);
         if (domid_ >= 0) {
-            libxl_device_pci_remove(xl_ctx_, domid_, &xl_device_pci_, 0);
+            const int rc = cross_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
+            if (rc < 0) {
+                CROSS_FPRINTF(stderr, "xc_deassign_device failed\n");
+                return false;
+            }
         }
         domid_ = ctx->domid();
-        libxl_device_pci_add(xl_ctx_, domid_, &xl_device_pci_, 0);
+        const int rc = cross_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
+        if (rc < 0) {
+            CROSS_FPRINTF(stderr, "xc_assign_device failed\n");
+            return false;
+        }
     }
     return true;
 }

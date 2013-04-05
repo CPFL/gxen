@@ -5,9 +5,16 @@
 extern "C" {
 #endif
 #include <libxl.h>
-// #include <xenctrl.h>
+
+int cross_assign_device(libxl_ctx* ctx, int domid, unsigned int encoded_bdf);
+int cross_deassign_device(libxl_ctx* ctx, int domid, unsigned int encoded_bdf);
+
 #ifdef __cplusplus
 }
+#endif
+
+#ifndef __cplusplus
+#include <xenctrl.h>
 #endif
 
 #endif  // CROSS_XEN_H_
