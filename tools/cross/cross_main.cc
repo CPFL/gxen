@@ -66,12 +66,12 @@ int main(int argc, char** argv) {
     cross::bdf bdf = { { { 0, 0, 0 } } };
 
     if (argc <= 1) {
-        fprintf(stderr, "Usage: cross bdf\n");
+        CROSS_FPRINTF(stderr, "Usage: cross bdf\n");
         return 1;
     }
 
     if ((bdf.raw = strtol(argv[1], NULL, 16)) == 0) {
-        fprintf(stderr, "Usage: cross bdf\n");
+        CROSS_FPRINTF(stderr, "Usage: cross bdf\n");
         return 1;
     }
 
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
         cross::server s(io_service, CROSS_ENDPOINT);
         io_service.run();
     } catch (std::exception& e) {
-        std::cerr << "Exception: " << e.what() << "\n";
+        CROSS_FPRINTF(stderr, "Exception: %s\n", e.what());
     }
 
     return 0;

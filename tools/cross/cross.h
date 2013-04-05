@@ -11,10 +11,12 @@ namespace cross {
 #define CROSS_2G 0x80000000ULL
 #define CROSS_GPC_BCAST(r) (0x418000 + (r))
 
-#define CROSS_LOG(fmt, args...) do {\
-    std::printf("[CROSS] %s:%d - " fmt, __func__, __LINE__, ##args);\
-    std::fflush(stdout);\
-} while (0)
+#define CROSS_FPRINTF(stream, fmt, args...) do {\
+        std::fprintf(stream, "[CROSS] %s:%d - " fmt, __func__, __LINE__, ##args);\
+        std::fflush(stream);\
+    } while (0)
+
+#define CROSS_LOG(fmt, args...) CROSS_FPRINTF(stdout, fmt, ##args)
 
 #define CROSS_UNREACHABLE() assert(0)
 
