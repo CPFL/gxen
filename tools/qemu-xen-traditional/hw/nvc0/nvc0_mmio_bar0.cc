@@ -34,7 +34,6 @@
 #include "nvc0_context.h"
 #include "nvc0_vbios.inc"
 #include "nvc0_vm.h"
-#include "nvc0_bit_mask.h"
 
 // crystal freq is 27000KHz
 #define GPU_CLOCKS_PER_NANO_SEC 27
@@ -121,17 +120,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     case NV04_PTIMER_DENOMINATOR:  // 0x9210
         ret = timer_denominator;
         goto end;
-
-    // peephole
-    // these are write port
-    case 0x00155c:  // PEEPHOLE_W_CTRL
-        break;
-    case 0x060000:  // PEEPHOLE_W_ADDR
-        break;
-    case 0x060004:  // PEEPHOLE_W_DATA
-        break;
-    case 0x06000c:  // PEEPHOLE_RW_ADDR_HIGH
-        break;
     }
 
     {
@@ -181,14 +169,6 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         timer_denominator = val;
         NVC0_PRINTF("denominator set\n");
         return;
-
-    case 0x001704:
-        NVC0_PRINTF("BAR1 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
-        break;
-
-    case 0x001714:
-        NVC0_PRINTF("BAR3 ramin 0x%"PRIx64"\n", nvc0::bit_mask<30, uint64_t>(val) << 12);
-        break;
     }
 
     const cross::command cmd = {
