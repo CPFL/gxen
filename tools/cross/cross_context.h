@@ -56,6 +56,7 @@ class context : public session<context> {
         return phys - id() * CROSS_DOMAIN_CHANNELS;
     }
     uint32_t id() const { return id_; }
+    int domid() const { return domid_; }
     uint64_t poll_area() const { return poll_area_; }
 
  private:
