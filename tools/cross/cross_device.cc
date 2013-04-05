@@ -29,6 +29,16 @@
 #include <boost/thread.hpp>
 #include <boost/pool/detail/singleton.hpp>
 #include <pciaccess.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <libxl.h>
+// #include <xenctrl.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include "cross.h"
 #include "cross_device.h"
 #include "cross_vram.h"
