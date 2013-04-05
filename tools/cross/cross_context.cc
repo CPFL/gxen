@@ -58,7 +58,7 @@ context::context(boost::asio::io_service& io_service)
 context::~context() {
     if (accepted_) {
         device::instance()->release_virt(id_);
-        std::cout << "END and release GPU id " << id_ << std::endl;
+        CROSS_LOG("END and release GPU id %u\n", id_);
     }
 }
 
@@ -74,7 +74,7 @@ void context::handle(const command& cmd) {
     switch (cmd.type) {
     case command::TYPE_INIT:
         domid_ = cmd.value;
-        std::cout << "INIT domid " << domid_ << " & GPU id " << id_ << std::endl;
+        CROSS_LOG("INIT domid %d & GPU id %u\n", domid(), id());
         break;
 
     case command::TYPE_WRITE:

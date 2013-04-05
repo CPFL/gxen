@@ -23,7 +23,7 @@ class session : private boost::noncopyable {
     }
 
     void start() {
-        std::cout << "START" << std::endl;
+        CROSS_LOG("START\n");
         static_cast<Derived*>(this)->accept();
         boost::asio::async_read(
             socket_,
