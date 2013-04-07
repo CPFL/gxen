@@ -65,7 +65,7 @@ void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
     // id_ = 1;  // FIXME debug id
-    barrier_.reset(new barrier::table(get_address_shift(), CROSS_2G));
+    barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
     device::instance()->try_acquire_gpu(this);
     fifo_playlist_.reset(new page());
 }
