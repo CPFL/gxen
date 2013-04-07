@@ -42,8 +42,9 @@ class context : public session<context> {
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
+    uint64_t vram_size() const { return CROSS_2G; }
     uint64_t get_address_shift() const {
-        return id() * CROSS_2G;
+        return id() * vram_size();
     }
     uint64_t get_phys_address(uint64_t virt) const {
         return virt + get_address_shift();

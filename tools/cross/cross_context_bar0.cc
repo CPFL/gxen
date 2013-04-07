@@ -98,7 +98,7 @@ void context::write_bar0(const command& cmd) {
         }
 
     case 0x022438:
-        // 2GB
+        // memctrl size (2)
         return;
 
     case 0x100cb8:
@@ -133,7 +133,7 @@ void context::write_bar0(const command& cmd) {
         break;
 
     case 0x121c75:
-        // 2GB
+        // memctrl size (2)
         return;
 
     case 0x409500:
@@ -273,8 +273,7 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x022438:
-        // VRAM 2GB
-        buffer()->value = 0x2;
+        buffer()->value = vram_size() / CROSS_1G;
         return;
 
     case 0x100cb8:
@@ -320,8 +319,7 @@ void context::read_bar0(const command& cmd) {
         }
 
     case 0x121c75:
-        // VRAM 2GB (mem ctrl num)
-        buffer()->value = 0x2;
+        buffer()->value = vram_size() / CROSS_1G;
         return;
 
     case 0x409500:

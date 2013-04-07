@@ -8,7 +8,8 @@ namespace cross {
 #define CROSS_ENDPOINT "/tmp/cross_endpoint"
 #define CROSS_CHANNELS 128
 #define CROSS_DOMAIN_CHANNELS (CROSS_CHANNELS / 2)
-#define CROSS_2G 0x80000000ULL
+#define CROSS_1G 0x40000000ULL
+#define CROSS_2G (CROSS_1G * 2)
 #define CROSS_GPC_BCAST(r) (0x418000 + (r))
 
 #define CROSS_FPRINTF(stream, fmt, args...) do {\
