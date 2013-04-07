@@ -18,6 +18,8 @@ struct unique_ptr {
   typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
 };
 
+class page;
+
 class context : public session<context> {
  public:
     context(boost::asio::io_service& io_service);
@@ -73,10 +75,9 @@ class context : public session<context> {
     unique_ptr<channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
-
     uint64_t poll_area_;
-
     boost::scoped_array<uint32_t> reg_;
+    unique_ptr<page>::type fifo_playlist_;
 };
 
 }  // namespace cross
