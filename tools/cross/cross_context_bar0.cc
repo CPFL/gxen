@@ -88,12 +88,12 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x002634: {
             // channel kill
+            reg_[cmd.offset] = cmd.value;
             if (cmd.value >= CROSS_DOMAIN_CHANNELS) {
                 return;
             }
             const uint32_t phys = get_phys_channel_id(cmd.value);
             registers::write32(cmd.offset, phys);
-            reg_channel_kill_ = cmd.value;
             return;
         }
 
@@ -269,7 +269,7 @@ void context::read_bar0(const command& cmd) {
 
     case 0x002634:
         // channel kill
-        buffer()->value = reg_channel_kill_;
+        buffer()->value = reg_[cmd.offset];
         return;
 
     case 0x022438:
