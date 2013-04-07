@@ -77,9 +77,6 @@ class context : public session<context> {
     uint64_t poll_area_;
 
     boost::scoped_array<uint32_t> reg_;
-
-    // register value stores
-    uint32_t reg_channel_kill_;
 };
 
 }  // namespace cross
