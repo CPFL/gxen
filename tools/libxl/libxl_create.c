@@ -1097,8 +1097,10 @@ static void domcreate_attach_pci(libxl__egc *egc, libxl__multidev *multidev,
         goto error_out;
     }
 
-    for (i = 0; i < d_config->num_pcidevs; i++)
-        libxl__device_pci_add(gc, domid, &d_config->pcidevs[i], 1);
+    for (i = 0; i < d_config->num_pcidevs; i++) {
+	// TODO(Yusuke Suzuki): we should check target device is nvc0
+        libxl__device_pci_add_with_nvc0(gc, domid, &d_config->pcidevs[i], 1, d_config->b_info.u.hvm.nvc0 >= 0);
+    }
 
     if (d_config->num_pcidevs > 0) {
         ret = libxl__create_pci_backend(gc, domid, d_config->pcidevs,
