@@ -66,7 +66,6 @@ void context::accept() {
     id_ = device::instance()->acquire_virt();
     // id_ = 1;  // FIXME debug id
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    device::instance()->try_acquire_gpu(this);
     fifo_playlist_.reset(new page());
 }
 
@@ -75,6 +74,9 @@ void context::handle(const command& cmd) {
     case command::TYPE_INIT:
         domid_ = cmd.value;
         CROSS_LOG("INIT domid %d & GPU id %u\n", domid(), id());
+
+        // domid is not passed
+        device::instance()->try_acquire_gpu(this);
         break;
 
     case command::TYPE_WRITE:
