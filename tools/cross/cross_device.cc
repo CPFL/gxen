@@ -207,14 +207,14 @@ bool device::try_acquire_gpu(context* ctx) {
         if (domid_ >= 0) {
             const int rc = cross_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
             if (rc < 0) {
-                CROSS_FPRINTF(stderr, "xc_deassign_device failed\n");
+                CROSS_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
                 return false;
             }
         }
         domid_ = ctx->domid();
         const int rc = cross_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
         if (rc < 0) {
-            CROSS_FPRINTF(stderr, "xc_assign_device failed\n");
+            CROSS_FPRINTF(stderr, "xc_assign_device failed - (%d)\n", rc);
             return false;
         }
     }
