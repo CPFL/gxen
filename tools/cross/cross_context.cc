@@ -74,9 +74,6 @@ void context::handle(const command& cmd) {
     case command::TYPE_INIT:
         domid_ = cmd.value;
         CROSS_LOG("INIT domid %d & GPU id %u\n", domid(), id());
-
-        // domid is not passed
-        device::instance()->try_acquire_gpu(this);
         break;
 
     case command::TYPE_WRITE:
@@ -134,6 +131,8 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
     registers::write32(0x70000, 1);
     // FIXME(Yusuke Suzuki): BAR flush wait code is needed?
     // usleep(1000);
+
+    device::instance()->try_acquire_gpu(this);
 
     // registers::write32(0x2270, address >> 12);
     registers::write32(0x2270, fifo_playlist_->address() >> 12);
