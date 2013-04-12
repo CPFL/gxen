@@ -51,7 +51,7 @@ channel::channel(int id)
     , enabled_(false)
     , ramin_address_()
     , table_(new shadow_page_table(id))
-    , ramin_(new page(2)) {
+    , ramin_(new page(1)) {
 }
 
 channel::~channel() {

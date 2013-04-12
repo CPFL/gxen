@@ -13,7 +13,8 @@ class page : private boost::noncopyable {
     uint64_t address() const { return vram_->address(); }
     void write32(uint64_t offset, uint32_t value);
     uint32_t read32(uint64_t offset);
-    std::size_t size() const;
+    std::size_t page_size() const;
+    uint64_t size() const;
 
  private:
     vram_memory* vram_;
