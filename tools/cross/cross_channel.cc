@@ -29,6 +29,7 @@
 #include "cross_barrier.h"
 #include "cross_pramin.h"
 #include "cross_inttypes.h"
+#include "cross_page.h"
 #include "cross_bit_mask.h"
 namespace cross {
 
@@ -47,7 +48,8 @@ channel::channel(int id)
     : id_(id)
     , enabled_(false)
     , ramin_address_()
-    , table_(new shadow_page_table(id)) {
+    , table_(new shadow_page_table(id))
+    , ramin_(new page(2)) {
 }
 
 channel::~channel() {
