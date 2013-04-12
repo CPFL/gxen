@@ -7,6 +7,7 @@
 namespace cross {
 class shadow_page_table;
 class context;
+class page;
 
 class channel : private boost::noncopyable {
  public:
@@ -26,6 +27,7 @@ class channel : private boost::noncopyable {
     bool enabled_;
     uint64_t ramin_address_;
     boost::scoped_ptr<shadow_page_table> table_;
+    boost::scoped_ptr<page> ramin_;
 };
 
 }  // namespace cross
