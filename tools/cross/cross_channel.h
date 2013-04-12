@@ -13,7 +13,7 @@ class channel : private boost::noncopyable {
  public:
     channel(int id);
     ~channel();
-    void refresh(context* ctx, uint64_t addr);
+    uint64_t refresh(context* ctx, uint64_t addr);
     shadow_page_table* table() { return table_.get(); }
     const shadow_page_table* table() const { return table_.get(); }
     int id() const { return id_; }

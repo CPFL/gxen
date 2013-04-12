@@ -228,8 +228,11 @@ void context::write_bar0(const command& cmd) {
                 reg_[cmd.offset] = cmd.value;
                 const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
                 const uint64_t phys = get_phys_address(virt);
+
                 const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
                 channels(virt_channel_id)->refresh(this, phys);
+
+                // const uint32_t value = bit_clear<28>(cmd.value) | (channels(virt_channel_id)->refresh(this, phys) >> 12);
                 registers::write32(adjusted_offset, value);
             } else {
                 // status

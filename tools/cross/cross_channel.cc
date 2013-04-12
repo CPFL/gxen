@@ -33,13 +33,15 @@
 #include "cross_bit_mask.h"
 namespace cross {
 
-static uint64_t read64(pramin::accessor* pramin, uint64_t addr) {
+template<typename T>
+static uint64_t read64(T* pramin, uint64_t addr) {
     const uint32_t lower = pramin->read32(addr);
     const uint32_t upper = pramin->read32(addr + 0x4);
     return lower | (static_cast<uint64_t>(upper) << 32);
 }
 
-static void write64(pramin::accessor* pramin, uint64_t addr, uint64_t value) {
+template<typename T>
+static void write64(T* pramin, uint64_t addr, uint64_t value) {
     pramin->write32(addr, bit_mask<32>(value));
     pramin->write32(addr + 0x4, value >> 32);
 }
@@ -88,42 +90,67 @@ void channel::attach(context* ctx, uint64_t addr) {
     {
         pramin::accessor pramin;
 
+        // shadow ramin
+        for (uint64_t offset = 0; offset < ramin_->size(); offset += 0x4) {
+            const uint32_t value = pramin.read32(ramin_address() + offset);
+            ramin_->write32(offset, value);
+        }
+
+        // and adjust address
         // page directory
         page_directory_virt = read64(&pramin, ramin_address() + 0x0200);
         page_directory_phys = ctx->get_phys_address(page_directory_virt);
         page_directory_size = read64(&pramin, ramin_address() + 0x0208);
+
+        // TODO(Yusuke Suzuki): remove it
         write64(&pramin, ramin_address() + 0x0200, page_directory_phys);
+
+        write64(ramin_.get(), 0x0200, page_directory_phys);
         CROSS_LOG("virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", page_directory_virt, page_directory_phys);
 
         // fctx
         const uint64_t fctx_virt = read64(&pramin, ramin_address() + 0x08);
         const uint64_t fctx_phys = ctx->get_phys_address(fctx_virt);
+
+        // TODO(Yusuke Suzuki): remove it
         write64(&pramin, ramin_address() + 0x08, fctx_phys);
+
+        write64(ramin_.get(), 0x08, fctx_phys);
 
         // mpeg ctx
         const uint64_t mpeg_ctx_limit_virt = pramin.read32(ramin_address() + 0x60 + 0x04);
         const uint64_t mpeg_ctx_limit_phys = ctx->get_phys_address(mpeg_ctx_limit_virt);
+
+        // TODO(Yusuke Suzuki): remove it
         pramin.write32(ramin_address() + 0x60 + 0x04, mpeg_ctx_limit_phys);
+
+        ramin_->write32(0x60 + 0x04, mpeg_ctx_limit_phys);
+
         const uint64_t mpeg_ctx_virt = pramin.read32(ramin_address() + 0x60 + 0x08);
         const uint64_t mpeg_ctx_phys = ctx->get_phys_address(mpeg_ctx_virt);
+
+        // TODO(Yusuke Suzuki): remove it
         pramin.write32(ramin_address() + 0x60 + 0x08, mpeg_ctx_phys);
+
+        ramin_->write32(0x60 + 0x08, mpeg_ctx_phys);
     }
     table()->refresh(ctx, page_directory_phys, page_directory_size);
     ctx->barrier()->map(ramin_address());
 }
 
-void channel::refresh(context* ctx, uint64_t addr) {
+uint64_t channel::refresh(context* ctx, uint64_t addr) {
     CROSS_LOG("mapping 0x%" PRIX64 "\n", addr);
     if (enabled()) {
         if (addr == ramin_address()) {
             // same channel ramin
-            return;
+            return ramin_->address();
         }
         detach(ctx, addr);
     }
     enabled_ = true;
     ramin_address_ = addr;
     attach(ctx, addr);
+    return ramin_->address();
 }
 
 }  // namespace cross
