@@ -43,21 +43,24 @@ page::~page() {
 
 void page::clear() {
     pramin::accessor pramin;
-    for (std::size_t i = 0; i < (0x1000 / sizeof(uint32_t)); i += sizeof(uint32_t)) {
+    for (std::size_t i = 0; i < ((0x1000 * size()) / sizeof(uint32_t)); i += sizeof(uint32_t)) {
         pramin.write32(address() + i, 0);
     }
 }
 
 void page::write32(uint64_t offset, uint32_t value) {
-    assert(offset < 0x1000);
+    assert(offset < (0x1000 * size()));
     pramin::write32(address() + offset, value);
 }
 
 uint32_t page::read32(uint64_t offset) {
-    assert(offset < 0x1000);
+    assert(offset < (0x1000 * size()));
     return pramin::read32(address() + offset);
 }
 
+std::size_t page::size() const {
+    return vram_->n();
+}
 
 }  // namespace cross
 /* vim: set sw=4 ts=4 et tw=80 : */
