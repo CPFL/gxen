@@ -139,14 +139,6 @@ void context::write_bar0(const command& cmd) {
     case 0x409500:
         // WRCMD_DATA
         reg_[cmd.offset] = cmd.value;
-        if (bit_check<31>(cmd.value)) {
-            // VRAM address
-            const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
-            const uint64_t phys = get_phys_address(virt);
-            const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-            registers::write32(cmd.offset, value);
-            return;
-        }
         break;
 
     case 0x409504: {
