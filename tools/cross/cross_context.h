@@ -3,6 +3,7 @@
 #include <boost/scoped_array.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_channel.h"
@@ -22,6 +23,8 @@ class page;
 
 class context : public session<context> {
  public:
+    typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
+
     context(boost::asio::io_service& io_service);
     virtual ~context();
     void accept();
@@ -42,6 +45,8 @@ class context : public session<context> {
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
+    channel_map* ramin_channel_map() { return &ramin_channel_map_; }
+    const channel_map* ramin_channel_map() const { return &ramin_channel_map_; }
     uint64_t vram_size() const { return CROSS_2G; }
     uint64_t get_address_shift() const {
         return id() * vram_size();
@@ -79,6 +84,7 @@ class context : public session<context> {
     uint64_t poll_area_;
     boost::scoped_array<uint32_t> reg_;
     unique_ptr<page>::type fifo_playlist_;
+    channel_map ramin_channel_map_;
 };
 
 }  // namespace cross
