@@ -112,7 +112,6 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
 
     // scan fifo and update values
     {
-        // TODO(Yusuke Suzuki): Virtualized playlist area
         pramin::accessor pramin;
         uint32_t i;
         CROSS_LOG("FIFO playlist update %u\n", count);
@@ -121,10 +120,6 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
             CROSS_LOG("FIFO playlist cid %u => %u\n", cid, get_phys_channel_id(cid));
             fifo_playlist_->write32(i * 0x8 + 0x0, get_phys_channel_id(cid));
             fifo_playlist_->write32(i * 0x8 + 0x4, 0x4);
-#if 0
-            pramin.write32(address + i * 0x8, get_phys_channel_id(cid));
-            pramin.write32(address + i * 0x8 + 0x4, 0x4);
-#endif
         }
     }
 
