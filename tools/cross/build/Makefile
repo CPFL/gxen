@@ -1,7 +1,8 @@
 SRCDIR=../
 VPATH+=:$(SRCDIR)
 
-CPPFLAGS= -g -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
+CPPFLAGS+= -g -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
+CXXFLAGS+= -std=c++0x
 LDFLAGS=
 TARGET=cross
 LIBS= -lpciaccess -lrt -lboost_system -lboost_thread -lpthread -lxenlight -lxenctrl
