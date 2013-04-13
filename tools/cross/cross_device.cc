@@ -205,6 +205,9 @@ bool device::try_acquire_gpu(context* ctx) {
     CROSS_SYNCHRONIZED(mutex_handle()) {
         // TODO(Yusuke Suzuki): check GPU doesn't work now
         if (domid_ >= 0) {
+            if (domid_ == ctx->domid()) {
+                return true;
+            }
             const int rc = cross_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
             if (rc < 0) {
                 CROSS_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
