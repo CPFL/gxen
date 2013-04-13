@@ -149,6 +149,25 @@ void context::write_bar0(const command& cmd) {
         }
         break;
 
+    case 0x409504: {
+            // WRCMD_CMD
+            reg_[cmd.offset] = cmd.value;
+            uint32_t data = reg_[0x409500];
+            if (bit_check<31>(data)) {
+                // VRAM address
+                const uint64_t virt = (bit_mask<28, uint64_t>(data) << 12);
+                const uint64_t phys = get_phys_address(virt);
+                data = bit_clear<28>(data) | (phys >> 12);
+            }
+            // fire cmd
+            // TODO(Yusuke Suzuki): queued system needed
+            CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                registers::write32(0x409500, data);
+                registers::write32(0x409504, cmd.value);
+            }
+            return;
+        }
+
     case 0x409b00:
         // graph IRQ channel instance
         return;
@@ -327,6 +346,11 @@ void context::read_bar0(const command& cmd) {
 
     case 0x409500:
         // WRCMD_DATA
+        buffer()->value = reg_[cmd.offset];
+        return;
+
+    case 0x409504:
+        // WRCMD_CMD
         buffer()->value = reg_[cmd.offset];
         return;
 
