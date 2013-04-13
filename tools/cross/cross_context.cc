@@ -47,8 +47,7 @@ context::context(boost::asio::io_service& io_service)
     , channels_()
     , barrier_()
     , poll_area_(0)
-    , reg_(new uint32_t[32ULL * 1024 * 1024])
-    , fifo_playlist_() {
+    , reg_(new uint32_t[32ULL * 1024 * 1024]) {
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channels_[i].reset(new channel(i));
     }
@@ -66,7 +65,7 @@ void context::accept() {
     id_ = device::instance()->acquire_virt();
     // id_ = 1;  // FIXME debug id
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    fifo_playlist_.reset(new page());
+    device::instance()->try_acquire_gpu(this);
 }
 
 void context::handle(const command& cmd) {
@@ -118,8 +117,8 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
         for (i = 0; i < count; ++i) {
             const uint32_t cid = pramin.read32(address + i * 0x8);
             CROSS_LOG("FIFO playlist cid %u => %u\n", cid, get_phys_channel_id(cid));
-            fifo_playlist_->write32(i * 0x8 + 0x0, get_phys_channel_id(cid));
-            fifo_playlist_->write32(i * 0x8 + 0x4, 0x4);
+            pramin.write32(address + i * 0x8, get_phys_channel_id(cid));
+            pramin.write32(address + i * 0x8 + 0x4, 0x4);
         }
     }
 
@@ -129,8 +128,7 @@ void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
 
     device::instance()->try_acquire_gpu(this);
 
-    // registers::write32(0x2270, address >> 12);
-    registers::write32(0x2270, fifo_playlist_->address() >> 12);
+    registers::write32(0x2270, address >> 12);
     registers::write32(0x2274, reg_count);
 }
 
