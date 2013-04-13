@@ -48,7 +48,8 @@ context::context(boost::asio::io_service& io_service)
     , barrier_()
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
-    , fifo_playlist_() {
+    , fifo_playlist_()
+    , ramin_channel_map_() {
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channels_[i].reset(new channel(i));
     }

@@ -149,7 +149,25 @@ void context::write_bar0(const command& cmd) {
                 // VRAM address
                 const uint64_t virt = (bit_mask<28, uint64_t>(data) << 12);
                 const uint64_t phys = get_phys_address(virt);
-                data = bit_clear<28>(data) | (phys >> 12);
+
+                typedef context::channel_map::iterator iter_t;
+                std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(phys);
+
+                if (range.first == range.second) {
+                    // no channel found
+                    data = bit_clear<28>(data) | (phys >> 12);
+                } else {
+                    // channel found
+                    // channel ramin shift
+                    for (iter_t it = range.first; it != range.second; ++it) {
+                        const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
+                        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                            registers::write32(0x409500, res);
+                            registers::write32(0x409504, cmd.value);
+                        }
+                    }
+                    return;
+                }
             }
             // fire cmd
             // TODO(Yusuke Suzuki): queued system needed
@@ -239,11 +257,7 @@ void context::write_bar0(const command& cmd) {
                 reg_[cmd.offset] = cmd.value;
                 const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
                 const uint64_t phys = get_phys_address(virt);
-
-                const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-                channels(virt_channel_id)->refresh(this, phys);
-
-                // const uint32_t value = bit_clear<28>(cmd.value) | (channels(virt_channel_id)->refresh(this, phys) >> 12);
+                const uint32_t value = bit_clear<28>(cmd.value) | (channels(virt_channel_id)->refresh(this, phys) >> 12);
                 registers::write32(adjusted_offset, value);
             } else {
                 // status
