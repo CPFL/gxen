@@ -156,16 +156,20 @@ void context::write_bar0(const command& cmd) {
                 if (range.first == range.second) {
                     // no channel found
                     data = bit_clear<28>(data) | (phys >> 12);
+                    CROSS_LOG("channel not found graph\n");
                 } else {
                     // channel found
                     // channel ramin shift
+                    CROSS_LOG("WRCMD start cmd %" PRIX32 "\n", cmd.value);
                     for (iter_t it = range.first; it != range.second; ++it) {
                         const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
                         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                            CROSS_LOG("    channel %d ramin graph with cmd %" PRIX32 "\n", it->second->id(), cmd.value);
                             registers::write32(0x409500, res);
                             registers::write32(0x409504, cmd.value);
                         }
                     }
+                    CROSS_LOG("WRCMD end cmd %" PRIX32 "\n", cmd.value);
                     return;
                 }
             }
