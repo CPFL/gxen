@@ -18,6 +18,8 @@ struct unique_ptr {
   typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
 };
 
+class playlist;
+
 class context : public session<context> {
  public:
     context(boost::asio::io_service& io_service);
@@ -40,6 +42,8 @@ class context : public session<context> {
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
+    playlist* fifo_playlist() { return fifo_playlist_.get(); }
+    const playlist* fifo_playlist() const { return fifo_playlist_.get(); }
     uint64_t vram_size() const { return CROSS_2G; }
     uint64_t get_address_shift() const {
         return id() * vram_size();
@@ -74,6 +78,7 @@ class context : public session<context> {
     unique_ptr<channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
+    unique_ptr<playlist>::type fifo_playlist_;
 
     uint64_t poll_area_;
 
