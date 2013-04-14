@@ -32,8 +32,8 @@ class context : public session<context> {
     void read_bar0(const command& command);
     void read_bar1(const command& command);
     void read_bar3(const command& command);
-    void read_barrier(uint64_t addr);
-    void write_barrier(uint64_t addr, uint32_t value);
+    void read_barrier(uint64_t addr, const command& command);
+    void write_barrier(uint64_t addr, const command& command);
     bool through() const { return through_; }
     shadow_bar1* bar1_channel() { return bar1_channel_.get(); }
     const shadow_bar1* bar1_channel() const { return bar1_channel_.get(); }

@@ -29,10 +29,10 @@
 #include <cstdio>
 namespace cross {
 
-void context::write_barrier(uint64_t addr, uint32_t value) {
+void context::write_barrier(uint64_t addr, const command& cmd) {
     const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
     // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
-    CROSS_LOG("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, value);
+    CROSS_LOG("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, cmd.value);
 //    switch (offset) {
 //    case 0x0200: {
 //            // lower 32bit
@@ -45,7 +45,7 @@ void context::write_barrier(uint64_t addr, uint32_t value) {
 //    }
 }
 
-void context::read_barrier(uint64_t addr) {
+void context::read_barrier(uint64_t addr, const command& cmd) {
     const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
     // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
     CROSS_LOG("read barrier 0x%" PRIX64 " : page 0x%" PRIX64 "\n", addr, page);
