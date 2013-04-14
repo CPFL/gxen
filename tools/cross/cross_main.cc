@@ -29,19 +29,21 @@
 #include "cross.h"
 #include "cross_context.h"
 #include "cross_device.h"
+#include "cross_cmdline.h"
 namespace cross {
 
 class server {
  public:
-    server(boost::asio::io_service& io_service, const char* endpoint)
+    server(boost::asio::io_service& io_service, const char* endpoint, bool through)
         : io_service_(io_service)
-        , acceptor_(io_service, boost::asio::local::stream_protocol::endpoint(endpoint)) {
+        , acceptor_(io_service, boost::asio::local::stream_protocol::endpoint(endpoint))
+        , through_(through) {
         start_accept();
     }
 
  private:
     void start_accept() {
-        context* new_session = new context(io_service_);
+        context* new_session = new context(io_service_, through());
         acceptor_.async_accept(
             new_session->socket(),
             boost::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
@@ -56,33 +58,58 @@ class server {
         start_accept();
     }
 
+    bool through() const { return through_; }
+
     boost::asio::io_service& io_service_;
     boost::asio::local::stream_protocol::acceptor acceptor_;
+    bool through_;
 };
 
 }  // namespace cross
 
 int main(int argc, char** argv) {
-    cross::bdf bdf = { { { 0, 0, 0 } } };
+    namespace c = cross;
+    c::cmdline::Parser cmd("cross");
 
-    if (argc <= 1) {
-        CROSS_FPRINTF(stderr, "Usage: cross bdf\n");
+
+    cmd.Add("help", "help", 'h', "print this message");
+    cmd.Add("version", "version", 'v', "print the version");
+    cmd.Add("through", "through", 't', "through I/O");
+    cmd.set_footer("[program_file] [arguments]");
+
+    if (!cmd.Parse(argc, argv)) {
+        std::fprintf(stderr, "%s\n%s", cmd.error().c_str(), cmd.usage().c_str());
         return 1;
     }
 
-    if ((bdf.raw = strtol(argv[1], NULL, 16)) == 0) {
+    if (cmd.Exist("help")) {
+        std::fputs(cmd.usage().c_str(), stdout);
+        return 1;
+    }
+
+    if (cmd.Exist("version")) {
+        std::printf("cross %s (compiled %s %s)\n", CROSS_VERSION, __DATE__, __TIME__);
+        return 1;
+    }
+
+    const std::vector<std::string>& rest = cmd.rest();
+
+    c::bdf bdf = { { { 0, 0, 0 } } };
+
+    if (rest.empty() || ((bdf.raw = strtol(rest.front().c_str(), NULL, 16)) == 0)) {
         CROSS_FPRINTF(stderr, "Usage: cross bdf\n");
         return 1;
     }
 
     CROSS_LOG("BDF: %02x:%02x.%01x\n", bdf.bus, bdf.dev, bdf.func);
+    CROSS_LOG("through: %s\n", cmd.Exist("through") ? "enabled" : "disabled");
 
-    cross::device::instance()->initialize(bdf);
+    c::device::instance()->initialize(bdf);
 
     ::unlink(CROSS_ENDPOINT);
     try {
         boost::asio::io_service io_service;
-        cross::server s(io_service, CROSS_ENDPOINT);
+        c::server s(io_service, CROSS_ENDPOINT, cmd.Exist("through"));
         io_service.run();
     } catch (std::exception& e) {
         CROSS_FPRINTF(stderr, "Exception: %s\n", e.what());
