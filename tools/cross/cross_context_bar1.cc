@@ -43,7 +43,7 @@ void context::write_bar1(const command& cmd) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
-            read_barrier(gphys);
+            write_barrier(gphys, cmd);
         }
         pramin::accessor pramin;
         pramin.write32(gphys, cmd.value);
@@ -65,7 +65,7 @@ void context::read_bar1(const command& cmd) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
-            read_barrier(gphys);
+            read_barrier(gphys, cmd);
         }
         pramin::accessor pramin;
         const uint32_t ret = pramin.read32(gphys);
