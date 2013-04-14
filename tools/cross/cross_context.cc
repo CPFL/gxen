@@ -39,8 +39,9 @@
 namespace cross {
 
 
-context::context(boost::asio::io_service& io_service)
+context::context(boost::asio::io_service& io_service, bool through)
     : session(io_service)
+    , through_(through)
     , accepted_(false)
     , id_()
     , bar1_channel_(new shadow_bar1(this))
@@ -69,40 +70,58 @@ void context::accept() {
     fifo_playlist_.reset(new playlist());
 }
 
+// main entry
 void context::handle(const command& cmd) {
-    switch (cmd.type) {
-    case command::TYPE_INIT:
+    if (cmd.type == command::TYPE_INIT) {
         domid_ = cmd.value;
         CROSS_LOG("INIT domid %d & GPU id %u\n", domid(), id());
-        break;
+        return;
+    }
 
-    case command::TYPE_WRITE:
-        switch (cmd.payload) {
-            case command::BAR0:
-                write_bar0(cmd);
-                break;
-            case command::BAR1:
-                write_bar1(cmd);
-                break;
-            case command::BAR3:
-                write_bar3(cmd);
-                break;
+    if (through()) {
+        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            // through mode. direct access
+            const uint32_t bar =
+                (cmd.payload == command::BAR0) ? 0 :
+                (cmd.payload == command::BAR1) ? 1 :
+                (cmd.payload == command::BAR3) ? 3 : 0;
+            if (cmd.type == command::TYPE_WRITE) {
+                device::instance()->write(bar, cmd.offset, cmd.value);
+            } else if (cmd.type == command::TYPE_READ) {
+                buffer()->value = device::instance()->read(bar, cmd.offset);
+            }
         }
-        break;
+        return;
+    }
 
-    case command::TYPE_READ:
+    if (cmd.type == command::TYPE_WRITE) {
         switch (cmd.payload) {
-            case command::BAR0:
-                read_bar0(cmd);
-                break;
-            case command::BAR1:
-                read_bar1(cmd);
-                break;
-            case command::BAR3:
-                read_bar3(cmd);
-                break;
+        case command::BAR0:
+            write_bar0(cmd);
+            break;
+        case command::BAR1:
+            write_bar1(cmd);
+            break;
+        case command::BAR3:
+            write_bar3(cmd);
+            break;
         }
-        break;
+        return;
+    }
+
+    if (cmd.type == command::TYPE_READ) {
+        switch (cmd.payload) {
+        case command::BAR0:
+            read_bar0(cmd);
+            break;
+        case command::BAR1:
+            read_bar1(cmd);
+            break;
+        case command::BAR3:
+            read_bar3(cmd);
+            break;
+        }
+        return;
     }
 }
 

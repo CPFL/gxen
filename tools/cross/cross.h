@@ -5,6 +5,7 @@
 #include <stdint.h>
 namespace cross {
 
+#define CROSS_VERSION "0.0.1"
 #define CROSS_ENDPOINT "/tmp/cross_endpoint"
 #define CROSS_CHANNELS 128
 #define CROSS_DOMAIN_CHANNELS (CROSS_CHANNELS / 2)
