@@ -20,7 +20,7 @@ struct unique_ptr {
 
 class context : public session<context> {
  public:
-    context(boost::asio::io_service& io_service);
+    context(boost::asio::io_service& io_service, bool through);
     virtual ~context();
     void accept();
     void handle(const command& command);
@@ -32,6 +32,7 @@ class context : public session<context> {
     void read_bar3(const command& command);
     void read_barrier(uint64_t addr);
     void write_barrier(uint64_t addr, uint32_t value);
+    bool through() const { return through_; }
     shadow_bar1* bar1_channel() { return bar1_channel_.get(); }
     const shadow_bar1* bar1_channel() const { return bar1_channel_.get(); }
     channel* bar3_channel() { return bar3_channel_.get(); }
@@ -67,6 +68,7 @@ class context : public session<context> {
         return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
     }
 
+    bool through_;
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
