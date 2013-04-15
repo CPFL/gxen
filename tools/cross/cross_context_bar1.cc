@@ -70,7 +70,7 @@ void context::read_bar1(const command& cmd) {
         pramin::accessor pramin;
         const uint32_t ret = pramin.read(gphys, cmd.size());
         buffer()->value = ret;
-        CROSS_LOG("VM BAR1 read 0x%" PRIX32 " access value 0x%" PRIX32 "\n", cmd.offset, ret);
+        // CROSS_LOG("VM BAR1 read 0x%" PRIX32 " access value 0x%" PRIX32 "\n", cmd.offset, ret);
         return;
     }
 

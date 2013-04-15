@@ -44,7 +44,7 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
         pramin::accessor pramin;
         // TODO(Yusuke Suzuki): check values
         for (iter_t it = range.first; it != range.second; ++it) {
-            pramin.write(it->second->shadow_ramin()->address() + rest, cmd.value, cmd.size());
+            it->second->shadow_ramin()->write(rest, cmd.value, cmd.size());
         }
     }
 
