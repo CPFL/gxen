@@ -33,7 +33,7 @@ namespace cross {
 void context::write_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            device::instance()->bar1()->write32(this, cmd);
+            device::instance()->bar1()->write(this, cmd);
         }
         return;
     }
@@ -43,19 +43,19 @@ void context::write_bar1(const command& cmd) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
-            read_barrier(gphys);
+            write_barrier(gphys, cmd);
         }
         pramin::accessor pramin;
-        pramin.write32(gphys, cmd.value);
+        pramin.write(gphys, cmd.value, cmd.u8[1]);
         return;
     }
-    CROSS_LOG("VM BAR1 invalid write 0x%" PRIX32 " access\n", cmd.offset);
+    // CROSS_LOG("VM BAR1 invalid write 0x%" PRIX32 " access\n", cmd.offset);
 }
 
 void context::read_bar1(const command& cmd) {
     if (in_poll_area(cmd.offset)) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            buffer()->value = device::instance()->bar1()->read32(this, cmd);
+            buffer()->value = device::instance()->bar1()->read(this, cmd);
         }
         return;
     }
@@ -65,11 +65,12 @@ void context::read_bar1(const command& cmd) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
-            read_barrier(gphys);
+            read_barrier(gphys, cmd);
         }
         pramin::accessor pramin;
-        const uint32_t ret = pramin.read32(gphys);
+        const uint32_t ret = pramin.read(gphys, cmd.u8[1]);
         buffer()->value = ret;
+        CROSS_LOG("VM BAR1 read 0x%" PRIX32 " access value 0x%" PRIX32 "\n", cmd.offset, ret);
         return;
     }
 

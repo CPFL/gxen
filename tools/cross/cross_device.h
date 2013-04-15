@@ -31,8 +31,8 @@ class device : private boost::noncopyable {
     uint32_t acquire_virt();
     void release_virt(uint32_t virt);
     mutex& mutex_handle() { return mutex_handle_; }
-    uint32_t read(int bar, uint32_t offset);
-    void write(int bar, uint32_t offset, uint32_t val);
+    uint32_t read(int bar, uint32_t offset, std::size_t size);
+    void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
     uint32_t pramin() const { return pramin_; }
     void set_pramin(uint32_t pramin) { pramin_ = pramin; }
     device_bar1* bar1() { return bar1_.get(); }

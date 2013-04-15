@@ -222,7 +222,7 @@ void context::write_bar0(const command& cmd) {
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(addr, &entry, false)) {
             // found
-            write_barrier(addr, cmd.value);
+            write_barrier(addr, cmd);
         }
         pramin::write32(addr, cmd.value);
         return;
@@ -395,7 +395,7 @@ void context::read_bar0(const command& cmd) {
         CROSS_LOG("read from PMEM 0x%" PRIX64 " 0x%" PRIX32 " 0x%" PRIX64 "\n", base, cmd.offset - 0x700000, addr);
         if (barrier()->lookup(addr, &entry, false)) {
             // found
-            read_barrier(addr);
+            read_barrier(addr, cmd);
         }
         buffer()->value = pramin::read32(addr);
         return;

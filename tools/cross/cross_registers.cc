@@ -31,12 +31,36 @@ accessor::accessor()
     : lock_(cross::device::instance()->mutex_handle()) {
 }
 
+uint32_t accessor::read(uint32_t offset, std::size_t size) {
+    return cross::device::instance()->read(0, offset, size);
+}
+
+void accessor::write(uint32_t offset, uint32_t val, std::size_t size) {
+    cross::device::instance()->write(0, offset, val, size);
+}
+
 uint32_t accessor::read32(uint32_t offset) {
-    return cross::device::instance()->read(0, offset);
+    return cross::device::instance()->read(0, offset, sizeof(uint32_t));
 }
 
 void accessor::write32(uint32_t offset, uint32_t val) {
-    cross::device::instance()->write(0, offset, val);
+    cross::device::instance()->write(0, offset, val, sizeof(uint32_t));
+}
+
+uint32_t accessor::read16(uint32_t offset) {
+    return cross::device::instance()->read(0, offset, sizeof(uint16_t));
+}
+
+void accessor::write16(uint32_t offset, uint16_t val) {
+    cross::device::instance()->write(0, offset, val, sizeof(uint16_t));
+}
+
+uint32_t accessor::read8(uint32_t offset) {
+    return cross::device::instance()->read(0, offset, sizeof(uint8_t));
+}
+
+void accessor::write8(uint32_t offset, uint8_t val) {
+    cross::device::instance()->write(0, offset, val, sizeof(uint8_t));
 }
 
 uint32_t accessor::mask32(uint32_t offset, uint32_t mask, uint32_t val) {

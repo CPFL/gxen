@@ -19,13 +19,13 @@ struct unique_ptr {
   typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
 };
 
-class page;
+class playlist;
 
 class context : public session<context> {
  public:
     typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
 
-    context(boost::asio::io_service& io_service);
+    context(boost::asio::io_service& io_service, bool through);
     virtual ~context();
     void accept();
     void handle(const command& command);
@@ -35,8 +35,9 @@ class context : public session<context> {
     void read_bar0(const command& command);
     void read_bar1(const command& command);
     void read_bar3(const command& command);
-    void read_barrier(uint64_t addr);
-    void write_barrier(uint64_t addr, uint32_t value);
+    void read_barrier(uint64_t addr, const command& command);
+    void write_barrier(uint64_t addr, const command& command);
+    bool through() const { return through_; }
     shadow_bar1* bar1_channel() { return bar1_channel_.get(); }
     const shadow_bar1* bar1_channel() const { return bar1_channel_.get(); }
     channel* bar3_channel() { return bar3_channel_.get(); }
@@ -47,6 +48,8 @@ class context : public session<context> {
     const barrier::table* barrier() const { return barrier_.get(); }
     channel_map* ramin_channel_map() { return &ramin_channel_map_; }
     const channel_map* ramin_channel_map() const { return &ramin_channel_map_; }
+    playlist* fifo_playlist() { return fifo_playlist_.get(); }
+    const playlist* fifo_playlist() const { return fifo_playlist_.get(); }
     uint64_t vram_size() const { return CROSS_2G; }
     uint64_t get_address_shift() const {
         return id() * vram_size();
@@ -74,6 +77,7 @@ class context : public session<context> {
         return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
     }
 
+    bool through_;
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
@@ -81,7 +85,10 @@ class context : public session<context> {
     unique_ptr<channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
+    unique_ptr<playlist>::type fifo_playlist_;
+
     uint64_t poll_area_;
+
     boost::scoped_array<uint32_t> reg_;
     unique_ptr<page>::type fifo_playlist_;
     channel_map ramin_channel_map_;

@@ -1,5 +1,5 @@
 /*
- * Cross Context BAR3
+ * Cross FIFO queue playlist
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,47 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdint.h>
+#include <cstdio>
 #include "cross.h"
+#include "cross_page.h"
+#include "cross_playlist.h"
 #include "cross_context.h"
 #include "cross_pramin.h"
-#include "cross_shadow_page_table.h"
-#include "cross_channel.h"
-#include "cross_barrier.h"
 namespace cross {
 
-void context::write_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
-    if (gphys != UINT64_MAX) {
-        barrier::page_entry* entry = NULL;
-        if (barrier()->lookup(gphys, &entry, false)) {
-            // found
-            write_barrier(gphys, cmd);
-        }
-        pramin::accessor pramin;
-        pramin.write(gphys, cmd.value, cmd.u8[1]);
-        return;
-    }
-    CROSS_LOG("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
+playlist::playlist()
+    : pages_(new page[2])
+    , cursor_(0)
+{
 }
 
-void context::read_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
-    if (gphys != UINT64_MAX) {
-        barrier::page_entry* entry = NULL;
-        if (barrier()->lookup(gphys, &entry, false)) {
-            // found
-            read_barrier(gphys, cmd);
-        }
-
-        pramin::accessor pramin;
-        const uint32_t ret = pramin.read(gphys, cmd.u8[1]);
-        buffer()->value = ret;
-        return;
+uint64_t playlist::update(context* ctx, uint64_t address, uint32_t count) {
+    // scan fifo and update values
+    page* page = toggle();
+    pramin::accessor pramin;
+    uint32_t i;
+    CROSS_LOG("FIFO playlist update %u\n", count);
+    for (i = 0; i < count; ++i) {
+        const uint32_t cid = pramin.read32(address + i * 0x8);
+        CROSS_LOG("FIFO playlist cid %u => %u\n", cid, ctx->get_phys_channel_id(cid));
+        page->write32(i * 0x8 + 0x0, ctx->get_phys_channel_id(cid));
+        page->write32(i * 0x8 + 0x4, 0x4);
     }
+    return page->address();
+}
 
-    CROSS_LOG("VM BAR3 invalid read 0x%" PRIX32 " access\n", cmd.offset);
-    buffer()->value = 0xFFFFFFFF;
+page* playlist::toggle() {
+    cursor_ ^= 1;
+    return &pages_[cursor_];
 }
 
 }  // namespace cross
