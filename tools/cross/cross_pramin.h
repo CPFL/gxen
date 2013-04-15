@@ -10,8 +10,16 @@ class accessor : private boost::noncopyable {
  public:
     explicit accessor();
     ~accessor();
+
+    uint32_t read(uint64_t addr, std::size_t size);
+    void write(uint64_t addr, uint32_t val, std::size_t size);
+
     uint32_t read32(uint64_t addr);
     void write32(uint64_t addr, uint32_t val);
+    uint32_t read16(uint64_t addr);
+    void write16(uint64_t addr, uint16_t val);
+    uint32_t read8(uint64_t addr);
+    void write8(uint64_t addr, uint8_t val);
 
  private:
     void change_current(uint64_t addr);

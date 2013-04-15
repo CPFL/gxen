@@ -113,16 +113,16 @@ void device_bar1::flush() {
     }
 }
 
-void device_bar1::write32(context* ctx, const command& cmd) {
+void device_bar1::write(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * CROSS_DOMAIN_CHANNELS;
-    device::instance()->write(1, offset, cmd.value);
+    device::instance()->write(1, offset, cmd.value, cmd.u8[1]);
 }
 
-uint32_t device_bar1::read32(context* ctx, const command& cmd) {
+uint32_t device_bar1::read(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * CROSS_DOMAIN_CHANNELS;
-    return device::instance()->read(1, offset);
+    return device::instance()->read(1, offset, cmd.u8[1]);
 }
 
 }  // namespace cross

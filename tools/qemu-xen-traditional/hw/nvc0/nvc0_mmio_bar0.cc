@@ -127,7 +127,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
             cross::command::TYPE_READ,
             0xdeadface,
             offset,
-            cross::command::BAR0
+            { cross::command::BAR0 }
         };
         ret = ctx->send(cmd).value;
     }
@@ -175,7 +175,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         cross::command::TYPE_WRITE,
         val,
         offset,
-        cross::command::BAR0
+        { cross::command::BAR0 }
     };
     ctx->send(cmd);
     return;
