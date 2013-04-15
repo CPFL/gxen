@@ -7,7 +7,6 @@
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_channel.h"
-#include "cross_shadow_bar1.h"
 namespace cross {
 namespace barrier {
 class table;
@@ -38,8 +37,8 @@ class context : public session<context> {
     void read_barrier(uint64_t addr, const command& command);
     void write_barrier(uint64_t addr, const command& command);
     bool through() const { return through_; }
-    shadow_bar1* bar1_channel() { return bar1_channel_.get(); }
-    const shadow_bar1* bar1_channel() const { return bar1_channel_.get(); }
+    channel* bar1_channel() { return bar1_channel_.get(); }
+    const channel* bar1_channel() const { return bar1_channel_.get(); }
     channel* bar3_channel() { return bar3_channel_.get(); }
     const channel* bar3_channel() const { return bar3_channel_.get(); }
     channel* channels(int id) { return channels_[id].get(); }
@@ -71,7 +70,7 @@ class context : public session<context> {
     uint64_t poll_area() const { return poll_area_; }
 
  private:
-    void fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count);
+    void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     bool in_poll_area(uint64_t offset) const {
         return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
@@ -81,7 +80,7 @@ class context : public session<context> {
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    unique_ptr<shadow_bar1>::type bar1_channel_;
+    unique_ptr<channel>::type bar1_channel_;
     unique_ptr<channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;

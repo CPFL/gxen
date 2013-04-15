@@ -44,7 +44,7 @@ context::context(boost::asio::io_service& io_service, bool through)
     , through_(through)
     , accepted_(false)
     , id_()
-    , bar1_channel_(new shadow_bar1(this))
+    , bar1_channel_(new channel(-1))
     , bar3_channel_(new channel(-3))
     , channels_()
     , barrier_()
@@ -123,14 +123,14 @@ void context::handle(const command& cmd) {
     }
 }
 
-void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
+void context::fifo_playlist_update(uint32_t reg_addr, uint32_t cmd) {
     const uint64_t address = get_phys_address(bit_mask<28, uint64_t>(reg_addr) << 12);
-    const uint32_t count = bit_mask<8, uint32_t>(reg_count);
+    const uint32_t count = bit_mask<8, uint32_t>(cmd);
     const uint64_t shadow = fifo_playlist()->update(this, address, count);
     device::instance()->try_acquire_gpu(this);
-    registers::write32(0x70000, 1);
+    // registers::write32(0x70000, 1);
     registers::write32(0x2270, shadow >> 12);
-    registers::write32(0x2274, reg_count);
+    registers::write32(0x2274, cmd);
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
