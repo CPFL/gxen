@@ -35,15 +35,15 @@ class command {
     };
 
     enum bar_t {
-        BAR0,
-        BAR1,
-        BAR3
+        BAR0 = 0,
+        BAR1 = 1,
+        BAR3 = 3
     };
 
     uint32_t type;
     uint32_t value;
     uint32_t offset;
-    uint32_t payload;
+    uint8_t  u8[4];
 };
 
 // Assuming little endianess

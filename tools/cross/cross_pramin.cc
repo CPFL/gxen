@@ -36,6 +36,16 @@ accessor::~accessor() {
     regs_.write32(0x1700, old_);
 }
 
+uint32_t accessor::read(uint64_t addr, std::size_t size) {
+    change_current(addr);
+    return regs_.read(0x700000 + bit_mask<16>(addr), size);
+}
+
+void accessor::write(uint64_t addr, uint32_t val, std::size_t size) {
+    change_current(addr);
+    regs_.write(0x700000 + bit_mask<16>(addr), val, size);
+}
+
 uint32_t accessor::read32(uint64_t addr) {
     change_current(addr);
     return regs_.read32(0x700000 + bit_mask<16>(addr));
@@ -44,6 +54,26 @@ uint32_t accessor::read32(uint64_t addr) {
 void accessor::write32(uint64_t addr, uint32_t val) {
     change_current(addr);
     regs_.write32(0x700000 + bit_mask<16>(addr), val);
+}
+
+uint32_t accessor::read16(uint64_t addr) {
+    change_current(addr);
+    return regs_.read16(0x700000 + bit_mask<16>(addr));
+}
+
+void accessor::write16(uint64_t addr, uint16_t val) {
+    change_current(addr);
+    regs_.write16(0x700000 + bit_mask<16>(addr), val);
+}
+
+uint32_t accessor::read8(uint64_t addr) {
+    change_current(addr);
+    return regs_.read8(0x700000 + bit_mask<16>(addr));
+}
+
+void accessor::write8(uint64_t addr, uint8_t val) {
+    change_current(addr);
+    regs_.write8(0x700000 + bit_mask<16>(addr), val);
 }
 
 void accessor::change_current(uint64_t addr) {

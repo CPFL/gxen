@@ -16,8 +16,8 @@ class device_bar1 : private boost::noncopyable {
     void refresh_poll_area();
     void shadow(context* ctx);
     void flush();
-    void write32(context* ctx, const command& cmd);
-    uint32_t read32(context* ctx, const command& cmd);
+    void write(context* ctx, const command& cmd);
+    uint32_t read(context* ctx, const command& cmd);
 
  private:
     void map(uint64_t virt, uint64_t data);
