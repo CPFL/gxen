@@ -82,18 +82,18 @@ void context::handle(const command& cmd) {
     if (through()) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
             // through mode. direct access
-            const uint32_t bar = cmd.u8[0];
+            const uint32_t bar = cmd.bar();
             if (cmd.type == command::TYPE_WRITE) {
-                device::instance()->write(bar, cmd.offset, cmd.value, cmd.u8[1]);
+                device::instance()->write(bar, cmd.offset, cmd.value, cmd.size());
             } else if (cmd.type == command::TYPE_READ) {
-                buffer()->value = device::instance()->read(bar, cmd.offset, cmd.u8[1]);
+                buffer()->value = device::instance()->read(bar, cmd.offset, cmd.size());
             }
         }
         return;
     }
 
     if (cmd.type == command::TYPE_WRITE) {
-        switch (cmd.u8[0]) {
+        switch (cmd.bar()) {
         case command::BAR0:
             write_bar0(cmd);
             break;
@@ -108,7 +108,7 @@ void context::handle(const command& cmd) {
     }
 
     if (cmd.type == command::TYPE_READ) {
-        switch (cmd.u8[0]) {
+        switch (cmd.bar()) {
         case command::BAR0:
             read_bar0(cmd);
             break;
