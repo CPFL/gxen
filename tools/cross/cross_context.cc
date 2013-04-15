@@ -33,19 +33,22 @@
 #include "cross_registers.h"
 #include "cross_barrier.h"
 #include "cross_pramin.h"
+#include "cross_playlist.h"
 #include "cross_device_bar1.h"
 #include "cross_shadow_page_table.h"
 namespace cross {
 
 
-context::context(boost::asio::io_service& io_service)
+context::context(boost::asio::io_service& io_service, bool through)
     : session(io_service)
+    , through_(through)
     , accepted_(false)
     , id_()
     , bar1_channel_(new shadow_bar1(this))
     , bar3_channel_(new channel(-3))
     , channels_()
     , barrier_()
+    , fifo_playlist_()
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
     , fifo_playlist_()
@@ -65,73 +68,69 @@ context::~context() {
 void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
-    // id_ = 1;  // FIXME debug id
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    fifo_playlist_.reset(new page());
+    fifo_playlist_.reset(new playlist());
 }
 
+// main entry
 void context::handle(const command& cmd) {
-    switch (cmd.type) {
-    case command::TYPE_INIT:
+    if (cmd.type == command::TYPE_INIT) {
         domid_ = cmd.value;
         CROSS_LOG("INIT domid %d & GPU id %u\n", domid(), id());
-        break;
+        return;
+    }
 
-    case command::TYPE_WRITE:
-        switch (cmd.payload) {
-            case command::BAR0:
-                write_bar0(cmd);
-                break;
-            case command::BAR1:
-                write_bar1(cmd);
-                break;
-            case command::BAR3:
-                write_bar3(cmd);
-                break;
+    if (through()) {
+        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            // through mode. direct access
+            const uint32_t bar = cmd.u8[0];
+            if (cmd.type == command::TYPE_WRITE) {
+                device::instance()->write(bar, cmd.offset, cmd.value, cmd.u8[1]);
+            } else if (cmd.type == command::TYPE_READ) {
+                buffer()->value = device::instance()->read(bar, cmd.offset, cmd.u8[1]);
+            }
         }
-        break;
+        return;
+    }
 
-    case command::TYPE_READ:
-        switch (cmd.payload) {
-            case command::BAR0:
-                read_bar0(cmd);
-                break;
-            case command::BAR1:
-                read_bar1(cmd);
-                break;
-            case command::BAR3:
-                read_bar3(cmd);
-                break;
+    if (cmd.type == command::TYPE_WRITE) {
+        switch (cmd.u8[0]) {
+        case command::BAR0:
+            write_bar0(cmd);
+            break;
+        case command::BAR1:
+            write_bar1(cmd);
+            break;
+        case command::BAR3:
+            write_bar3(cmd);
+            break;
         }
-        break;
+        return;
+    }
+
+    if (cmd.type == command::TYPE_READ) {
+        switch (cmd.u8[0]) {
+        case command::BAR0:
+            read_bar0(cmd);
+            break;
+        case command::BAR1:
+            read_bar1(cmd);
+            break;
+        case command::BAR3:
+            read_bar3(cmd);
+            break;
+        }
+        return;
     }
 }
 
 void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
     const uint64_t address = get_phys_address(bit_mask<28, uint64_t>(reg_addr) << 12);
     const uint32_t count = bit_mask<8, uint32_t>(reg_count);
-
-    // scan fifo and update values
-    {
-        pramin::accessor pramin;
-        uint32_t i;
-        CROSS_LOG("FIFO playlist update %u\n", count);
-        for (i = 0; i < count; ++i) {
-            const uint32_t cid = pramin.read32(address + i * 0x8);
-            CROSS_LOG("FIFO playlist cid %u => %u\n", cid, get_phys_channel_id(cid));
-            fifo_playlist_->write32(i * 0x8 + 0x0, get_phys_channel_id(cid));
-            fifo_playlist_->write32(i * 0x8 + 0x4, 0x4);
-        }
-    }
-
-    registers::write32(0x70000, 1);
-    // FIXME(Yusuke Suzuki): BAR flush wait code is needed?
-    // usleep(1000);
-
+    const uint64_t shadow = fifo_playlist()->update(this, address, count);
     device::instance()->try_acquire_gpu(this);
-
-    // registers::write32(0x2270, address >> 12);
-    registers::write32(0x2270, fifo_playlist_->address() >> 12);
+    registers::write32(0x70000, 1);
+    registers::write32(0x2270, shadow >> 12);
     registers::write32(0x2274, reg_count);
 }
 

@@ -8,6 +8,8 @@ namespace registers {
 class accessor : private boost::noncopyable {
  public:
     explicit accessor();
+    uint32_t read(uint32_t offset, std::size_t size);
+    void write(uint32_t offset, uint32_t val, std::size_t size);
     uint32_t read32(uint32_t offset);
     void write32(uint32_t offset, uint32_t val);
     uint32_t mask32(uint32_t offset, uint32_t mask, uint32_t val);
@@ -27,6 +29,10 @@ class accessor : private boost::noncopyable {
         } while (true);
         return false;
     }
+    uint32_t read16(uint32_t offset);
+    void write16(uint32_t offset, uint16_t val);
+    uint32_t read8(uint32_t offset);
+    void write8(uint32_t offset, uint8_t val);
 
  private:
     mutex::scoped_lock lock_;

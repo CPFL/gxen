@@ -42,21 +42,14 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     // send guest id to cross
     cross::command cmd = {
         cross::command::TYPE_INIT,
-        nvc0_domid(),
-        0,
-        0
+        nvc0_domid()
     };
     send(cmd);
 }
 
 cross::command context::send(const cross::command& cmd) {
     boost::mutex::scoped_lock lock(socket_mutex_);
-    cross::command result = {
-        0xdeadface,
-        0xdeadface,
-        0xdeadface,
-        0xdeadface
-    };
+    cross::command result = { };
     while (true) {
         boost::system::error_code error;
         boost::asio::write(

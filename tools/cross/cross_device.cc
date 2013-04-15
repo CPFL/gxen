@@ -181,12 +181,33 @@ void device::release_virt(uint32_t virt) {
     virts_.set(virt, 1);
 }
 
-uint32_t device::read(int bar, uint32_t offset) {
-    return mmio::read32(bars_[bar].addr, offset);
+uint32_t device::read(int bar, uint32_t offset, std::size_t size) {
+    switch (size) {
+    case sizeof(uint8_t):
+        return mmio::read8(bars_[bar].addr, offset);
+    case sizeof(uint16_t):
+        return mmio::read16(bars_[bar].addr, offset);
+    case sizeof(uint32_t):
+        return mmio::read32(bars_[bar].addr, offset);
+    }
+    CROSS_UNREACHABLE();
+    return 0;
 }
 
-void device::write(int bar, uint32_t offset, uint32_t val) {
-    mmio::write32(bars_[bar].addr, offset, val);
+void device::write(int bar, uint32_t offset, uint32_t val, std::size_t size) {
+    switch (size) {
+    case sizeof(uint8_t):
+        mmio::write8(bars_[bar].addr, offset, val);
+        return;
+    case sizeof(uint16_t):
+        mmio::write16(bars_[bar].addr, offset, val);
+        return;
+    case sizeof(uint32_t):
+        mmio::write32(bars_[bar].addr, offset, val);
+        return;
+    }
+    CROSS_UNREACHABLE();
+    return;
 }
 
 device* device::instance() {
@@ -205,6 +226,9 @@ bool device::try_acquire_gpu(context* ctx) {
     CROSS_SYNCHRONIZED(mutex_handle()) {
         // TODO(Yusuke Suzuki): check GPU doesn't work now
         if (domid_ >= 0) {
+            if (domid_ == ctx->domid()) {
+                return true;
+            }
             const int rc = cross_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
             if (rc < 0) {
                 CROSS_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
