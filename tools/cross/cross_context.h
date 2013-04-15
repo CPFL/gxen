@@ -90,7 +90,6 @@ class context : public session<context> {
     uint64_t poll_area_;
 
     boost::scoped_array<uint32_t> reg_;
-    unique_ptr<page>::type fifo_playlist_;
     channel_map ramin_channel_map_;
 };
 

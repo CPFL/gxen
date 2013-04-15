@@ -58,6 +58,18 @@ uint32_t page::read32(uint64_t offset) {
     return pramin::read32(address() + offset);
 }
 
+void page::write(uint64_t offset, uint32_t value, std::size_t s) {
+    assert(offset < size());
+    pramin::accessor pramin;
+    pramin.write(address() + offset, value, s);
+}
+
+uint32_t page::read(uint64_t offset, std::size_t s) {
+    assert(offset < size());
+    pramin::accessor pramin;
+    return pramin.read(address() + offset, s);
+}
+
 std::size_t page::page_size() const {
     return vram_->n();
 }
