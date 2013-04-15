@@ -80,7 +80,7 @@ void channel::attach(context* ctx, uint64_t addr) {
         pramin::accessor pramin;
 
         // shadow ramin
-        for (uint64_t offset = 0; offset < shadow_ramin()->size(); offset += 0x4) {
+        for (uint64_t offset = 0; offset < 0x100; offset += 0x4) {
             const uint32_t value = pramin.read32(ramin_address() + offset);
             shadow_ramin()->write32(offset, value);
         }
