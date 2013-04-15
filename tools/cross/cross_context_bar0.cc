@@ -151,7 +151,7 @@ void context::write_bar0(const command& cmd) {
                 const uint64_t phys = get_phys_address(virt);
 
                 typedef context::channel_map::iterator iter_t;
-                std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(phys);
+                const std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(phys);
 
                 if (range.first == range.second) {
                     // no channel found
@@ -161,9 +161,9 @@ void context::write_bar0(const command& cmd) {
                     // channel found
                     // channel ramin shift
                     CROSS_LOG("WRCMD start cmd %" PRIX32 "\n", cmd.value);
-                    for (iter_t it = range.first; it != range.second; ++it) {
-                        const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
-                        CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                        for (iter_t it = range.first; it != range.second; ++it) {
+                            const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
                             CROSS_LOG("    channel %d ramin graph with cmd %" PRIX32 "\n", it->second->id(), cmd.value);
                             registers::write32(0x409500, res);
                             registers::write32(0x409504, cmd.value);
