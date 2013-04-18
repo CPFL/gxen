@@ -75,6 +75,9 @@ class context : public session<context> {
     bool in_poll_area(uint64_t offset) const {
         return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
     }
+    uint32_t decode_to_virt_ramin(uint32_t value);
+    uint32_t encode_to_shadow_ramin(uint32_t value);
+    bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
 
     bool through_;
     bool accepted_;
