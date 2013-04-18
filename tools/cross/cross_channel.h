@@ -19,6 +19,9 @@ class channel : private boost::noncopyable {
     int id() const { return id_; }
     bool enabled() const { return enabled_; }
     uint64_t ramin_address() const { return ramin_address_; }
+    page* shadow_ramin() { return shadow_ramin_.get(); }
+    const page* shadow_ramin() const { return shadow_ramin_.get(); }
+    void shadow(context* ctx);
 
  private:
     void detach(context* ctx, uint64_t addr);
@@ -27,7 +30,7 @@ class channel : private boost::noncopyable {
     bool enabled_;
     uint64_t ramin_address_;
     boost::scoped_ptr<shadow_page_table> table_;
-    boost::scoped_ptr<page> ramin_;
+    boost::scoped_ptr<page> shadow_ramin_;
 };
 
 }  // namespace cross

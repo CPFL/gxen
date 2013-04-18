@@ -39,6 +39,14 @@ static uint32_t upper32(uint64_t data) {
     return bit_mask<32>(data >> 32);
 }
 
+#if 0
+static uint64_t encode(uint64_t phys) {
+    phys >>= 8;
+    phys |= 0x00000001; /* present */
+    return phys;
+}
+#endif
+
 device_bar1::device_bar1()
     : ramin_(2)
     , directory_(8)
@@ -47,8 +55,8 @@ device_bar1::device_bar1()
     // construct channel ramin
     ramin_.write32(0x0200, lower32(directory_.address()));
     ramin_.write32(0x0204, lower32(directory_.address()));
-	ramin_.write32(0x0208, lower32(vm_size));
-	ramin_.write32(0x020c, upper32(vm_size));
+    ramin_.write32(0x0208, lower32(vm_size));
+    ramin_.write32(0x020c, upper32(vm_size));
 
     // construct minimum page table
     struct page_directory dir = { };
@@ -81,11 +89,11 @@ void device_bar1::shadow(context* ctx) {
     CROSS_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
     for (uint32_t vcid = 0; vcid < CROSS_DOMAIN_CHANNELS; ++vcid) {
         const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area();
+        const uint32_t pcid = ctx->get_phys_channel_id(vcid);
+        const uint64_t virt = pcid * 0x1000ULL;
         struct shadow_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
-            const uint32_t pcid = ctx->get_phys_channel_id(vcid);
-            const uint64_t virt = pcid * 0x1000ULL;
             map(virt, entry.virt().raw);
         }
     }
@@ -116,13 +124,13 @@ void device_bar1::flush() {
 void device_bar1::write(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * CROSS_DOMAIN_CHANNELS;
-    device::instance()->write(1, offset, cmd.value, cmd.u8[1]);
+    device::instance()->write(1, offset, cmd.value, cmd.size());
 }
 
 uint32_t device_bar1::read(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * CROSS_DOMAIN_CHANNELS;
-    return device::instance()->read(1, offset, cmd.u8[1]);
+    return device::instance()->read(1, offset, cmd.size());
 }
 
 }  // namespace cross
