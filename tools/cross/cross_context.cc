@@ -44,13 +44,14 @@ context::context(boost::asio::io_service& io_service, bool through)
     , through_(through)
     , accepted_(false)
     , id_()
-    , bar1_channel_(new shadow_bar1(this))
+    , bar1_channel_(new channel(-1))
     , bar3_channel_(new channel(-3))
     , channels_()
     , barrier_()
-    , fifo_playlist_()
+    , fifo_playlist_(new playlist())
     , poll_area_(0)
-    , reg_(new uint32_t[32ULL * 1024 * 1024]) {
+    , reg_(new uint32_t[32ULL * 1024 * 1024])
+    , ramin_channel_map_() {
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channels_[i].reset(new channel(i));
     }
@@ -67,7 +68,6 @@ void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    fifo_playlist_.reset(new playlist());
 }
 
 // main entry
@@ -81,18 +81,18 @@ void context::handle(const command& cmd) {
     if (through()) {
         CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
             // through mode. direct access
-            const uint32_t bar = cmd.u8[0];
+            const uint32_t bar = cmd.bar();
             if (cmd.type == command::TYPE_WRITE) {
-                device::instance()->write(bar, cmd.offset, cmd.value, cmd.u8[1]);
+                device::instance()->write(bar, cmd.offset, cmd.value, cmd.size());
             } else if (cmd.type == command::TYPE_READ) {
-                buffer()->value = device::instance()->read(bar, cmd.offset, cmd.u8[1]);
+                buffer()->value = device::instance()->read(bar, cmd.offset, cmd.size());
             }
         }
         return;
     }
 
     if (cmd.type == command::TYPE_WRITE) {
-        switch (cmd.u8[0]) {
+        switch (cmd.bar()) {
         case command::BAR0:
             write_bar0(cmd);
             break;
@@ -107,7 +107,7 @@ void context::handle(const command& cmd) {
     }
 
     if (cmd.type == command::TYPE_READ) {
-        switch (cmd.u8[0]) {
+        switch (cmd.bar()) {
         case command::BAR0:
             read_bar0(cmd);
             break;
@@ -122,14 +122,14 @@ void context::handle(const command& cmd) {
     }
 }
 
-void context::fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count) {
+void context::fifo_playlist_update(uint32_t reg_addr, uint32_t cmd) {
     const uint64_t address = get_phys_address(bit_mask<28, uint64_t>(reg_addr) << 12);
-    const uint32_t count = bit_mask<8, uint32_t>(reg_count);
+    const uint32_t count = bit_mask<8, uint32_t>(cmd);
     const uint64_t shadow = fifo_playlist()->update(this, address, count);
     device::instance()->try_acquire_gpu(this);
-    registers::write32(0x70000, 1);
+    // registers::write32(0x70000, 1);
     registers::write32(0x2270, shadow >> 12);
-    registers::write32(0x2274, reg_count);
+    registers::write32(0x2274, cmd);
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
@@ -138,6 +138,8 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
 
     bool bar1 = false;
     bool bar1_only = true;
+
+    CROSS_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {

@@ -113,24 +113,18 @@ void context::write_bar0(const command& cmd) {
         return;
 
     case 0x104050:
-        // PCOPY 0x104000 + 0x050
-        // TODO(Yusuke Suzuki) needs to limit engine
-        break;
-
     case 0x104054:
-        // PCOPY 0x104000 + 0x054
-        // TODO(Yusuke Suzuki) needs to limit engine
-        break;
-
     case 0x105050:
-        // PCOPY 0x105000 + 0x050
-        // TODO(Yusuke Suzuki) needs to limit engine
-        break;
-
-    case 0x105054:
-        // PCOPY 0x105000 + 0x054
-        // TODO(Yusuke Suzuki) needs to limit engine
-        break;
+    case 0x105054: {
+            // PCOPY 0x104000 + 0x050
+            //                + 0x054
+            // PCOPY 0x105000 + 0x050
+            //                + 0x050
+            // TODO(Yusuke Suzuki) needs to limit engine
+            const uint32_t value = encode_to_shadow_ramin(cmd.value);
+            registers::write32(cmd.offset, value);
+            return;
+        }
 
     case 0x121c75:
         // memctrl size (2)
@@ -149,7 +143,31 @@ void context::write_bar0(const command& cmd) {
                 // VRAM address
                 const uint64_t virt = (bit_mask<28, uint64_t>(data) << 12);
                 const uint64_t phys = get_phys_address(virt);
+
                 data = bit_clear<28>(data) | (phys >> 12);
+
+                typedef context::channel_map::iterator iter_t;
+                const std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(phys);
+
+                if (range.first == range.second) {
+                    // no channel found
+                    data = bit_clear<28>(data) | (phys >> 12);
+                    CROSS_LOG("channel not found graph\n");
+                } else {
+                    // channel found
+                    // channel ramin shift
+                    CROSS_LOG("WRCMD start cmd %" PRIX32 "\n", cmd.value);
+                    CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                        for (iter_t it = range.first; it != range.second; ++it) {
+                            const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
+                            CROSS_LOG("    channel %d ramin graph with cmd %" PRIX32 " with addr %" PRIX64 "\n", it->second->id(), cmd.value, it->second->shadow_ramin()->address());
+                            registers::write32(0x409500, res);
+                            registers::write32(0x409504, cmd.value);
+                        }
+                    }
+                    CROSS_LOG("WRCMD end cmd %" PRIX32 "\n", cmd.value);
+                    return;
+                }
             }
             // fire cmd
             // TODO(Yusuke Suzuki): queued system needed
@@ -210,7 +228,7 @@ void context::write_bar0(const command& cmd) {
     if (0x002000 <= cmd.offset && cmd.offset <= 0x004000) {
         // see pscnv/nvc0_fifo.c
         // 0x003000 + id * 8
-        if ((cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
+        if (cmd.offset >= 0x003000 && (cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
             const bool ramin_area = ((cmd.offset - 0x003000) % 0x8) == 0;
@@ -231,7 +249,6 @@ void context::write_bar0(const command& cmd) {
 
             const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
-            CROSS_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
             if (ramin_area) {
                 // channel ramin
@@ -239,11 +256,9 @@ void context::write_bar0(const command& cmd) {
                 reg_[cmd.offset] = cmd.value;
                 const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
                 const uint64_t phys = get_phys_address(virt);
-
-                const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
-                channels(virt_channel_id)->refresh(this, phys);
-
-                // const uint32_t value = bit_clear<28>(cmd.value) | (channels(virt_channel_id)->refresh(this, phys) >> 12);
+                const uint64_t shadow = channels(virt_channel_id)->refresh(this, phys);
+                const uint32_t value = bit_clear<28>(cmd.value) | (shadow >> 12);
+                CROSS_LOG("channel shift from 0x%" PRIX64 " to 0x%" PRIX64 " mem 0x%" PRIX64 " to 0x%" PRIX64 "\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id, phys, shadow);
                 registers::write32(adjusted_offset, value);
             } else {
                 // status
@@ -300,35 +315,17 @@ void context::read_bar0(const command& cmd) {
         buffer()->value = reg_[cmd.offset];
         return;
 
-    case 0x104050: {
-            // PCOPY 0x104000 + 0x050
-            // TODO(Yusuke Suzuki) needs to limit engine
-            const uint32_t value = registers::read32(cmd.offset);
-            buffer()->value = value - (get_address_shift() >> 12);
-            return;
-        }
-
-    case 0x104054: {
-            // PCOPY 0x104000 + 0x054
-            // TODO(Yusuke Suzuki) needs to limit engine
-            const uint32_t value = registers::read32(cmd.offset);
-            buffer()->value = value - (get_address_shift() >> 12);
-            return;
-        }
-
-    case 0x105050: {
-            // PCOPY 0x105000 + 0x050
-            // TODO(Yusuke Suzuki) needs to limit engine
-            const uint32_t value = registers::read32(cmd.offset);
-            buffer()->value = value - (get_address_shift() >> 12);
-            return;
-        }
-
+    case 0x104050:
+    case 0x104054:
+    case 0x105050:
     case 0x105054: {
+            // PCOPY 0x104000 + 0x050
+            //                + 0x054
             // PCOPY 0x105000 + 0x050
+            //                + 0x050
             // TODO(Yusuke Suzuki) needs to limit engine
-            const uint32_t value = registers::read32(cmd.offset);
-            buffer()->value = value - (get_address_shift() >> 12);
+            const uint32_t value = decode_to_virt_ramin(registers::read32(cmd.offset));
+            buffer()->value = value;
             return;
         }
 
@@ -387,7 +384,7 @@ void context::read_bar0(const command& cmd) {
     if (0x002000 <= cmd.offset && cmd.offset <= 0x004000) {
         // see pscnv/nvc0_fifo.c
         // 0x003000 + id * 8
-        if ((cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
+        if (cmd.offset >= 0x003000 && (cmd.offset - 0x003000) <= CROSS_CHANNELS * 8) {
             // channel status access
             // we should shift access target by guest VM
             const bool ramin_area = ((cmd.offset - 0x003000) % 0x8) == 0;
@@ -408,7 +405,7 @@ void context::read_bar0(const command& cmd) {
 
             const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
-            CROSS_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
+//             CROSS_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
             if (ramin_area) {
                 // channel ramin
@@ -423,6 +420,54 @@ void context::read_bar0(const command& cmd) {
     }
 
     buffer()->value = registers::read32(cmd.offset);
+}
+
+// PCOPY channel inst decode
+uint32_t context::decode_to_virt_ramin(uint32_t value) {
+    CROSS_LOG("decoding channel 0x%" PRIX32 "\n", value);
+    // This is address of channel ramin (shadow)
+    const uint64_t shadow = bit_mask<28, uint64_t>(value) << 12;
+    uint64_t phys = 0;
+    if (shadow_ramin_to_phys(shadow, &phys)) {
+        CROSS_LOG("decode: ramin shadow %" PRIX64 " to virt %" PRIX64 "\n", shadow, get_virt_address(phys));
+        value = bit_clear<28>(value) | (get_virt_address(phys) >> 12);
+    } else {
+        value = 0;
+    }
+    return value;
+}
+
+bool context::shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys) {
+    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
+        if (channels(i)->enabled()) {
+            if (channels(i)->shadow_ramin()->address() == shadow) {
+                *phys = channels(i)->ramin_address();
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// PCOPY channel inst encode
+uint32_t context::encode_to_shadow_ramin(uint32_t value) {
+    CROSS_LOG("encoding channel 0x%" PRIX32 "\n", value);
+    // This is address of channel ramin (shadow)
+    const uint64_t virt = bit_mask<28, uint64_t>(value) << 12;
+    const uint64_t phys = get_phys_address(virt);
+    typedef context::channel_map::iterator iter_t;
+    const std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(phys);
+    if (range.first == range.second) {
+        // no channel found
+        CROSS_LOG("encoding channel not found graph\n");
+        return value;
+    } else {
+        for (iter_t it = range.first; it != range.second; ++it) {
+            CROSS_LOG("encode: virt %" PRIX64 " to shadow ramin %" PRIX64 "\n", virt, it->second->shadow_ramin()->address());
+            return bit_clear<28>(value) | (it->second->shadow_ramin()->address() >> 12);
+        }
+    }
+    return value;
 }
 
 }  // namespace cross

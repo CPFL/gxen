@@ -57,7 +57,7 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     }
 
     CROSS_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
-    dump();
+    // dump();
     return false;
 }
 

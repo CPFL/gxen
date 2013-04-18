@@ -44,6 +44,9 @@ class command {
     uint32_t value;
     uint32_t offset;
     uint8_t  u8[4];
+
+    inline bar_t bar() const { return static_cast<bar_t>(u8[0]); }
+    inline std::size_t size() const { return u8[1]; }
 };
 
 // Assuming little endianess

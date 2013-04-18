@@ -3,10 +3,10 @@
 #include <boost/scoped_array.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
+#include <boost/unordered_map.hpp>
 #include "cross.h"
 #include "cross_session.h"
 #include "cross_channel.h"
-#include "cross_shadow_bar1.h"
 namespace cross {
 namespace barrier {
 class table;
@@ -22,6 +22,8 @@ class playlist;
 
 class context : public session<context> {
  public:
+    typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
+
     context(boost::asio::io_service& io_service, bool through);
     virtual ~context();
     void accept();
@@ -35,14 +37,16 @@ class context : public session<context> {
     void read_barrier(uint64_t addr, const command& command);
     void write_barrier(uint64_t addr, const command& command);
     bool through() const { return through_; }
-    shadow_bar1* bar1_channel() { return bar1_channel_.get(); }
-    const shadow_bar1* bar1_channel() const { return bar1_channel_.get(); }
+    channel* bar1_channel() { return bar1_channel_.get(); }
+    const channel* bar1_channel() const { return bar1_channel_.get(); }
     channel* bar3_channel() { return bar3_channel_.get(); }
     const channel* bar3_channel() const { return bar3_channel_.get(); }
     channel* channels(int id) { return channels_[id].get(); }
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
     const barrier::table* barrier() const { return barrier_.get(); }
+    channel_map* ramin_channel_map() { return &ramin_channel_map_; }
+    const channel_map* ramin_channel_map() const { return &ramin_channel_map_; }
     playlist* fifo_playlist() { return fifo_playlist_.get(); }
     const playlist* fifo_playlist() const { return fifo_playlist_.get(); }
     uint64_t vram_size() const { return CROSS_2G; }
@@ -66,17 +70,20 @@ class context : public session<context> {
     uint64_t poll_area() const { return poll_area_; }
 
  private:
-    void fifo_playlist_update(uint32_t reg_addr, uint32_t reg_count);
+    void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     bool in_poll_area(uint64_t offset) const {
         return poll_area() <= offset && offset < poll_area() + (CROSS_DOMAIN_CHANNELS * 0x1000);
     }
+    uint32_t decode_to_virt_ramin(uint32_t value);
+    uint32_t encode_to_shadow_ramin(uint32_t value);
+    bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
 
     bool through_;
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    unique_ptr<shadow_bar1>::type bar1_channel_;
+    unique_ptr<channel>::type bar1_channel_;
     unique_ptr<channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, CROSS_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
@@ -85,6 +92,7 @@ class context : public session<context> {
     uint64_t poll_area_;
 
     boost::scoped_array<uint32_t> reg_;
+    channel_map ramin_channel_map_;
 };
 
 }  // namespace cross

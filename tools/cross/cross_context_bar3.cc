@@ -39,7 +39,7 @@ void context::write_bar3(const command& cmd) {
             write_barrier(gphys, cmd);
         }
         pramin::accessor pramin;
-        pramin.write(gphys, cmd.value, cmd.u8[1]);
+        pramin.write(gphys, cmd.value, cmd.size());
         return;
     }
     CROSS_LOG("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
@@ -55,7 +55,7 @@ void context::read_bar3(const command& cmd) {
         }
 
         pramin::accessor pramin;
-        const uint32_t ret = pramin.read(gphys, cmd.u8[1]);
+        const uint32_t ret = pramin.read(gphys, cmd.size());
         buffer()->value = ret;
         return;
     }
