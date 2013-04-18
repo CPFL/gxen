@@ -48,7 +48,7 @@ context::context(boost::asio::io_service& io_service, bool through)
     , bar3_channel_(new channel(-3))
     , channels_()
     , barrier_()
-    , fifo_playlist_()
+    , fifo_playlist_(new playlist())
     , poll_area_(0)
     , reg_(new uint32_t[32ULL * 1024 * 1024])
     , ramin_channel_map_() {
@@ -68,7 +68,6 @@ void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    fifo_playlist_.reset(new playlist());
 }
 
 // main entry
@@ -139,6 +138,8 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
 
     bool bar1 = false;
     bool bar1_only = true;
+
+    CROSS_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {

@@ -34,16 +34,15 @@ namespace cross {
 
 void context::write_barrier(uint64_t addr, const command& cmd) {
     const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
-    const uint64_t rest = addr % barrier::kPAGE_BITS;
-    // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
+    const uint64_t rest = addr - page;
     CROSS_LOG("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, cmd.value);
 
+    // TODO(Yusuke Suzuki): check values
     typedef context::channel_map::iterator iter_t;
     const std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(page);
     CROSS_SYNCHRONIZED(device::instance()->mutex_handle()) {
-        pramin::accessor pramin;
-        // TODO(Yusuke Suzuki): check values
         for (iter_t it = range.first; it != range.second; ++it) {
+            CROSS_LOG("write reflect shadow 0x%" PRIX64 " : rest 0x%" PRIX64 "\n", it->second->shadow_ramin()->address(), rest);
             it->second->shadow_ramin()->write(rest, cmd.value, cmd.size());
         }
     }

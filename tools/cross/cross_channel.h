@@ -21,6 +21,7 @@ class channel : private boost::noncopyable {
     uint64_t ramin_address() const { return ramin_address_; }
     page* shadow_ramin() { return shadow_ramin_.get(); }
     const page* shadow_ramin() const { return shadow_ramin_.get(); }
+    void shadow(context* ctx);
 
  private:
     void detach(context* ctx, uint64_t addr);

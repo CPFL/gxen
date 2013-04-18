@@ -52,7 +52,7 @@ uint64_t playlist::update(context* ctx, uint64_t address, uint32_t count) {
 
 page* playlist::toggle() {
     cursor_ ^= 1;
-    return &pages_[cursor_];
+    return &pages_[cursor_ & 0x1];
 }
 
 }  // namespace cross
