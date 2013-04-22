@@ -14,7 +14,7 @@ namespace cross {
 #define CROSS_GPC_BCAST(r) (0x418000 + (r))
 
 #if defined(NDEBUG)
-    #define CROSS_FPRINTF(stream, fmt, args...) do { } (0)
+    #define CROSS_FPRINTF(stream, fmt, args...) do { } while (0)
 #else
     #define CROSS_FPRINTF(stream, fmt, args...) do {\
             std::fprintf(stream, "[CROSS] %s:%d - " fmt, __func__, __LINE__, ##args);\
