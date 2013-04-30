@@ -11,11 +11,11 @@ namespace nvc0 {
 template<std::size_t N>
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
-    const cross::command cmd = {
-        cross::command::TYPE_READ,
+    const a3::command cmd = {
+        a3::command::TYPE_READ,
         0,
         offset,
-        { cross::command::BAR1, N }
+        { a3::command::BAR1, N }
     };
     return ctx->send(cmd).value;
 }
@@ -23,11 +23,11 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
 template<std::size_t N>
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
-    const cross::command cmd = {
-        cross::command::TYPE_WRITE,
+    const a3::command cmd = {
+        a3::command::TYPE_WRITE,
         value,
         offset,
-        { cross::command::BAR1, N }
+        { a3::command::BAR1, N }
     };
     ctx->send(cmd);
 }
@@ -35,11 +35,11 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
 template<std::size_t N>
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
-    const cross::command cmd = {
-        cross::command::TYPE_READ,
+    const a3::command cmd = {
+        a3::command::TYPE_READ,
         0,
         offset,
-        { cross::command::BAR3, N }
+        { a3::command::BAR3, N }
     };
     return ctx->send(cmd).value;
 }
@@ -47,11 +47,11 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
 template<std::size_t N>
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
-    const cross::command cmd = {
-        cross::command::TYPE_WRITE,
+    const a3::command cmd = {
+        a3::command::TYPE_WRITE,
         value,
         offset,
-        { cross::command::BAR3, N }
+        { a3::command::BAR3, N }
     };
     ctx->send(cmd);
 }
