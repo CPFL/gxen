@@ -4,7 +4,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include "nvc0.h"
-#include "cross.h"
+#include "a3.h"
 namespace nvc0 {
 
 class context {
@@ -13,7 +13,7 @@ class context {
     nvc0_state_t* state() const { return state_; }
     uint64_t pramin() const { return pramin_; }
     void set_pramin(uint64_t pramin) { pramin_ = pramin; }
-    cross::command send(const cross::command& cmd);
+    a3::command send(const a3::command& cmd);
 
     static context* extract(nvc0_state_t* state);
 

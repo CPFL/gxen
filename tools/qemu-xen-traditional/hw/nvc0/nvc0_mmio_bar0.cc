@@ -123,11 +123,11 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     }
 
     {
-        const cross::command cmd = {
-            cross::command::TYPE_READ,
+        const a3::command cmd = {
+            a3::command::TYPE_READ,
             0xdeadface,
             offset,
-            { cross::command::BAR0 }
+            { a3::command::BAR0 }
         };
         ret = ctx->send(cmd).value;
     }
@@ -171,11 +171,11 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         return;
     }
 
-    const cross::command cmd = {
-        cross::command::TYPE_WRITE,
+    const a3::command cmd = {
+        a3::command::TYPE_WRITE,
         val,
         offset,
-        { cross::command::BAR0 }
+        { a3::command::BAR0 }
     };
     ctx->send(cmd);
     return;

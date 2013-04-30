@@ -26,7 +26,7 @@
 #include <signal.h>
 #include "nvc0.h"
 #include "nvc0_context.h"
-#include "cross.h"
+#include "a3.h"
 namespace nvc0 {
 
 context::context(nvc0_state_t* state, uint64_t memory_size)
@@ -37,24 +37,24 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     , socket_mutex_() {
 
     // initialize connection
-    socket_.connect(boost::asio::local::stream_protocol::endpoint(CROSS_ENDPOINT));
+    socket_.connect(boost::asio::local::stream_protocol::endpoint(A3_ENDPOINT));
 
-    // send guest id to cross
-    cross::command cmd = {
-        cross::command::TYPE_INIT,
+    // send guest id to a3
+    a3::command cmd = {
+        a3::command::TYPE_INIT,
         nvc0_domid()
     };
     send(cmd);
 }
 
-cross::command context::send(const cross::command& cmd) {
+a3::command context::send(const a3::command& cmd) {
     boost::mutex::scoped_lock lock(socket_mutex_);
-    cross::command result = { };
+    a3::command result = { };
     while (true) {
         boost::system::error_code error;
         boost::asio::write(
             socket_,
-            boost::asio::buffer(reinterpret_cast<const char*>(&cmd), sizeof(cross::command)),
+            boost::asio::buffer(reinterpret_cast<const char*>(&cmd), sizeof(a3::command)),
             boost::asio::transfer_all(),
             error);
         if (error != boost::asio::error::make_error_code(boost::asio::error::interrupted)) {
@@ -66,7 +66,7 @@ cross::command context::send(const cross::command& cmd) {
         boost::system::error_code error;
         boost::asio::read(
             socket_,
-            boost::asio::buffer(reinterpret_cast<char*>(&result), sizeof(cross::command)),
+            boost::asio::buffer(reinterpret_cast<char*>(&result), sizeof(a3::command)),
             boost::asio::transfer_all(),
             error);
         if (error != boost::asio::error::make_error_code(boost::asio::error::interrupted)) {

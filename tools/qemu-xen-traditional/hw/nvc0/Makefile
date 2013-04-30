@@ -16,5 +16,5 @@ OBJS += nvc0_context.o
 # link pciaccess and boost libraries
 LIBS += -lpciaccess -lboost_thread -lboost_system -lboost_date_time
 
-# for cross.h
-CPPFLAGS += -I$(XEN_ROOT)/tools/cross
+# for a3.h
+CPPFLAGS += -I$(XEN_ROOT)/tools/a3
