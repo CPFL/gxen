@@ -1,0 +1,156 @@
+#!/bin/bash
+#
+# xencommons    Script to start and stop xenstored and xenconsoled
+#
+# Author:       Ian Jackson <ian.jackson@eu.citrix.com>
+#
+# chkconfig: 2345 70 10
+# description: Starts and stops xenstored and xenconsoled
+### BEGIN INIT INFO
+# Provides:          xenstored xenconsoled
+# Required-Start:    $syslog $remote_fs
+# Should-Start:
+# Required-Stop:     $syslog $remote_fs
+# Should-Stop:
+# Default-Start:     2 3 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop xenstored and xenconsoled
+# Description:       Starts and stops the daemons neeeded for xl/xend
+### END INIT INFO
+
+if [ -d /etc/sysconfig ]; then
+	xencommons_config=/etc/sysconfig
+else
+	xencommons_config=/etc/default
+fi
+
+test -f $xencommons_config/xencommons && . $xencommons_config/xencommons
+
+XENCONSOLED_PIDFILE=/var/run/xenconsoled.pid
+shopt -s extglob
+
+# not running in Xen dom0 or domU
+if ! test -d /proc/xen ; then
+	exit 0
+fi
+
+# mount xenfs in dom0 or domU with a pv_ops kernel
+if test "x$1" = xstart && \
+   ! test -f /proc/xen/capabilities && \
+   ! grep '^xenfs ' /proc/mounts >/dev/null;
+then
+	mount -t xenfs xenfs /proc/xen
+fi
+
+# run this script only in dom0:
+# no capabilities file in xenlinux domU kernel
+# empty capabilities file in pv_ops domU kernel
+if test -f /proc/xen/capabilities && \
+   ! grep -q "control_d" /proc/xen/capabilities ; then
+	exit 0
+fi
+
+do_start () {
+        local time=0
+	local timeout=30
+
+	modprobe xen-evtchn 2>/dev/null
+	modprobe xen-gntdev 2>/dev/null
+	modprobe xen-gntalloc 2>/dev/null
+	modprobe xen-blkback 2>/dev/null
+	modprobe xen-netback 2>/dev/null
+	modprobe xen-pciback 2>/dev/null
+	modprobe evtchn 2>/dev/null
+	modprobe gntdev 2>/dev/null
+	modprobe netbk 2>/dev/null
+	modprobe blkbk 2>/dev/null
+	modprobe xen-scsibk 2>/dev/null
+	modprobe usbbk 2>/dev/null
+	modprobe pciback 2>/dev/null
+	modprobe xen-acpi-processor 2>/dev/null
+	modprobe blktap2 2>/dev/null || modprobe blktap 2>/dev/null
+	mkdir -p /var/run/xen
+
+	if ! `xenstore-read -s / >/dev/null 2>&1`
+	then
+		test -z "$XENSTORED_ROOTDIR" && XENSTORED_ROOTDIR="/var/lib/xenstored"
+		rm -f "$XENSTORED_ROOTDIR"/tdb* &>/dev/null
+		test -z "$XENSTORED_TRACE" || XENSTORED_ARGS=" -T /var/log/xen/xenstored-trace.log"
+
+		if [ -n "$XENSTORED" ] ; then
+		    echo -n Starting $XENSTORED...
+		    $XENSTORED --pid-file /var/run/xenstored.pid $XENSTORED_ARGS
+		elif [ -x /usr/sbin/oxenstored ] ; then
+		    echo -n Starting oxenstored...
+		    /usr/sbin/oxenstored --pid-file /var/run/xenstored.pid $XENSTORED_ARGS
+		elif [ -x /usr/sbin/xenstored ] ; then
+		    echo -n Starting C xenstored...
+		    /usr/sbin/xenstored --pid-file /var/run/xenstored.pid $XENSTORED_ARGS
+		else
+		    echo "No xenstored found"
+		    exit 1
+		fi
+
+		# Wait for xenstored to actually come up, timing out after 30 seconds
+                while [ $time -lt $timeout ] && ! `xenstore-read -s / >/dev/null 2>&1` ; do
+                    echo -n .
+		    time=$(($time+1))
+                    sleep 1
+                done
+		echo
+
+		# Exit if we timed out
+		if ! [ $time -lt $timeout ] ; then
+		    echo Could not start xenstored
+		    exit 1
+		fi
+
+		echo Setting domain 0 name...
+		xenstore-write "/local/domain/0/name" "Domain-0"
+	fi
+
+	echo Starting xenconsoled...
+	test -z "$XENCONSOLED_TRACE" || XENCONSOLED_ARGS=" --log=$XENCONSOLED_TRACE"
+	xenconsoled --pid-file=$XENCONSOLED_PIDFILE $XENCONSOLED_ARGS
+	test -z "$XENBACKENDD_DEBUG" || XENBACKENDD_ARGS="-d"
+	test "`uname`" != "NetBSD" || xenbackendd $XENBACKENDD_ARGS
+	echo Starting QEMU as disk backend for dom0
+	test -z "$QEMU_XEN" && QEMU_XEN=/usr/lib/xen/bin/qemu-system-i386
+	$QEMU_XEN -xen-domid 0 -xen-attach -name dom0 -nographic -M xenpv -daemonize -monitor /dev/null
+}
+do_stop () {
+        echo Stopping xenconsoled
+	if read 2>/dev/null <$XENCONSOLED_PIDFILE pid; then
+		kill $pid
+		while kill -9 $pid >/dev/null 2>&1; do sleep 0.1; done
+		rm -f $XENCONSOLED_PIDFILE
+	fi
+
+	echo WARNING: Not stopping xenstored, as it cannot be restarted.
+}
+
+case "$1" in
+  start)
+	do_start
+	;;
+  status)
+        xenstore-read -s /
+	;;
+  stop)
+	do_stop
+	;;
+  reload)
+	echo >&2 'Reload not available; use force-reload'; exit 1
+	;;
+  force-reload|restart)
+        do_stop
+	do_start
+	;;
+  *)
+	# do not advertise unreasonable commands that there is no reason
+	# to use with this device
+	echo $"Usage: $0 {start|stop|status|restart|force-reload}"
+	exit 1
+esac
+
+exit $?
