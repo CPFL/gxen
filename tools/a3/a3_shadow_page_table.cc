@@ -155,7 +155,11 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
         std::size_t i = 0;
         for (shadow_page_entries::iterator it = large_entries_.begin(),
              last = large_entries_.end(); it != last; ++it, ++i) {
-            it->refresh(pramin, address + 0x8 * i);
+            const uint64_t item = 0x8 * i;
+            const struct page_entry result =
+                it->refresh(pramin, page_entry::create(pramin, address + item));
+            large_page_->write32(item, result.word0);
+            large_page_->write32(item + 0x4, result.word1);
         }
     } else {
         large_entries_.clear();
@@ -171,7 +175,11 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
         std::size_t i = 0;
         for (shadow_page_entries::iterator it = small_entries_.begin(),
              last = small_entries_.end(); it != last; ++it, ++i) {
-            it->refresh(pramin, address + 0x8 * i);
+            const uint64_t item = 0x8 * i;
+            const struct page_entry result =
+                it->refresh(pramin, page_entry::create(pramin, address + item));
+            small_page_->write32(item, result.word0);
+            small_page_->write32(item + 0x4, result.word1);
         }
     } else {
         small_entries_.clear();
@@ -214,12 +222,9 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
     return UINT64_MAX;
 }
 
-bool shadow_page_entry::refresh(pramin::accessor* pramin, uint64_t page_entry_address) {
-    struct page_entry virt = { };
-    virt.word0 = pramin->read32(page_entry_address);
-    virt.word1 = pramin->read32(page_entry_address + 0x4);
-    virt_ = virt;
-    return true;
+struct page_entry shadow_page_entry::refresh(pramin::accessor* pramin, const struct page_entry& entry) {
+    virt_ = entry;
+    return entry;
 }
 
 }  // namespace a3

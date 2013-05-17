@@ -11,7 +11,7 @@ class page;
 
 class shadow_page_entry {
  public:
-    bool refresh(pramin::accessor* pramin, uint64_t page_entry_address);
+    struct page_entry refresh(pramin::accessor* pramin, const struct page_entry& entry);
     const struct page_entry& virt() const { return virt_; }
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return virt_.present; }
