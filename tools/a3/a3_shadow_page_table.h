@@ -3,11 +3,13 @@
 #include <stdint.h>
 #include <vector>
 #include <boost/static_assert.hpp>
+#include <boost/scoped_ptr.hpp>
 namespace a3 {
 namespace pramin {
 class accessor;
 }  // namespace pramin
 class context;
+class page;
 
 // We assume Little Endianess machine.
 
@@ -171,6 +173,8 @@ class shadow_page_table {
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }
+    page* phys() { return phys_.get(); };
+    const page* phys() const { return phys_.get(); };
 
     shadow_page_directories directories_;
     union {
@@ -182,6 +186,7 @@ class shadow_page_table {
     };
     uint64_t page_directory_address_;
     uint32_t channel_id_;
+    boost::scoped_ptr<page> phys_;
 };
 
 }  // namespace a3
