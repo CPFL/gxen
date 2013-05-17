@@ -161,6 +161,8 @@ void context::write_bar0(const command& cmd) {
                         for (iter_t it = range.first; it != range.second; ++it) {
                             const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
                             A3_LOG("    channel %d ramin graph with cmd %" PRIX32 " with addr %" PRIX64 "\n", it->second->id(), cmd.value, it->second->shadow_ramin()->address());
+                            // Because we doesn't recognize PCOPY engine initialization
+                            // it->second->shadow(this);
                             registers::write32(0x409500, res);
                             registers::write32(0x409504, cmd.value);
                         }
