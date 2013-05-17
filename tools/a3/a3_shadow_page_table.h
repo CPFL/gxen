@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <vector>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include "a3_page_table.h"
 namespace a3 {
 class context;
@@ -32,10 +33,17 @@ class shadow_page_directory {
     const shadow_page_entries& small_entries() const { return small_entries_; }
 
  private:
+    page* large_page() { return large_page_.get(); }
+    const page* large_page() const { return large_page_.get(); }
+    page* small_page() { return small_page_.get(); }
+    const page* small_page() const { return small_page_.get(); }
+
     struct page_directory virt_;
     struct page_directory phys_;
     shadow_page_entries large_entries_;
     shadow_page_entries small_entries_;
+    boost::shared_ptr<page> large_page_;
+    boost::shared_ptr<page> small_page_;
 };
 
 class shadow_page_table {
