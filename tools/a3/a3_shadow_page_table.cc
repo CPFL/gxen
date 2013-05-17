@@ -27,19 +27,27 @@
 #include "a3_bit_mask.h"
 #include "a3_shadow_page_table.h"
 #include "a3_pramin.h"
+#include "a3_page.h"
 namespace a3 {
 
 shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
-    , channel_id_(channel_id) {
+    , channel_id_(channel_id)
+    , phys_(NULL) {
 }
 
 bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
+    // directories size change
     const uint64_t vspace_size = page_limit + 1;
     size_ = vspace_size;
     if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
         return false;
+    }
+
+    if (phys()->size() < page_directory_size()) {
+        // we should extend shadow page directories
+        phys_.reset(new page(page_directory_size()));
     }
 
     return refresh_page_directories(ctx, page_directory_address);
