@@ -41,25 +41,29 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
     // directories size change
     const uint64_t vspace_size = page_limit + 1;
     size_ = vspace_size;
+
+    bool result = false;
     if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
-        return false;
+        return result;
     }
 
     const uint64_t page_directory_page_size =
         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
     if (!page_directory_page_size) {
         // page_directory_page_size becomes 0
-        return true;
+        return result;
     }
 
     if (!phys() || phys()->size() < page_directory_page_size) {
+        result = true;
         phys_.reset(new page(page_directory_page_size));
     }
 
-    return refresh_page_directories(ctx, page_directory_address);
+    refresh_page_directories(ctx, page_directory_address);
+    return result;
 }
 
-bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
+void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
     pramin::accessor pramin;
     page_directory_address_ = address;
 
@@ -76,7 +80,6 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
     // dump();
-    return false;
 }
 
 void shadow_page_table::set_low_size(uint32_t value) {
