@@ -70,7 +70,6 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         const uint64_t item = 0x8 * i;
         const struct page_directory result =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-        // TODO(Yusuke Suzuki): shift shadow page table value
         phys()->write32(item, result.word0);
         phys()->write32(item + 0x4, result.word1);
     }
@@ -226,6 +225,7 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
 }
 
 struct page_entry shadow_page_entry::refresh(pramin::accessor* pramin, const struct page_entry& entry) {
+    // TODO(Yusuke Suzuki): should be shifted
     virt_ = entry;
     return entry;
 }
