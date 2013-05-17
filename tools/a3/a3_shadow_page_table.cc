@@ -35,7 +35,7 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
     , channel_id_(channel_id)
-    , phys_(NULL) {
+    , phys_(new page(2)) {
 }
 
 bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
@@ -57,6 +57,11 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
             result = true;
             phys_.reset(new page(page_directory_page_size));
         }
+    }
+
+    for (uint64_t offset = 0; offset < 0x2000; offset += 0x4) {
+        const uint32_t value = pramin::read32(page_directory_address + offset);
+        phys()->write32(offset, value);
     }
 
     refresh_page_directories(ctx, page_directory_address);

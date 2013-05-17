@@ -174,7 +174,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR1
         bar1 = true;
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
-        addresses.push_back(bar1_channel()->table()->shadow_address());
+        // addresses.push_back(bar1_channel()->table()->shadow_address());
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar1()->shadow(this);
         }
@@ -184,7 +184,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR3
         bar1_only = false;
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
-        addresses.push_back(bar1_channel()->table()->shadow_address());
+        // addresses.push_back(bar3_channel()->table()->shadow_address());
     }
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         if (channels(i)->enabled()) {
@@ -192,7 +192,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
             if (channels(i)->table()->page_directory_address() == page_directory) {
                 bar1_only = false;
                 channels(i)->table()->refresh_page_directories(this, page_directory);
-                addresses.push_back(bar1_channel()->table()->shadow_address());
+                addresses.push_back(channels(i)->table()->shadow_address());
             }
         }
     }
@@ -209,11 +209,11 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     if (addresses.size() > 0) {
         for (std::vector<uint64_t>::const_iterator it = addresses.begin(),
              last = addresses.end(); it != last; ++it) {
-            const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
-            // const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(*it >> 8);
+            // const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
+            const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(*it >> 8);
+            A3_LOG("flush %" PRIx64 "\n", *it);
             registers.write32(0x100cb8, vsp);
             registers.write32(0x100cbc, trigger);
-            break;
             if ((it + 1) != last) {
                 // waiting flush
                 if (!registers.wait_eq(0x100c80, 0x00008000, 0x00008000)) {
@@ -227,6 +227,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
             }
         }
     }
+//     const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
+//     registers.write32(0x100cb8, vsp);
+//     registers.write32(0x100cbc, trigger);
 }
 
 }  // namespace a3
