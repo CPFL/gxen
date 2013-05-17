@@ -45,7 +45,7 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
         return false;
     }
 
-    if (phys()->size() < page_directory_size()) {
+    if (!phys() || phys()->size() < page_directory_size()) {
         // we should extend shadow page directories
         phys_.reset(new page(page_directory_size()));
     }
