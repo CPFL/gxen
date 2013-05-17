@@ -68,6 +68,7 @@ class context : public session<context> {
     uint32_t id() const { return id_; }
     int domid() const { return domid_; }
     uint64_t poll_area() const { return poll_area_; }
+    bool flush(uint64_t pd, bool bar = false);
 
  private:
     void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);

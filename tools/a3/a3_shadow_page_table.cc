@@ -40,6 +40,8 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
 
 bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
     // directories size change
+    page_directory_address_ = page_directory_address;
+
     const uint64_t vspace_size = page_limit + 1;
     size_ = vspace_size;
 
@@ -50,17 +52,15 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
 
     const uint64_t page_directory_page_size =
         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
-    if (!page_directory_page_size) {
-        // page_directory_page_size becomes 0
-        return result;
-    }
-
-    if (!phys() || phys()->size() < page_directory_page_size) {
-        result = true;
-        phys_.reset(new page(page_directory_page_size));
+    if (page_directory_page_size) {
+        if (!phys() || phys()->size() < page_directory_page_size) {
+            result = true;
+            phys_.reset(new page(page_directory_page_size));
+        }
     }
 
     refresh_page_directories(ctx, page_directory_address);
+    A3_LOG("table setting... 0x%" PRIx64 "\n", page_directory_address_);
     return result;
 }
 
@@ -229,18 +229,18 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
 }
 
 struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
-    // TODO(Yusuke Suzuki): should be shifted
-    struct page_entry result(entry);
     virt_ = entry;
-    if (!entry.present) {
-        return result;
-    }
-    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t field = result.address;
-        const uint64_t address = field << 12;
-        result.address = ctx->get_phys_address(address);
-    }
+    struct page_entry result(entry);
+    // TODO(Yusuke Suzuki): should be shifted
+//     if (!entry.present) {
+//         return result;
+//     }
+//     if (entry.target == page_entry::TARGET_TYPE_VRAM) {
+//         // rewrite address
+//         const uint64_t field = result.address;
+//         const uint64_t address = field << 12;
+//         result.address = ctx->get_phys_address(address);
+//     }
     phys_ = result;
     return result;
 }
