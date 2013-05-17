@@ -10,7 +10,7 @@ namespace a3 {
 static const unsigned kSMALL_PAGE_SHIFT = 12;
 static const unsigned kLARGE_PAGE_SHIFT = 17;
 static const unsigned kPAGE_TABLE_BITS = 27 - 12;
-static const unsigned kBLOCK = 4096;
+static const unsigned kPAGE_SIZE = 0x1000;
 static const unsigned kPAGE_TABLE_SIZE = 0x8000;
 
 static const unsigned kPAGE_DIRECTORY_COVERED_SIZE = 0x8000000;

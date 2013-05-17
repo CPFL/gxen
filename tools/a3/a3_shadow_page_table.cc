@@ -45,9 +45,10 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
         return false;
     }
 
-    if (!phys() || phys()->size() < page_directory_size()) {
-        // we should extend shadow page directories
-        phys_.reset(new page(page_directory_size()));
+    const uint64_t page_directory_page_size =
+        round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
+    if (!phys() || phys()->size() < page_directory_page_size) {
+        phys_.reset(new page(page_directory_page_size));
     }
 
     return refresh_page_directories(ctx, page_directory_address);
@@ -62,10 +63,10 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
         const uint64_t item = page_directory_address() + 0x8 * i;
-        const struct page_directory dir = page_directory::create(&pramin, item);
-        phys()->write32(item, dir.word0);
-        phys()->write32(item + 0x4, dir.word1);
-        it->refresh(ctx, &pramin, dir);
+        const struct page_directory result = it->refresh(ctx, &pramin, page_directory::create(&pramin, item));
+        // TODO(Yusuke Suzuki): shift shadow page table value
+        phys()->write32(item, result.word0);
+        phys()->write32(item + 0x4, result.word1);
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
@@ -135,7 +136,7 @@ void shadow_page_table::dump() const {
     }
 }
 
-void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
+struct page_directory shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
     virt_ = dir;
 
     if (dir.large_page_table_present) {
@@ -164,9 +165,7 @@ void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, cons
         small_entries_.clear();
     }
 
-    // TODO(Yusuke Suzuki)
-    // Calculate physical page address
-    phys_ = dir;
+    return dir;
 }
 
 uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entry* result) {
@@ -208,10 +207,6 @@ bool shadow_page_entry::refresh(pramin::accessor* pramin, uint64_t page_entry_ad
     virt.word0 = pramin->read32(page_entry_address);
     virt.word1 = pramin->read32(page_entry_address + 0x4);
     virt_ = virt;
-
-    // TODO(Yusuke Suzuki)
-    // Calculate physical page address
-    phys_ = virt;
     return true;
 }
 
