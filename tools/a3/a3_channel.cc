@@ -112,8 +112,10 @@ void channel::shadow(context* ctx) {
     if (table()->refresh(ctx, page_directory_phys, page_directory_size)) {
         // write64(shadow_ramin(), 0x0200, table()->shadow_address());
     }
-    // write64(shadow_ramin(), 0x0200, table()->shadow_address());
-    ctx->flush(page_directory_phys);
+    if (id() >= 0) {
+        write64(shadow_ramin(), 0x0200, table()->shadow_address());
+//         ctx->flush(table()->shadow_address());
+    }
 }
 
 void channel::attach(context* ctx, uint64_t addr) {
