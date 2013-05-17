@@ -144,6 +144,7 @@ void shadow_page_table::dump() const {
 
 struct page_directory shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
     virt_ = dir;
+    struct page_directory result(dir);
 
     if (dir.large_page_table_present) {
         const uint64_t address = static_cast<uint64_t>(dir.large_page_table_address) << 12;
@@ -161,6 +162,7 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
             large_page_->write32(item, result.word0);
             large_page_->write32(item + 0x4, result.word1);
         }
+        result.large_page_table_address = (large_page()->address() >> 12);
     } else {
         large_entries_.clear();
     }
@@ -181,11 +183,12 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
             small_page_->write32(item, result.word0);
             small_page_->write32(item + 0x4, result.word1);
         }
+        result.small_page_table_address = (small_page()->address() >> 12);
     } else {
         small_entries_.clear();
     }
 
-    return dir;
+    return result;
 }
 
 uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entry* result) {
