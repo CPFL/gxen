@@ -5,6 +5,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "a3_page_table.h"
+#include "a3_page.h"
 namespace a3 {
 class context;
 class page;
@@ -52,7 +53,7 @@ class shadow_page_table {
 
     shadow_page_table(uint32_t channel_id);
     bool refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit);
-    bool refresh_page_directories(context* ctx, uint64_t address);
+    void refresh_page_directories(context* ctx, uint64_t address);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
@@ -61,6 +62,7 @@ class shadow_page_table {
     uint64_t resolve(uint64_t virtual_address, struct shadow_page_entry* result);
     uint64_t page_directory_address() const { return page_directory_address_; }
     void dump() const;
+    uint64_t shadow_address() const { return phys() ? phys()->address() : 0; }
 
  private:
     static uint64_t round_up(uint64_t x, uint64_t y) {
