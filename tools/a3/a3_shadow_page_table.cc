@@ -160,7 +160,7 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
              last = large_entries_.end(); it != last; ++it, ++i) {
             const uint64_t item = 0x8 * i;
             const struct page_entry result =
-                it->refresh(pramin, page_entry::create(pramin, address + item));
+                it->refresh(ctx, pramin, page_entry::create(pramin, address + item));
             large_page_->write32(item, result.word0);
             large_page_->write32(item + 0x4, result.word1);
         }
@@ -181,7 +181,7 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
              last = small_entries_.end(); it != last; ++it, ++i) {
             const uint64_t item = 0x8 * i;
             const struct page_entry result =
-                it->refresh(pramin, page_entry::create(pramin, address + item));
+                it->refresh(ctx, pramin, page_entry::create(pramin, address + item));
             small_page_->write32(item, result.word0);
             small_page_->write32(item + 0x4, result.word1);
         }
@@ -227,10 +227,21 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
     return UINT64_MAX;
 }
 
-struct page_entry shadow_page_entry::refresh(pramin::accessor* pramin, const struct page_entry& entry) {
+struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
     // TODO(Yusuke Suzuki): should be shifted
+    struct page_entry result(entry);
     virt_ = entry;
-    return entry;
+    if (!entry.present) {
+        return result;
+    }
+    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t field = result.address;
+        const uint64_t address = field << 12;
+        result.address = ctx->get_phys_address(address);
+    }
+    phys_ = result;
+    return result;
 }
 
 }  // namespace a3
