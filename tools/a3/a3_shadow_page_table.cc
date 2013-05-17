@@ -47,6 +47,11 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
 
     const uint64_t page_directory_page_size =
         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
+    if (!page_directory_page_size) {
+        // page_directory_page_size becomes 0
+        return true;
+    }
+
     if (!phys() || phys()->size() < page_directory_page_size) {
         phys_.reset(new page(page_directory_page_size));
     }
@@ -62,8 +67,9 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     std::size_t i = 0;
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
-        const uint64_t item = page_directory_address() + 0x8 * i;
-        const struct page_directory result = it->refresh(ctx, &pramin, page_directory::create(&pramin, item));
+        const uint64_t item = 0x8 * i;
+        const struct page_directory result =
+            it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
         // TODO(Yusuke Suzuki): shift shadow page table value
         phys()->write32(item, result.word0);
         phys()->write32(item + 0x4, result.word1);
@@ -142,6 +148,9 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
     if (dir.large_page_table_present) {
         const uint64_t address = static_cast<uint64_t>(dir.large_page_table_address) << 12;
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
+        if (!large_page()) {
+            large_page_.reset(new page(count * 0x8 / kPAGE_SIZE));
+        }
         large_entries_.resize(count);
         std::size_t i = 0;
         for (shadow_page_entries::iterator it = large_entries_.begin(),
@@ -155,6 +164,9 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
     if (dir.small_page_table_present) {
         const uint64_t address = static_cast<uint64_t>(dir.small_page_table_address) << 12;
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
+        if (!small_page()) {
+            small_page_.reset(new page(count * 0x8 / kPAGE_SIZE));
+        }
         small_entries_.resize(count);
         std::size_t i = 0;
         for (shadow_page_entries::iterator it = small_entries_.begin(),
