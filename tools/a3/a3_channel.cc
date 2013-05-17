@@ -90,9 +90,10 @@ void channel::shadow(context* ctx) {
     page_directory_virt = read64(&pramin, ramin_address() + 0x0200);
     page_directory_phys = ctx->get_phys_address(page_directory_virt);
     page_directory_size = read64(&pramin, ramin_address() + 0x0208);
+    write64(shadow_ramin(), 0x0200, page_directory_phys);
 
     write64(shadow_ramin(), 0x0208, page_directory_size);
-    A3_LOG("virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", page_directory_virt, page_directory_phys);
+    A3_LOG("id %d virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", id(), page_directory_virt, page_directory_phys);
 
     // fctx
     const uint64_t fctx_virt = read64(&pramin, ramin_address() + 0x08);
@@ -109,8 +110,10 @@ void channel::shadow(context* ctx) {
     shadow_ramin()->write32(0x60 + 0x08, mpeg_ctx_phys);
 
     if (table()->refresh(ctx, page_directory_phys, page_directory_size)) {
-        write64(shadow_ramin(), 0x0200, table()->shadow_address());
+        // write64(shadow_ramin(), 0x0200, table()->shadow_address());
     }
+    // write64(shadow_ramin(), 0x0200, table()->shadow_address());
+    ctx->flush(page_directory_phys);
 }
 
 void channel::attach(context* ctx, uint64_t addr) {
