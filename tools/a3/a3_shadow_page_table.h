@@ -24,7 +24,7 @@ class shadow_page_directory {
  public:
     typedef std::vector<shadow_page_entry> shadow_page_entries;
 
-    void refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir);
+    struct page_directory refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir);
     const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
     uint64_t resolve(uint64_t offset, struct shadow_page_entry* result);
