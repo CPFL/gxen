@@ -28,6 +28,7 @@
 #include "a3_shadow_page_table.h"
 #include "a3_pramin.h"
 #include "a3_page.h"
+#include "a3_context.h"
 namespace a3 {
 
 shadow_page_table::shadow_page_table(uint32_t channel_id)
