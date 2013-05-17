@@ -61,7 +61,11 @@ bool shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     std::size_t i = 0;
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
-        it->refresh(ctx, &pramin, page_directory_address() + 0x8 * i);
+        const uint64_t item = page_directory_address() + 0x8 * i;
+        const struct page_directory dir = page_directory::create(&pramin, item);
+        phys()->write32(item, dir.word0);
+        phys()->write32(item + 0x4, dir.word1);
+        it->refresh(ctx, &pramin, dir);
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
@@ -131,14 +135,11 @@ void shadow_page_table::dump() const {
     }
 }
 
-void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint64_t page_directory_address) {
-    struct page_directory virt = { { } };
-    virt.word0 = pramin->read32(page_directory_address);
-    virt.word1 = pramin->read32(page_directory_address + 0x4);
-    virt_ = virt;
+void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
+    virt_ = dir;
 
-    if (virt.large_page_table_present) {
-        const uint64_t address = static_cast<uint64_t>(virt.large_page_table_address) << 12;
+    if (dir.large_page_table_present) {
+        const uint64_t address = static_cast<uint64_t>(dir.large_page_table_address) << 12;
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
         large_entries_.resize(count);
         std::size_t i = 0;
@@ -150,8 +151,8 @@ void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint
         large_entries_.clear();
     }
 
-    if (virt.small_page_table_present) {
-        const uint64_t address = static_cast<uint64_t>(virt.small_page_table_address) << 12;
+    if (dir.small_page_table_present) {
+        const uint64_t address = static_cast<uint64_t>(dir.small_page_table_address) << 12;
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
         small_entries_.resize(count);
         std::size_t i = 0;
@@ -165,7 +166,7 @@ void shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, uint
 
     // TODO(Yusuke Suzuki)
     // Calculate physical page address
-    phys_ = virt;
+    phys_ = dir;
 }
 
 uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entry* result) {
