@@ -17,15 +17,19 @@ class accessor : private boost::noncopyable {
     bool wait_ne(uint32_t offset, uint32_t mask, uint32_t val);
     template<typename Functor>
     bool wait_cb(uint32_t offset, uint32_t mask, uint32_t val, const Functor& func) {
+#if !defined(NDEBUG)
         uint64_t counter = 0;
+#endif
         do {
             if (func((read32(offset) & mask), val)) {
                 return true;
             }
+#if !defined(NDEBUG)
             ++counter;
-            if (counter % 100000) {
+            if ((counter % 100000) == 0) {
                 A3_LOG("wait stop count %" PRIX64 "\n", counter);
             }
+#endif
         } while (true);
         return false;
     }

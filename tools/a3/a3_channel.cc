@@ -109,12 +109,10 @@ void channel::shadow(context* ctx) {
     const uint64_t mpeg_ctx_phys = ctx->get_phys_address(mpeg_ctx_virt);
     shadow_ramin()->write32(0x60 + 0x08, mpeg_ctx_phys);
 
-    if (table()->refresh(ctx, page_directory_phys, page_directory_size)) {
-        // write64(shadow_ramin(), 0x0200, table()->shadow_address());
-    }
+    table()->refresh(ctx, page_directory_phys, page_directory_size);
     if (id() >= 0) {
-        write64(shadow_ramin(), 0x0200, table()->shadow_address());
-//         ctx->flush(table()->shadow_address());
+        shadow_ramin()->write32(0x0200, bit_mask<32>(table()->shadow_address()));
+        shadow_ramin()->write32(0x0204, table()->shadow_address() >> 32);
     }
 }
 
