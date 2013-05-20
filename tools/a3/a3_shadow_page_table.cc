@@ -35,7 +35,7 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
     , channel_id_(channel_id)
-    , phys_(new page(2)) {
+    , phys_(new page(0x10)) {
 }
 
 bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
@@ -52,26 +52,25 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
 
     const uint64_t page_directory_page_size =
         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
-    if (page_directory_page_size) {
-        if (!phys() || phys()->size() < page_directory_page_size) {
-            result = true;
-            phys_.reset(new page(page_directory_page_size));
-        }
-    }
-
-    for (uint64_t offset = 0; offset < 0x2000; offset += 0x4) {
-        const uint32_t value = pramin::read32(page_directory_address + offset);
-        phys()->write32(offset, value);
-    }
+//     if (page_directory_page_size) {
+//         if (!phys() || phys()->size() < page_directory_page_size) {
+//             result = true;
+//             phys_.reset(new page(page_directory_page_size));
+//         }
+//     }
 
     refresh_page_directories(ctx, page_directory_address);
-    A3_LOG("table setting... 0x%" PRIx64 "\n", page_directory_address_);
     return result;
 }
 
 void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
     pramin::accessor pramin;
     page_directory_address_ = address;
+
+    for (uint64_t offset = 0; offset < 0x10000; offset += 0x4) {
+        const uint32_t value = pramin.read32(address + offset);
+        phys()->write32(offset, value);
+    }
 
     directories_.resize(page_directory_size());
     std::size_t i = 0;
@@ -80,8 +79,8 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         const uint64_t item = 0x8 * i;
         const struct page_directory result =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-        phys()->write32(item, result.word0);
-        phys()->write32(item + 0x4, result.word1);
+//         phys()->write32(item, result.word0);
+//         phys()->write32(item + 0x4, result.word1);
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
