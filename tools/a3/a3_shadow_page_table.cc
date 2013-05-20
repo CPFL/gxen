@@ -199,7 +199,7 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
 }
 
 uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entry* result) {
-    if (virt().large_page_table_present) {
+    if (phys().large_page_table_present) {
         const uint64_t index = offset / kLARGE_PAGE_SIZE;
         const uint64_t rest = offset % kLARGE_PAGE_SIZE;
         if (large_entries_.size() > index) {
@@ -208,13 +208,13 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
                 if (result) {
                     *result = entry;
                 }
-                const uint64_t address = entry.virt().address;
+                const uint64_t address = entry.phys().address;
                 return (address << 12) + rest;
             }
         }
     }
 
-    if (virt().small_page_table_present) {
+    if (phys().small_page_table_present) {
         const uint64_t index = offset / kSMALL_PAGE_SIZE;
         const uint64_t rest = offset % kSMALL_PAGE_SIZE;
         if (small_entries_.size() > index) {
@@ -223,7 +223,7 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
                 if (result) {
                     *result = entry;
                 }
-                const uint64_t address = entry.virt().address;
+                const uint64_t address = entry.phys().address;
                 return (address << 12) + rest;
             }
         }
