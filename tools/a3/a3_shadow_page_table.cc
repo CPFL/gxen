@@ -79,8 +79,8 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         const uint64_t item = 0x8 * i;
         const struct page_directory result =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-//         phys()->write32(item, result.word0);
-//         phys()->write32(item + 0x4, result.word1);
+         phys()->write32(item, result.word0);
+         phys()->write32(item + 0x4, result.word1);
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
@@ -235,16 +235,15 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
 struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
     virt_ = entry;
     struct page_entry result(entry);
-    // TODO(Yusuke Suzuki): should be shifted
-//     if (!entry.present) {
-//         return result;
-//     }
-//     if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-//         // rewrite address
-//         const uint64_t field = result.address;
-//         const uint64_t address = field << 12;
-//         result.address = ctx->get_phys_address(address);
-//     }
+    if (!entry.present) {
+        return result;
+    }
+    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t field = result.address;
+        const uint64_t address = field << 12;
+        result.address = ctx->get_phys_address(address);
+    }
     phys_ = result;
     return result;
 }
