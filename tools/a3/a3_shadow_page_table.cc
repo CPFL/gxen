@@ -35,10 +35,15 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
     : directories_()
     , size_(0)
     , channel_id_(channel_id)
-    , phys_(new page(0x10)) {
+    , phys_() {
 }
 
 bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
+    // allocate directories
+    if (!phys()) {
+        phys_.reset(new page(0x10));
+    }
+
     // directories size change
     page_directory_address_ = page_directory_address;
 
@@ -79,11 +84,11 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         const uint64_t item = 0x8 * i;
         const struct page_directory result =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-         phys()->write32(item, result.word0);
-         phys()->write32(item + 0x4, result.word1);
+        phys()->write32(item, result.word0);
+        phys()->write32(item + 0x4, result.word1);
     }
 
-    A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
+    A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
     // dump();
 }
 
@@ -93,60 +98,6 @@ void shadow_page_table::set_low_size(uint32_t value) {
 
 void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
-}
-
-uint64_t shadow_page_table::resolve(uint64_t virtual_address, struct shadow_page_entry* result) {
-    const uint32_t index = virtual_address / kPAGE_DIRECTORY_COVERED_SIZE;
-    if (directories_.size() <= index) {
-        return UINT64_MAX;
-    }
-    return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE, result);
-}
-
-void shadow_page_table::dump() const {
-    std::size_t i = 0;
-    for (shadow_page_directories::const_iterator it = directories_.begin(),
-         iz = directories_.end(); it != iz; ++it, ++i) {
-        const struct shadow_page_directory& dir = *it;
-        A3_LOG("PDE 0x%" PRIX64 " : large %d / small %d\n",
-                  page_directory_address_ + 0x8 * i,
-                  dir.virt().large_page_table_present,
-                  dir.virt().small_page_table_present);
-
-        if (dir.virt().large_page_table_present) {
-            std::size_t j = 0;
-            for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.large_entries().begin(),
-                 jz = dir.large_entries().end(); jt != jz; ++jt, ++j) {
-                if (jt->present()) {
-                    const uint64_t address = jt->virt().address;
-                    A3_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                              kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
-                              kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
-                              (address << 12),
-                              (address << 12) + kLARGE_PAGE_SIZE - 1,
-                              jt->virt().read_only ? "RO" : "RW",
-                              jt->virt().target);
-                }
-            }
-        }
-
-        if (dir.virt().small_page_table_present) {
-            std::size_t j = 0;
-            for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.small_entries().begin(),
-                 jz = dir.small_entries().end(); jt != jz; ++jt, ++j) {
-                if (jt->present()) {
-                    const uint64_t address = jt->virt().address;
-                    A3_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
-                              kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
-                              kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,
-                              (address << 12),
-                              (address << 12) + kSMALL_PAGE_SIZE - 1,
-                              jt->virt().read_only ? "RO" : "RW",
-                              jt->virt().target);
-                }
-            }
-        }
-    }
 }
 
 struct page_directory shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
@@ -169,7 +120,8 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
             large_page_->write32(item, result.word0);
             large_page_->write32(item + 0x4, result.word1);
         }
-        result.large_page_table_address = (large_page()->address() >> 12);
+        const uint64_t result_address = (large_page()->address() >> 12);
+        result.large_page_table_address = result_address;
     } else {
         large_entries_.clear();
     }
@@ -190,12 +142,37 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
             small_page_->write32(item, result.word0);
             small_page_->write32(item + 0x4, result.word1);
         }
-        result.small_page_table_address = (small_page()->address() >> 12);
+        const uint64_t result_address = (small_page()->address() >> 12);
+        result.small_page_table_address = result_address;
     } else {
         small_entries_.clear();
     }
 
+    phys_ = result;
     return result;
+}
+
+struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
+    virt_ = entry;
+    struct page_entry result(entry);
+    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = ctx->get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
+    }
+    phys_ = result;
+    return result;
+}
+
+uint64_t shadow_page_table::resolve(uint64_t virtual_address, struct shadow_page_entry* result) {
+    const uint32_t index = virtual_address / kPAGE_DIRECTORY_COVERED_SIZE;
+    if (directories_.size() <= index) {
+        return UINT64_MAX;
+    }
+    return directories_[index].resolve(virtual_address - index * kPAGE_DIRECTORY_COVERED_SIZE, result);
 }
 
 uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entry* result) {
@@ -232,22 +209,50 @@ uint64_t shadow_page_directory::resolve(uint64_t offset, struct shadow_page_entr
     return UINT64_MAX;
 }
 
-struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
-    virt_ = entry;
-    struct page_entry result(entry);
-    if (!entry.present) {
-        return result;
+void shadow_page_table::dump() const {
+    std::size_t i = 0;
+    for (shadow_page_directories::const_iterator it = directories_.begin(),
+         iz = directories_.end(); it != iz; ++it, ++i) {
+        const struct shadow_page_directory& dir = *it;
+        A3_LOG("PDE 0x%" PRIX64 " : large %d / small %d\n",
+                  page_directory_address_ + 0x8 * i,
+                  dir.phys().large_page_table_present,
+                  dir.phys().small_page_table_present);
+
+        if (dir.phys().large_page_table_present) {
+            std::size_t j = 0;
+            for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.large_entries().begin(),
+                 jz = dir.large_entries().end(); jt != jz; ++jt, ++j) {
+                if (jt->present()) {
+                    const uint64_t address = jt->phys().address;
+                    A3_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
+                              (address << 12),
+                              (address << 12) + kLARGE_PAGE_SIZE - 1,
+                              jt->phys().read_only ? "RO" : "RW",
+                              jt->phys().target);
+                }
+            }
+        }
+
+        if (dir.phys().small_page_table_present) {
+            std::size_t j = 0;
+            for (shadow_page_directory::shadow_page_entries::const_iterator jt = dir.small_entries().begin(),
+                 jz = dir.small_entries().end(); jt != jz; ++jt, ++j) {
+                if (jt->present()) {
+                    const uint64_t address = jt->phys().address;
+                    A3_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
+                              kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,
+                              (address << 12),
+                              (address << 12) + kSMALL_PAGE_SIZE - 1,
+                              jt->phys().read_only ? "RO" : "RW",
+                              jt->phys().target);
+                }
+            }
+        }
     }
-    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-    }
-    phys_ = result;
-    return result;
 }
 
 }  // namespace a3
