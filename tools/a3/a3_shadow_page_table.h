@@ -15,7 +15,7 @@ class shadow_page_entry {
     struct page_entry refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry);
     const struct page_entry& virt() const { return virt_; }
     const struct page_entry& phys() const { return phys_; }
-    bool present() const { return virt_.present; }
+    bool present() const { return phys_.present; }
 
  private:
     struct page_entry virt_;
