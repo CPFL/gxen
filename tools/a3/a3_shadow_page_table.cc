@@ -38,6 +38,14 @@ shadow_page_table::shadow_page_table(uint32_t channel_id)
     , phys_() {
 }
 
+void shadow_page_table::set_low_size(uint32_t value) {
+    low_size_ = value;
+}
+
+void shadow_page_table::set_high_size(uint32_t value) {
+    high_size_ = value;
+}
+
 bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
     // allocate directories
     if (!phys()) {
@@ -89,15 +97,7 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
-    // dump();
-}
-
-void shadow_page_table::set_low_size(uint32_t value) {
-    low_size_ = value;
-}
-
-void shadow_page_table::set_high_size(uint32_t value) {
-    high_size_ = value;
+    dump();
 }
 
 struct page_directory shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
@@ -155,14 +155,14 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
 struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
     virt_ = entry;
     struct page_entry result(entry);
-    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-    }
+//     if (entry.target == page_entry::TARGET_TYPE_VRAM) {
+//         // rewrite address
+//         const uint64_t g_field = result.address;
+//         const uint64_t g_address = g_field << 12;
+//         const uint64_t h_address = ctx->get_phys_address(g_address);
+//         const uint64_t h_field = h_address >> 12;
+//         result.address = h_field;
+//     }
     phys_ = result;
     return result;
 }

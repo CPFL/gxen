@@ -66,6 +66,7 @@ context::~context() {
 void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
+    id_ = 1;
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
 }
 
@@ -208,8 +209,8 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     if (addresses.size() > 0) {
         for (std::vector<uint64_t>::const_iterator it = addresses.begin(),
              last = addresses.end(); it != last; ++it) {
-            // const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
-            const uint32_t vsp = static_cast<uint32_t>(*it >> 8);
+            const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
+            // const uint32_t vsp = static_cast<uint32_t>(*it >> 8);
             A3_LOG("flush %" PRIx64 "\n", *it);
             registers.write32(0x100cb8, vsp);
             registers.write32(0x100cbc, trigger);
