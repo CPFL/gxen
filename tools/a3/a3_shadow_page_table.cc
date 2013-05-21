@@ -1,5 +1,5 @@
 /*
- * Cross shadow page table
+ * A3 shadow page table
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -50,8 +50,8 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
         return result;
     }
 
-    const uint64_t page_directory_page_size =
-        round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
+//     const uint64_t page_directory_page_size =
+//         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
 //     if (page_directory_page_size) {
 //         if (!phys() || phys()->size() < page_directory_page_size) {
 //             result = true;
@@ -240,9 +240,11 @@ struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pra
     }
     if (entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address
-        const uint64_t field = result.address;
-        const uint64_t address = field << 12;
-        result.address = ctx->get_phys_address(address);
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = ctx->get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
     }
     phys_ = result;
     return result;

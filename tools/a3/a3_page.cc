@@ -1,5 +1,5 @@
 /*
- * Cross Page
+ * A3 Page
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -32,7 +32,8 @@ page::page(std::size_t n)
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
         vram_ = device::instance()->malloc(n);
     }
-    clear();
+    A3_LOG("page allocated 0x%" PRIx64 "\n", address());
+    // clear();
 }
 
 page::~page() {

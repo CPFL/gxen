@@ -1,5 +1,5 @@
 /*
- * Cross NVC0 registers accessor
+ * A3 NVC0 registers accessor
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

@@ -1,5 +1,5 @@
 /*
- * Cross Context BAR1
+ * A3 Context BAR1
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

@@ -1,5 +1,5 @@
 /*
- * Cross Device
+ * A3 Device
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -77,6 +77,7 @@ device::device()
         fprintf(stderr, "cannot init xl context\n");
         exit(1);
     }
+    A3_LOG("device environment setup\n");
 }
 
 device::~device() {
@@ -147,6 +148,8 @@ void device::initialize(const bdf& bdf) {
         pci_system_cleanup();
         return;
     }
+
+    A3_LOG("PCI device catch\n");
 
     // init bar1 device
     bar1_.reset(new device_bar1());

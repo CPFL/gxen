@@ -1,5 +1,5 @@
 /*
- * Cross NVC0 PRAMIN
+ * A3 NVC0 PRAMIN
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

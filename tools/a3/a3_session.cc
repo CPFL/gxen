@@ -1,5 +1,5 @@
 /*
- * A3 NVC0 poll area
+ * A3 session
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,8 +21,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "a3_poll_area.h"
+#include "a3_session.h"
+#include "a3_context.h"
 namespace a3 {
+
+session::session(boost::asio::io_service& io_service)
+    : socket_(io_service)
+    , context_(NULL) {
+}
+
+session::~session() { }
+
+void session::start(bool through) {
+    A3_LOG("START\n");
+    context_.reset(new context(this, through));
+    ctx()->accept();
+    boost::asio::async_read(
+	socket_,
+	boost::asio::buffer(&buffer_, kCommandSize),
+	  boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
+}
+
+void session::handle_read(const boost::system::error_code& error) {
+    if (error) {
+        delete this;
+        return;
+    }
+    const command command(*buffer());
+    ctx()->handle(command);
+
+    // handle command
+    boost::asio::async_write(
+	socket_,
+	boost::asio::buffer(&buffer_, kCommandSize),
+	boost::bind(&session::handle_write, this, boost::asio::placeholders::error));
+}
+
+void session::handle_write(const boost::system::error_code& error) {
+    if (error) {
+        delete this;
+        return;
+    }
+
+    boost::asio::async_read(
+        socket_,
+        boost::asio::buffer(&buffer_, kCommandSize),
+        boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
+}
 
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */
