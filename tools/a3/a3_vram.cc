@@ -1,5 +1,5 @@
 /*
- * Cross NVC0 VRAM pool
+ * A3 NVC0 VRAM pool
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

@@ -1,5 +1,5 @@
 /*
- * Cross main entry point
+ * A3 main entry point
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -43,15 +43,15 @@ class server {
 
  private:
     void start_accept() {
-        context* new_session = new context(io_service_, through());
+        session* new_session = new session(io_service_);
         acceptor_.async_accept(
             new_session->socket(),
             boost::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
     }
 
-    void handle_accept(context* new_session, const boost::system::error_code& error) {
+    void handle_accept(session* new_session, const boost::system::error_code& error) {
         if (!error) {
-            new_session->start();
+            new_session->start(through());
         } else {
             delete new_session;
         }

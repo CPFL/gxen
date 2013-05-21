@@ -1,5 +1,5 @@
 /*
- * Cross Channel
+ * A3 Channel
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

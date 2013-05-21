@@ -1,5 +1,5 @@
 /*
- * Cross FIFO queue playlist
+ * A3 FIFO queue playlist
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

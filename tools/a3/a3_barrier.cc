@@ -1,5 +1,5 @@
 /*
- * NVIDIA cross barrier table
+ * A3 barrier table
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

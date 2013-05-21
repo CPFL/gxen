@@ -1,5 +1,5 @@
 /*
- * Cross Xen API
+ * A3 Xen API
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

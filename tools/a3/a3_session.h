@@ -5,66 +5,30 @@
 #include <boost/asio.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
 #include <boost/type_traits/alignment_of.hpp>
+#include <boost/scoped_ptr.hpp>
+#include "a3.h"
 namespace a3 {
 
-template<typename Derived>
+class context;
+
 class session : private boost::noncopyable {
  public:
     static const int kCommandSize = sizeof(command);
 
-    virtual ~session() { }
-
-    session(boost::asio::io_service& io_service)
-        : socket_(io_service) {
-    }
-
-    boost::asio::local::stream_protocol::socket& socket() {
-        return socket_;
-    }
-
-    void start() {
-        A3_LOG("START\n");
-        static_cast<Derived*>(this)->accept();
-        boost::asio::async_read(
-            socket_,
-            boost::asio::buffer(&buffer_, kCommandSize),
-              boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
-    }
-
-    command* buffer() {
-        return reinterpret_cast<a3::command*>(&buffer_);
-    }
+    virtual ~session();
+    session(boost::asio::io_service& io_service);
+    void start(bool through);
+    boost::asio::local::stream_protocol::socket& socket() { return socket_; }
+    command* buffer() { return reinterpret_cast<a3::command*>(&buffer_); }
+    context* ctx() const { return context_.get(); }
 
  private:
-    void handle_read(const boost::system::error_code& error) {
-        if (error) {
-            delete this;
-            return;
-        }
-        const command command(*buffer());
-        static_cast<Derived*>(this)->handle(command);
-
-        // handle command
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(&buffer_, kCommandSize),
-            boost::bind(&session::handle_write, this, boost::asio::placeholders::error));
-    }
-
-    void handle_write(const boost::system::error_code& error) {
-        if (error) {
-            delete this;
-            return;
-        }
-
-        boost::asio::async_read(
-            socket_,
-            boost::asio::buffer(&buffer_, kCommandSize),
-            boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
-    }
+    void handle_read(const boost::system::error_code& error);
+    void handle_write(const boost::system::error_code& error);
 
     boost::asio::local::stream_protocol::socket socket_;
     boost::aligned_storage<kCommandSize, boost::alignment_of<command>::value>::type buffer_;
+    boost::scoped_ptr<context> context_;
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Cross device table
+ * A3 device table
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *

@@ -4,9 +4,10 @@
 #include <boost/checked_delete.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/noncopyable.hpp>
 #include "a3.h"
-#include "a3_session.h"
 #include "a3_channel.h"
+#include "a3_session.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -20,11 +21,11 @@ struct unique_ptr {
 
 class playlist;
 
-class context : public session<context> {
+class context : private boost::noncopyable {
  public:
     typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
 
-    context(boost::asio::io_service& io_service, bool through);
+    context(session* session, bool through);
     virtual ~context();
     void accept();
     void handle(const command& command);
@@ -69,6 +70,7 @@ class context : public session<context> {
     int domid() const { return domid_; }
     uint64_t poll_area() const { return poll_area_; }
     bool flush(uint64_t pd, bool bar = false);
+    command* buffer() { return session_->buffer(); }
 
  private:
     void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -80,6 +82,7 @@ class context : public session<context> {
     uint32_t encode_to_shadow_ramin(uint32_t value);
     bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
 
+    session* session_;
     bool through_;
     bool accepted_;
     int domid_;

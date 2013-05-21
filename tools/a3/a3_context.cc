@@ -1,5 +1,5 @@
 /*
- * Cross Context
+ * A3 Context
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -38,9 +38,8 @@
 #include "a3_shadow_page_table.h"
 namespace a3 {
 
-
-context::context(boost::asio::io_service& io_service, bool through)
-    : session(io_service)
+context::context(session* s, bool through)
+    : session_(s)
     , through_(through)
     , accepted_(false)
     , id_()
