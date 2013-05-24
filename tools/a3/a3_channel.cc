@@ -110,10 +110,10 @@ void channel::shadow(context* ctx) {
     shadow_ramin()->write32(0x60 + 0x08, mpeg_ctx_phys);
 
     table()->refresh(ctx, page_directory_phys, page_directory_size);
-//     if (id() >= 0) {
-//         shadow_ramin()->write32(0x0200, bit_mask<32>(table()->shadow_address()));
-//         shadow_ramin()->write32(0x0204, table()->shadow_address() >> 32);
-//     }
+    if (id() >= 0) {
+        shadow_ramin()->write32(0x0200, bit_mask<32>(table()->shadow_address()));
+        shadow_ramin()->write32(0x0204, table()->shadow_address() >> 32);
+    }
 }
 
 void channel::attach(context* ctx, uint64_t addr) {
