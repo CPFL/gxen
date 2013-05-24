@@ -92,12 +92,12 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         const uint64_t item = 0x8 * i;
         const struct page_directory result =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-        phys()->write32(item, result.word0);
-        phys()->write32(item + 0x4, result.word1);
+//         phys()->write32(item, result.word0);
+//         phys()->write32(item + 0x4, result.word1);
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
-    dump();
+    // dump();
 }
 
 struct page_directory shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
