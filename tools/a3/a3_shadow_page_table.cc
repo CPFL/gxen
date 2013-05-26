@@ -50,6 +50,7 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
     // allocate directories
     if (!phys()) {
         phys_.reset(new page(0x10));
+        phys_->clear();
     }
 
     // directories size change
@@ -80,20 +81,26 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     pramin::accessor pramin;
     page_directory_address_ = address;
 
-    for (uint64_t offset = 0; offset < 0x10000; offset += 0x4) {
-        const uint32_t value = pramin.read32(address + offset);
-        phys()->write32(offset, value);
+    uint64_t max = 0;
+    for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
+        const struct page_directory res = page_directory::create(&pramin, page_directory_address() + offset);
+        if (res.large_page_table_present || res.small_page_table_present) {
+            max = index;
+        }
+        phys()->write32(offset, res.word0);
+        phys()->write32(offset + 0x4, res.word1);
     }
+    A3_LOG("PGD size %" PRIu64 "\n", max);
 
     directories_.resize(page_directory_size());
     std::size_t i = 0;
     for (shadow_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
         const uint64_t item = 0x8 * i;
-        const struct page_directory result =
+        const struct page_directory res =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-        phys()->write32(item, result.word0);
-        phys()->write32(item + 0x4, result.word1);
+        phys()->write32(item, res.word0);
+        phys()->write32(item + 0x4, res.word1);
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIi32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
@@ -101,12 +108,11 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
 }
 
 struct page_directory shadow_page_directory::refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
-    virt_ = dir;
     struct page_directory result(dir);
 
     if (dir.large_page_table_present) {
-        // const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
-        const uint64_t address = (static_cast<uint64_t>(dir.large_page_table_address) << 12);
+        const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
+//         const uint64_t address = (static_cast<uint64_t>(dir.large_page_table_address) << 12);
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
         if (!large_page()) {
             large_page_.reset(new page(count * 0x8 / kPAGE_SIZE));
@@ -117,20 +123,21 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
         for (shadow_page_entries::iterator it = large_entries_.begin(),
              last = large_entries_.end(); it != last; ++it, ++i) {
             const uint64_t item = 0x8 * i;
-            const struct page_entry result =
+            const struct page_entry res =
                 it->refresh(ctx, pramin, page_entry::create(pramin, address + item));
-            large_page_->write32(item, result.word0);
-            large_page_->write32(item + 0x4, result.word1);
+            large_page_->write32(item, res.word0);
+            large_page_->write32(item + 0x4, res.word1);
         }
         const uint64_t result_address = (large_page()->address() >> 12);
         result.large_page_table_address = result_address;
     } else {
         large_entries_.clear();
+        result.word0 = 0;
     }
 
     if (dir.small_page_table_present) {
-        // const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
-        const uint64_t address = (static_cast<uint64_t>(dir.small_page_table_address) << 12);
+        const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
+//         const uint64_t address = (static_cast<uint64_t>(dir.small_page_table_address) << 12);
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
         if (!small_page()) {
             small_page_.reset(new page(count * 0x8 / kPAGE_SIZE));
@@ -141,15 +148,16 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
         for (shadow_page_entries::iterator it = small_entries_.begin(),
              last = small_entries_.end(); it != last; ++it, ++i) {
             const uint64_t item = 0x8 * i;
-            const struct page_entry result =
+            const struct page_entry res =
                 it->refresh(ctx, pramin, page_entry::create(pramin, address + item));
-            small_page_->write32(item, result.word0);
-            small_page_->write32(item + 0x4, result.word1);
+            small_page_->write32(item, res.word0);
+            small_page_->write32(item + 0x4, res.word1);
         }
         const uint64_t result_address = (small_page()->address() >> 12);
         result.small_page_table_address = result_address;
     } else {
         small_entries_.clear();
+        result.word1 = 0;
     }
 
     phys_ = result;
@@ -157,7 +165,6 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
 }
 
 struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
-    virt_ = entry;
     struct page_entry result(entry);
     if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address

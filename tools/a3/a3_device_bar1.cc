@@ -52,6 +52,8 @@ device_bar1::device_bar1()
     , directory_(8)
     , entry_() {
     const uint64_t vm_size = 0x1000 * 128;
+    ramin_.clear();
+    directory_.clear();
     // construct channel ramin
     ramin_.write32(0x0200, lower32(directory_.address()));
     ramin_.write32(0x0204, lower32(directory_.address()));
@@ -94,7 +96,7 @@ void device_bar1::shadow(context* ctx) {
         struct shadow_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
-            map(virt, entry.virt().raw);
+            map(virt, entry.phys().raw);
         }
     }
 }
