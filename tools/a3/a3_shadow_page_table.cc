@@ -92,11 +92,11 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         const uint64_t item = 0x8 * i;
         const struct page_directory result =
             it->refresh(ctx, &pramin, page_directory::create(&pramin, page_directory_address() + item));
-//         phys()->write32(item, result.word0);
-//         phys()->write32(item + 0x4, result.word1);
+        phys()->write32(item, result.word0);
+        phys()->write32(item + 0x4, result.word1);
     }
 
-    A3_LOG("scan page table of channel id 0x%" PRIX32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
+    A3_LOG("scan page table of channel id 0x%" PRIi32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
     // dump();
 }
 
@@ -105,10 +105,12 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
     struct page_directory result(dir);
 
     if (dir.large_page_table_present) {
-        const uint64_t address = static_cast<uint64_t>(dir.large_page_table_address) << 12;
+        // const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
+        const uint64_t address = (static_cast<uint64_t>(dir.large_page_table_address) << 12);
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
         if (!large_page()) {
             large_page_.reset(new page(count * 0x8 / kPAGE_SIZE));
+            large_page_->clear();
         }
         large_entries_.resize(count);
         std::size_t i = 0;
@@ -127,10 +129,12 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
     }
 
     if (dir.small_page_table_present) {
-        const uint64_t address = static_cast<uint64_t>(dir.small_page_table_address) << 12;
+        // const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
+        const uint64_t address = (static_cast<uint64_t>(dir.small_page_table_address) << 12);
         const uint64_t count = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
         if (!small_page()) {
             small_page_.reset(new page(count * 0x8 / kPAGE_SIZE));
+            small_page_->clear();
         }
         small_entries_.resize(count);
         std::size_t i = 0;
@@ -155,14 +159,15 @@ struct page_directory shadow_page_directory::refresh(context* ctx, pramin::acces
 struct page_entry shadow_page_entry::refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
     virt_ = entry;
     struct page_entry result(entry);
-//     if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-//         // rewrite address
-//         const uint64_t g_field = result.address;
-//         const uint64_t g_address = g_field << 12;
-//         const uint64_t h_address = ctx->get_phys_address(g_address);
-//         const uint64_t h_field = h_address >> 12;
-//         result.address = h_field;
-//     }
+    if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = ctx->get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
+        // A3_LOG("Rewriting address 0x%" PRIx64 " to 0x%" PRIx64 "\n", g_address, h_address);
+    }
     phys_ = result;
     return result;
 }
