@@ -13,12 +13,10 @@ class page;
 class shadow_page_entry {
  public:
     struct page_entry refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry);
-    const struct page_entry& virt() const { return virt_; }
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return phys_.present; }
 
  private:
-    struct page_entry virt_;
     struct page_entry phys_;
 };
 
@@ -27,7 +25,6 @@ class shadow_page_directory {
     typedef std::vector<shadow_page_entry> shadow_page_entries;
 
     struct page_directory refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir);
-    const struct page_directory& virt() const { return virt_; }
     const struct page_directory& phys() const { return phys_; }
     uint64_t resolve(uint64_t offset, struct shadow_page_entry* result);
     const shadow_page_entries& large_entries() const { return large_entries_; }
@@ -39,7 +36,6 @@ class shadow_page_directory {
     page* small_page() { return small_page_.get(); }
     const page* small_page() const { return small_page_.get(); }
 
-    struct page_directory virt_;
     struct page_directory phys_;
     shadow_page_entries large_entries_;
     shadow_page_entries small_entries_;
@@ -57,7 +53,10 @@ class shadow_page_table {
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
-    uint32_t page_directory_size() const { return round_up(size(), kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE; }
+    uint32_t page_directory_size() const {
+        //return 0x10000 / 0x8;
+        return round_up(size(), kPAGE_DIRECTORY_COVERED_SIZE) / kPAGE_DIRECTORY_COVERED_SIZE;
+    }
     uint32_t channel_id() const { return channel_id_; }
     uint64_t resolve(uint64_t virtual_address, struct shadow_page_entry* result);
     uint64_t page_directory_address() const { return page_directory_address_; }
