@@ -67,7 +67,6 @@ context::~context() {
 void context::accept() {
     accepted_ = true;
     id_ = device::instance()->acquire_virt();
-    id_ = 1;
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
 }
 
