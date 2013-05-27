@@ -143,6 +143,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pramin:
         // TODO(Yusuke Suzuki): regression
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
 //         const uint64_t address = (static_cast<uint64_t>(dir.small_page_table_address) << 12);
+        A3_LOG("=> %" PRIX64 "\n", address);
         boost::shared_ptr<page> small_page = allocate_small_page();
         for (uint64_t i = 0, iz = kSMALL_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
