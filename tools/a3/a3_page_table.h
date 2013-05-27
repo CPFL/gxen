@@ -19,6 +19,9 @@ static const unsigned kMAX_PAGE_DIRECTORIES = 0x2000;
 static const unsigned kSMALL_PAGE_SIZE = 0x1 << kSMALL_PAGE_SHIFT;
 static const unsigned kLARGE_PAGE_SIZE = 0x1 << kLARGE_PAGE_SHIFT;
 
+static const unsigned kSMALL_PAGE_COUNT = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
+static const unsigned kLARGE_PAGE_COUNT = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
+
 struct page_descriptor {
     union {
         uint64_t dword0;

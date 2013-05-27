@@ -3,7 +3,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include "a3.h"
-#include "a3_session.h"
 namespace a3 {
 class shadow_page_table;
 class context;

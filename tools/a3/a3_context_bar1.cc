@@ -26,6 +26,7 @@
 #include "a3_context.h"
 #include "a3_pramin.h"
 #include "a3_shadow_page_table.h"
+#include "a3_software_page_table.h"
 #include "a3_barrier.h"
 #include "a3_device_bar1.h"
 namespace a3 {

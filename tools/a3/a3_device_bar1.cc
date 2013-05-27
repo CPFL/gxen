@@ -27,6 +27,7 @@
 #include "a3_device_table.h"
 #include "a3_pramin.h"
 #include "a3_shadow_page_table.h"
+#include "a3_software_page_table.h"
 #include "a3_device_bar1.h"
 #include "a3_context.h"
 namespace a3 {
@@ -93,7 +94,7 @@ void device_bar1::shadow(context* ctx) {
         const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area();
         const uint32_t pcid = ctx->get_phys_channel_id(vcid);
         const uint64_t virt = pcid * 0x1000ULL;
-        struct shadow_page_entry entry;
+        struct software_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
             map(virt, entry.phys().raw);

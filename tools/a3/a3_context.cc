@@ -36,6 +36,7 @@
 #include "a3_playlist.h"
 #include "a3_device_bar1.h"
 #include "a3_shadow_page_table.h"
+#include "a3_software_page_table.h"
 namespace a3 {
 
 context::context(session* s, bool through)
@@ -43,8 +44,8 @@ context::context(session* s, bool through)
     , through_(through)
     , accepted_(false)
     , id_()
-    , bar1_channel_(new channel(-1))
-    , bar3_channel_(new channel(-3))
+    , bar1_channel_(new fake_channel(-1))
+    , bar3_channel_(new fake_channel(-3))
     , channels_()
     , barrier_()
     , fifo_playlist_(new playlist())
@@ -174,7 +175,6 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR1
         bar1 = true;
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
-        // addresses.push_back(bar1_channel()->table()->shadow_address());
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar1()->shadow(this);
         }
@@ -184,7 +184,6 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR3
         bar1_only = false;
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
-        // addresses.push_back(bar3_channel()->table()->shadow_address());
     }
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         if (channels(i)->enabled()) {
