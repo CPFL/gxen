@@ -38,6 +38,7 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
     A3_LOG("write barrier 0x%" PRIX64 " : page 0x%" PRIX64 " <= 0x%" PRIX32 "\n", addr, page, cmd.value);
 
     // TODO(Yusuke Suzuki): check values
+    // TODO(Yusuke Suzuki): BAR1 & BAR3 shadow sync
     typedef context::channel_map::iterator iter_t;
     const std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(page);
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {

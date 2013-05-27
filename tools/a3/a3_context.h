@@ -7,6 +7,7 @@
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "a3_channel.h"
+#include "a3_fake_channel.h"
 #include "a3_session.h"
 namespace a3 {
 namespace barrier {
@@ -38,10 +39,10 @@ class context : private boost::noncopyable {
     void read_barrier(uint64_t addr, const command& command);
     void write_barrier(uint64_t addr, const command& command);
     bool through() const { return through_; }
-    channel* bar1_channel() { return bar1_channel_.get(); }
-    const channel* bar1_channel() const { return bar1_channel_.get(); }
-    channel* bar3_channel() { return bar3_channel_.get(); }
-    const channel* bar3_channel() const { return bar3_channel_.get(); }
+    fake_channel* bar1_channel() { return bar1_channel_.get(); }
+    const fake_channel* bar1_channel() const { return bar1_channel_.get(); }
+    fake_channel* bar3_channel() { return bar3_channel_.get(); }
+    const fake_channel* bar3_channel() const { return bar3_channel_.get(); }
     channel* channels(int id) { return channels_[id].get(); }
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
@@ -87,8 +88,8 @@ class context : private boost::noncopyable {
     bool accepted_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    unique_ptr<channel>::type bar1_channel_;
-    unique_ptr<channel>::type bar3_channel_;
+    unique_ptr<fake_channel>::type bar1_channel_;
+    unique_ptr<fake_channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
     unique_ptr<playlist>::type fifo_playlist_;
