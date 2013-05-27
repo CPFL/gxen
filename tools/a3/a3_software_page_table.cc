@@ -110,6 +110,7 @@ void software_page_table::software_page_directory::refresh(context* ctx, pramin:
         if (!small_entries()) {
             small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
         }
+        A3_LOG("=> %" PRIX64 "\n", address);
         std::size_t i = 0;
         for (software_page_entries::iterator it = small_entries_->begin(),
              last = small_entries_->end(); it != last; ++it, ++i) {
