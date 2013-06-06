@@ -25,6 +25,7 @@
 #include <cassert>
 #include <iostream>
 #include <unistd.h>
+#include <sched.h>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/pool/detail/singleton.hpp>
@@ -35,6 +36,7 @@
 #include "a3_vram.h"
 #include "a3_mmio.h"
 #include "a3_context.h"
+#include "a3_registers.h"
 #include "a3_device_bar1.h"
 
 #define NVC0_VENDOR 0x10DE
@@ -246,6 +248,14 @@ bool device::try_acquire_gpu(context* ctx) {
         }
     }
     return true;
+}
+
+bool device::is_active() {
+    A3_SYNCHRONIZED(mutex_handle()) {
+        // this is status register of pgraph
+        return registers::read32(0x400700) != 0;
+    }
+    return false;
 }
 
 }  // namespace a3

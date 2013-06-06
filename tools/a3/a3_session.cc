@@ -33,9 +33,7 @@ session::session(boost::asio::io_service& io_service)
 session::~session() { }
 
 void session::start(bool through) {
-    A3_LOG("START\n");
     context_.reset(new context(this, through));
-    ctx()->accept();
     boost::asio::async_read(
 	socket_,
 	boost::asio::buffer(&buffer_, kCommandSize),

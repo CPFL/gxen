@@ -42,39 +42,44 @@ namespace a3 {
 context::context(session* s, bool through)
     : session_(s)
     , through_(through)
-    , accepted_(false)
+    , initialized_(false)
     , id_()
-    , bar1_channel_(new fake_channel(-1))
-    , bar3_channel_(new fake_channel(-3))
+    , bar1_channel_()
+    , bar3_channel_()
     , channels_()
     , barrier_()
-    , fifo_playlist_(new playlist())
+    , fifo_playlist_()
     , poll_area_(0)
-    , reg_(new uint32_t[32ULL * 1024 * 1024])
+    , reg_()
     , ramin_channel_map_() {
-    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
-        channels_[i].reset(new channel(i));
-    }
 }
 
 context::~context() {
-    if (accepted_) {
+    if (initialized_) {
         device::instance()->release_virt(id_);
         A3_LOG("END and release GPU id %u\n", id_);
     }
 }
 
-void context::accept() {
-    accepted_ = true;
+void context::initialize(int dom) {
     id_ = device::instance()->acquire_virt();
+    bar1_channel_.reset(new fake_channel(-1));
+    bar3_channel_.reset(new fake_channel(-3));
+    fifo_playlist_.reset(new playlist());
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
+    reg_.reset(new uint32_t[32ULL * 1024 * 1024]);
+    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
+        channels_[i].reset(new channel(i));
+    }
+    domid_ = dom;
+    initialized_ = true;
+    A3_LOG("INIT domid %d & GPU id %u\n", domid(), id());
 }
 
 // main entry
 void context::handle(const command& cmd) {
     if (cmd.type == command::TYPE_INIT) {
-        domid_ = cmd.value;
-        A3_LOG("INIT domid %d & GPU id %u\n", domid(), id());
+        initialize(cmd.value);
         return;
     }
 
@@ -167,7 +172,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     bool bar1 = false;
     bool bar1_only = true;
 
-    A3_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
+    A3_LOG("TLB flush 0x%" PRIX64 " pd [%s]\n", page_directory, device::instance()->is_active() ? "OK" : "NG");
 
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {

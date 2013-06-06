@@ -44,6 +44,7 @@ class device : private boost::noncopyable {
     bool try_acquire_gpu(context* ctx);
     void acquire_gpu(context* ctx);
     int domid() const { return domid_; }
+    bool is_active();
 
  private:
     struct pci_device* device_;
