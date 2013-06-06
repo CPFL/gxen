@@ -27,16 +27,16 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 #include <unistd.h>
-#include "../cross.h"
+#include "../a3.h"
 
 int main(int argc, char** argv) {
     try {
         boost::asio::io_service io_service;
-        boost::asio::local::stream_protocol::endpoint ep(CROSS_ENDPOINT);
+        boost::asio::local::stream_protocol::endpoint ep(A3_ENDPOINT);
         boost::asio::local::stream_protocol::socket socket(io_service);
         socket.connect(ep);
 
-        cross::command command = {
+        a3::command command = {
             0,
             1,
             2,
@@ -45,17 +45,13 @@ int main(int argc, char** argv) {
 
         boost::asio::write(
             socket,
-            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(cross::command)));
-
-        sleep(60);
-
+            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(a3::command)));
         boost::asio::read(
             socket,
-            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(cross::command)));
-
+            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(a3::command)));
         boost::asio::write(
             socket,
-            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(cross::command)));
+            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(a3::command)));
         std::cout << "send correct!" << std::endl;
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";

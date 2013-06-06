@@ -28,7 +28,6 @@ class context : private boost::noncopyable {
 
     context(session* session, bool through);
     virtual ~context();
-    void accept();
     void handle(const command& command);
     void write_bar0(const command& command);
     void write_bar1(const command& command);
@@ -74,6 +73,7 @@ class context : private boost::noncopyable {
     command* buffer() { return session_->buffer(); }
 
  private:
+    void initialize(int domid);
     void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     bool in_poll_area(uint64_t offset) const {
@@ -85,7 +85,7 @@ class context : private boost::noncopyable {
 
     session* session_;
     bool through_;
-    bool accepted_;
+    bool initialized_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
     unique_ptr<fake_channel>::type bar1_channel_;
