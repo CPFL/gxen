@@ -21,8 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <stdint.h>
+#include "a3.h"
 #include "a3_poll_area.h"
+#include "a3_context.h"
 namespace a3 {
+
+bool poll_area::in_poll_area(context* ctx, uint64_t offset) {
+    const uint64_t area = ctx->poll_area();
+    return area <= offset && offset < area + (A3_DOMAIN_CHANNELS * 0x1000);
+}
+
+poll_area::channel_and_offset_t poll_area::extract_channel_and_offset(context* ctx, uint64_t offset) {
+    channel_and_offset_t result = {};
+    const uint64_t area = ctx->poll_area();
+    const uint64_t sub = offset - area;
+    result.channel = sub / 0x1000;
+    result.offset = sub % 0x1000;
+    return result;
+}
 
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */

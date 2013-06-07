@@ -29,11 +29,19 @@
 #include "a3_software_page_table.h"
 #include "a3_barrier.h"
 #include "a3_device_bar1.h"
+#include "a3_poll_area.h"
 namespace a3 {
 
 void context::write_bar1(const command& cmd) {
-    if (in_poll_area(cmd.offset)) {
+    if (poll_area::in_poll_area(this, cmd.offset)) {
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            const poll_area::channel_and_offset_t res = poll_area::extract_channel_and_offset(this, cmd.offset);
+            switch (res.offset) {
+            case 0x8C: {
+                    A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
+                }
+                break;
+            }
             device::instance()->bar1()->write(this, cmd);
         }
         return;
@@ -54,7 +62,7 @@ void context::write_bar1(const command& cmd) {
 }
 
 void context::read_bar1(const command& cmd) {
-    if (in_poll_area(cmd.offset)) {
+    if (poll_area::in_poll_area(this, cmd.offset)) {
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             buffer()->value = device::instance()->bar1()->read(this, cmd);
         }

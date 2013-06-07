@@ -76,9 +76,6 @@ class context : private boost::noncopyable {
     void initialize(int domid);
     void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
-    bool in_poll_area(uint64_t offset) const {
-        return poll_area() <= offset && offset < poll_area() + (A3_DOMAIN_CHANNELS * 0x1000);
-    }
     uint32_t decode_to_virt_ramin(uint32_t value);
     uint32_t encode_to_shadow_ramin(uint32_t value);
     bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
