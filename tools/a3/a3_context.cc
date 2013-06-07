@@ -83,6 +83,23 @@ void context::handle(const command& cmd) {
         return;
     }
 
+    if (cmd.type == command::TYPE_UTILITY) {
+        switch (cmd.value) {
+        case command::UTILITY_REGISTER_READ: {
+                const uint32_t status = registers::read32(cmd.offset);
+                buffer()->value = status;
+            }
+            break;
+
+        case command::UTILITY_PGRAPH_STATUS: {
+                const uint32_t status = registers::read32(0x400700);
+                buffer()->value = status;
+            }
+            break;
+        }
+        return;
+    }
+
     if (through()) {
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             // through mode. direct access

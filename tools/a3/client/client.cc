@@ -1,5 +1,5 @@
 /*
- * Example client code
+ * A3 cli client
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -28,20 +28,52 @@
 #include <boost/array.hpp>
 #include <unistd.h>
 #include "../a3.h"
+#include "../a3_cmdline.h"
 
 int main(int argc, char** argv) {
+    namespace c = a3;
+    c::cmdline::Parser cmd("a3-client");
+
+    cmd.Add("help", "help", 'h', "print this message");
+    cmd.Add("version", "version", 'v', "print the version");
+    cmd.set_footer("[program_file] [arguments]");
+
+    if (!cmd.Parse(argc, argv)) {
+        std::fprintf(stderr, "%s\n%s", cmd.error().c_str(), cmd.usage().c_str());
+        return 1;
+    }
+
+    if (cmd.Exist("help")) {
+        std::fputs(cmd.usage().c_str(), stdout);
+        return 1;
+    }
+
+    if (cmd.Exist("version")) {
+        std::printf("a3 %s (compiled %s %s)\n", A3_VERSION, __DATE__, __TIME__);
+        return 1;
+    }
+
+    const std::vector<std::string>& rest = cmd.rest();
+
+    a3::command command = {
+        a3::command::TYPE_UTILITY,
+        0
+    };
+
+    if (rest.empty()) {
+        command.value = a3::command::UTILITY_PGRAPH_STATUS;
+    } else if (rest.front() == "register" && rest.size() >= 2) {
+        command.value = a3::command::UTILITY_REGISTER_READ;
+        command.offset = strtol(rest[1].c_str(), NULL, 16);
+    } else {
+        return 1;
+    }
+
     try {
         boost::asio::io_service io_service;
         boost::asio::local::stream_protocol::endpoint ep(A3_ENDPOINT);
         boost::asio::local::stream_protocol::socket socket(io_service);
         socket.connect(ep);
-
-        a3::command command = {
-            0,
-            1,
-            2,
-            3
-        };
 
         boost::asio::write(
             socket,
@@ -49,10 +81,7 @@ int main(int argc, char** argv) {
         boost::asio::read(
             socket,
             boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(a3::command)));
-        boost::asio::write(
-            socket,
-            boost::asio::buffer(reinterpret_cast<char*>(&command), sizeof(a3::command)));
-        std::cout << "send correct!" << std::endl;
+        std::cout << command.value << std::endl;
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }
