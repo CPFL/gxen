@@ -31,13 +31,19 @@ class command {
     enum type_t {
         TYPE_INIT,
         TYPE_WRITE,
-        TYPE_READ
+        TYPE_READ,
+        TYPE_UTILITY
     };
 
     enum bar_t {
         BAR0 = 0,
         BAR1 = 1,
         BAR3 = 3
+    };
+
+    enum utility_t {
+        UTILITY_PGRAPH_STATUS = 0,
+        UTILITY_REGISTER_READ
     };
 
     uint32_t type;
