@@ -31,12 +31,6 @@
 
 // BAR3 ramin bar
 extern "C" void nvc0_init_bar3(nvc0_state_t* state) {
-    if (void* ptr = malloc(0x4000000)) {
-        state->bar[3].space = static_cast<uint8_t*>(ptr);
-        memset(ptr, 0, 0x4000000);
-        return;
-    }
-    NVC0_PRINTF("BAR3 Initialization failed\n");
 }
 
 extern "C" uint32_t nvc0_mmio_bar3_readb(void *opaque, target_phys_addr_t addr) {

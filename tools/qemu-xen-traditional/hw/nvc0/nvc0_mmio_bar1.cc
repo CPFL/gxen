@@ -33,12 +33,6 @@
 //   VRAM. On pre-NV50, corresponds directly to the available VRAM on card.
 //   On NV50, gets remapped through VM engine.
 extern "C" void nvc0_init_bar1(nvc0_state_t* state) {
-    if (void* ptr = malloc(0x8000000)) {
-        state->bar[1].space = static_cast<uint8_t*>(ptr);
-        memset(ptr, 0, 0x8000000);
-        return;
-    }
-    NVC0_PRINTF("BAR1 Initialization failed\n");
 }
 
 extern "C" uint32_t nvc0_mmio_bar1_readb(void *opaque, target_phys_addr_t addr) {

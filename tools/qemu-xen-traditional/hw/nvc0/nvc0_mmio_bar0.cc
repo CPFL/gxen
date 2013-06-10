@@ -55,24 +55,23 @@ static uint64_t timer_now(void) {
 //   control registers. 16MB in size. Is divided into several areas for
 //   each of the functional blocks of the card.
 extern "C" void nvc0_init_bar0(nvc0_state_t* state) {
-    void* ptr = malloc(0x2000000);
-    memset(ptr, 0, 0x2000000);
-    state->bar[0].space = static_cast<uint8_t*>(ptr);
-    nvc0_mmio_write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
-
-    // map vbios
-    NVC0_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
-    memcpy(state->bar[0].space + NV_PROM_OFFSET, nvc0_vbios, sizeof(nvc0_vbios));
-
-    // and initialization information from BIOS
-    #include "nvc0_init.inc"
+//     void* ptr = malloc(0x2000000);
+//     memset(ptr, 0, 0x2000000);
+//     state->bar[0].space = static_cast<uint8_t*>(ptr);
+//     nvc0_mmio_write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
+//
+//     // map vbios
+//     NVC0_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
+//     memcpy(state->bar[0].space + NV_PROM_OFFSET, nvc0_vbios, sizeof(nvc0_vbios));
+//
+//     // and initialization information from BIOS
+//     #include "nvc0_init.inc"
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // return nvc0_mmio_read8(state->bar[0].space, offset);
     // return nvc0_mmio_read8(state->bar[0].real, offset);
     const a3::command cmd = {
         a3::command::TYPE_READ,
@@ -87,7 +86,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // return nvc0_mmio_read16(state->bar[0].space, offset);
     // return nvc0_mmio_read16(state->bar[0].real, offset);
     const a3::command cmd = {
         a3::command::TYPE_READ,
@@ -102,7 +100,6 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // nvc0_mmio_write8(state->bar[0].space, offset, val);
     // nvc0_mmio_write8(state->bar[0].real, offset, val);
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
@@ -117,7 +114,6 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // nvc0_mmio_write16(state->bar[0].space, offset, val);
     // nvc0_mmio_write16(state->bar[0].real, offset, val);
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
