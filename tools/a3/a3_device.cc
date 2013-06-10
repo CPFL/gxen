@@ -70,7 +70,7 @@ device::device()
     , xl_logger_()
     , xl_device_pci_()
     , domid_(-1)
-    , timer_(boost::posix_time::milliseconds(1000))
+    , timer_(boost::posix_time::milliseconds(1))
 {
     if (!(xl_logger_ = xtl_createlogger_stdiostream(stderr, XTL_PROGRESS,  0))) {
         std::exit(1);
@@ -260,6 +260,12 @@ bool device::is_active() {
         return registers::read32(0x400700) != 0;
     }
     return false;
+}
+
+void device::fire(context* ctx, const command& cmd) {
+    A3_SYNCHRONIZED(mutex_handle()) {
+        timer_.enqueue(ctx, cmd);
+    }
 }
 
 }  // namespace a3
