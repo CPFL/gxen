@@ -25,11 +25,15 @@
 #include "a3.h"
 #include "a3_timer.h"
 #include "a3_context.h"
+#include "a3_device.h"
+#include "a3_device_bar1.h"
 namespace a3 {
 
 timer_t::timer_t(const boost::posix_time::time_duration& wait)
     : wait_(wait)
     , thread_()
+    , mutex_()
+    , queue_()
 {
 }
 
@@ -51,10 +55,46 @@ void timer_t::stop() {
     }
 }
 
+void timer_t::enqueue(context* ctx, const command& cmd) {
+    A3_SYNCHRONIZED(mutex_) {
+        queue_.push(fire_t(ctx, cmd));
+    }
+}
+
 void timer_t::run() {
+    context* current = NULL;
+    bool wait = false;
+    fire_t handle;
     while (true) {
-        boost::this_thread::yield();
-        boost::this_thread::sleep(wait_);
+        A3_SYNCHRONIZED(mutex_) {
+            if (!wait && !queue_.empty()) {
+                wait = true;
+                handle = queue_.front();
+                queue_.pop();
+            }
+        }
+
+        bool will_be_sleep = true;
+        if (wait) {
+            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                if (current == handle.first || !device::instance()->is_active()) {
+                    current = handle.first;
+                    wait = false;
+                    // FIXME(Yusuke Suzuki) thread unsafe
+                    device::instance()->bar1()->write(handle.first, handle.second);
+                    // A3_LOG("timer thread fires FIRE [%s]\n", device::instance()->is_active() ? "OK" : "NG");
+                    will_be_sleep = false;
+                }
+            }
+        }
+
+        if (will_be_sleep) {
+            if (wait) {
+                // A3_LOG("timer thread sleeps\n");
+            }
+            boost::this_thread::yield();
+            boost::this_thread::sleep(wait_);
+        }
     }
 }
 

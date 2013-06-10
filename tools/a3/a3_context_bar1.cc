@@ -38,11 +38,15 @@ void context::write_bar1(const command& cmd) {
             const poll_area::channel_and_offset_t res = poll_area::extract_channel_and_offset(this, cmd.offset);
             switch (res.offset) {
             case 0x8C: {
-                    A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
+                    // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
+                    device::instance()->fire(this, cmd);
                 }
                 break;
+
+            default:
+                device::instance()->bar1()->write(this, cmd);
+                break;
             }
-            device::instance()->bar1()->write(this, cmd);
         }
         return;
     }
