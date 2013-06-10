@@ -78,7 +78,7 @@ device::device()
 
     if (libxl_ctx_alloc(&xl_ctx_, LIBXL_VERSION, 0, (xentoollog_logger*)xl_logger_)) {
         fprintf(stderr, "cannot init xl context\n");
-        exit(1);
+        std::exit(1);
     }
     timer_.start();
     A3_LOG("device environment setup\n");
