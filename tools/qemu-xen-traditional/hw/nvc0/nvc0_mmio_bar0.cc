@@ -70,30 +70,62 @@ extern "C" void nvc0_init_bar0(nvc0_state_t* state) {
 
 extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
+    nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // return nvc0_mmio_read8(state->bar[0].space, offset);
-    return nvc0_mmio_read8(state->bar[0].real, offset);
+    // return nvc0_mmio_read8(state->bar[0].real, offset);
+    const a3::command cmd = {
+        a3::command::TYPE_READ,
+        0xdeadface,
+        offset,
+        { a3::command::BAR0, sizeof(uint8_t) }
+    };
+    return ctx->send(cmd).value;
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
+    nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // return nvc0_mmio_read16(state->bar[0].space, offset);
-    return nvc0_mmio_read16(state->bar[0].real, offset);
+    // return nvc0_mmio_read16(state->bar[0].real, offset);
+    const a3::command cmd = {
+        a3::command::TYPE_READ,
+        0xdeadface,
+        offset,
+        { a3::command::BAR0, sizeof(uint16_t) }
+    };
+    return ctx->send(cmd).value;
 }
 
 extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
+    nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // nvc0_mmio_write8(state->bar[0].space, offset, val);
-    nvc0_mmio_write8(state->bar[0].real, offset, val);
+    // nvc0_mmio_write8(state->bar[0].real, offset, val);
+    const a3::command cmd = {
+        a3::command::TYPE_WRITE,
+        val,
+        offset,
+        { a3::command::BAR0, sizeof(uint8_t) }
+    };
+    ctx->send(cmd);
 }
 
 extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
+    nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     // nvc0_mmio_write16(state->bar[0].space, offset, val);
-    nvc0_mmio_write16(state->bar[0].real, offset, val);
+    // nvc0_mmio_write16(state->bar[0].real, offset, val);
+    const a3::command cmd = {
+        a3::command::TYPE_WRITE,
+        val,
+        offset,
+        { a3::command::BAR0, sizeof(uint16_t) }
+    };
+    ctx->send(cmd);
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
@@ -127,7 +159,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
             a3::command::TYPE_READ,
             0xdeadface,
             offset,
-            { a3::command::BAR0 }
+            { a3::command::BAR0, sizeof(uint32_t) }
         };
         ret = ctx->send(cmd).value;
     }
@@ -175,7 +207,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         a3::command::TYPE_WRITE,
         val,
         offset,
-        { a3::command::BAR0 }
+        { a3::command::BAR0, sizeof(uint32_t) }
     };
     ctx->send(cmd);
     return;
