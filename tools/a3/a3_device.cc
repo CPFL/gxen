@@ -70,7 +70,8 @@ device::device()
     , xl_logger_()
     , xl_device_pci_()
     , domid_(-1)
-    {
+    , timer_(boost::posix_time::milliseconds(1000))
+{
     if (!(xl_logger_ = xtl_createlogger_stdiostream(stderr, XTL_PROGRESS,  0))) {
         std::exit(1);
     }
@@ -79,6 +80,7 @@ device::device()
         fprintf(stderr, "cannot init xl context\n");
         exit(1);
     }
+    timer_.start();
     A3_LOG("device environment setup\n");
 }
 
@@ -195,6 +197,7 @@ uint32_t device::read(int bar, uint32_t offset, std::size_t size) {
     case sizeof(uint32_t):
         return mmio::read32(bars_[bar].addr, offset);
     }
+    A3_LOG("%" PRIu64 " is invalid\n", size);
     A3_UNREACHABLE();
     return 0;
 }
@@ -211,6 +214,7 @@ void device::write(int bar, uint32_t offset, uint32_t val, std::size_t size) {
         mmio::write32(bars_[bar].addr, offset, val);
         return;
     }
+    A3_LOG("%" PRIu64 " is invalid\n", size);
     A3_UNREACHABLE();
     return;
 }

@@ -9,6 +9,7 @@
 #include "a3_xen.h"
 #include "a3_lock.h"
 #include "a3_session.h"
+#include "a3_timer.h"
 namespace a3 {
 
 class device_bar1;
@@ -59,6 +60,7 @@ class device : private boost::noncopyable {
     xentoollog_logger_stdiostream* xl_logger_;
     libxl_device_pci xl_device_pci_;
     int domid_;
+    timer_t timer_;
 };
 
 }  // namespace a3
