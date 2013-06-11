@@ -36,8 +36,10 @@
 #include "a3_vram.h"
 #include "a3_mmio.h"
 #include "a3_context.h"
+#include "a3_playlist.h"
 #include "a3_registers.h"
 #include "a3_device_bar1.h"
+#include "a3_bit_mask.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -66,11 +68,12 @@ device::device()
     , bars_()
     , bar1_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+    , playlist_()
+    , timer_(boost::posix_time::milliseconds(1))
+    , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
     , xl_device_pci_()
-    , domid_(-1)
-    , timer_(boost::posix_time::milliseconds(1))
 {
     if (!(xl_logger_ = xtl_createlogger_stdiostream(stderr, XTL_PROGRESS,  0))) {
         std::exit(1);
@@ -171,6 +174,9 @@ void device::initialize(const bdf& bdf) {
         std::free(pcidevs);
     }
 
+    // init playlist
+    playlist_.reset(new playlist_t());
+
     A3_LOG("device initialized\n");
 }
 
@@ -265,6 +271,17 @@ bool device::is_active() {
 void device::fire(context* ctx, const command& cmd) {
     A3_SYNCHRONIZED(mutex_handle()) {
         timer_.enqueue(ctx, cmd);
+    }
+}
+
+void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
+    A3_SYNCHRONIZED(mutex_handle()) {
+        // const uint32_t count = bit_mask<8, uint32_t>(cmd);
+        playlist_->update(ctx, address, cmd);
+        // device::instance()->try_acquire_gpu(this);
+        // registers::write32(0x70000, 1);
+//         registers::write32(0x2270, shadow >> 12);
+//         registers::write32(0x2274, cmd);
     }
 }
 

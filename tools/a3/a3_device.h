@@ -16,6 +16,7 @@ class device_bar1;
 class vram;
 class vram_memory;
 class context;
+class playlist_t;
 
 class device : private boost::noncopyable {
  public:
@@ -48,6 +49,8 @@ class device : private boost::noncopyable {
     bool is_active();
     void fire(context* ctx, const command& cmd);
 
+    void playlist_update(context* ctx, uint32_t address, uint32_t cmd);
+
  private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
@@ -56,12 +59,14 @@ class device : private boost::noncopyable {
     boost::array<bar_t, 5> bars_;
     boost::scoped_ptr<device_bar1> bar1_;
     boost::scoped_ptr<vram> vram_;
+    boost::scoped_ptr<playlist_t> playlist_;
+    timer_t timer_;
+    int domid_;
+
     // libxl
     libxl_ctx* xl_ctx_;
     xentoollog_logger_stdiostream* xl_logger_;
     libxl_device_pci xl_device_pci_;
-    int domid_;
-    timer_t timer_;
 };
 
 }  // namespace a3

@@ -33,7 +33,6 @@
 #include "a3_registers.h"
 #include "a3_barrier.h"
 #include "a3_pramin.h"
-#include "a3_playlist.h"
 #include "a3_device_bar1.h"
 #include "a3_shadow_page_table.h"
 #include "a3_software_page_table.h"
@@ -48,7 +47,6 @@ context::context(session* s, bool through)
     , bar3_channel_()
     , channels_()
     , barrier_()
-    , fifo_playlist_()
     , poll_area_(0)
     , reg_()
     , ramin_channel_map_() {
@@ -65,7 +63,6 @@ void context::initialize(int dom) {
     id_ = device::instance()->acquire_virt();
     bar1_channel_.reset(new fake_channel(-1));
     bar3_channel_.reset(new fake_channel(-3));
-    fifo_playlist_.reset(new playlist());
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
     reg_.reset(new uint32_t[32ULL * 1024 * 1024]);
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
@@ -144,14 +141,9 @@ void context::handle(const command& cmd) {
     }
 }
 
-void context::fifo_playlist_update(uint32_t reg_addr, uint32_t cmd) {
+void context::playlist_update(uint32_t reg_addr, uint32_t cmd) {
     const uint64_t address = get_phys_address(bit_mask<28, uint64_t>(reg_addr) << 12);
-    const uint32_t count = bit_mask<8, uint32_t>(cmd);
-    const uint64_t shadow = fifo_playlist()->update(this, address, count);
-    device::instance()->try_acquire_gpu(this);
-    // registers::write32(0x70000, 1);
-    registers::write32(0x2270, shadow >> 12);
-    registers::write32(0x2274, cmd);
+    device::instance()->playlist_update(this, address, cmd);
 }
 
 static bool flush_without_check(uint64_t pd, uint32_t engine) {

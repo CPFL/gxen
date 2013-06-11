@@ -83,7 +83,7 @@ void context::write_bar0(const command& cmd) {
     case 0x002274: {
             // playlist update
             reg_[cmd.offset] = cmd.value;
-            fifo_playlist_update(reg_[0x2270], cmd.value);
+            playlist_update(reg_[0x2270], cmd.value);
             return;
         }
     case 0x002634: {

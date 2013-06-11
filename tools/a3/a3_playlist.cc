@@ -27,30 +27,53 @@
 #include "a3_playlist.h"
 #include "a3_context.h"
 #include "a3_pramin.h"
+#include "a3_bit_mask.h"
 namespace a3 {
 
-playlist::playlist()
+playlist_t::playlist_t()
     : pages_(new page[2])
+    , channels_()
     , cursor_(0)
 {
 }
 
-uint64_t playlist::update(context* ctx, uint64_t address, uint32_t count) {
+void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     // scan fifo and update values
     page* page = toggle();
     pramin::accessor pramin;
-    uint32_t i;
-    A3_LOG("FIFO playlist update %u\n", count);
-    for (i = 0; i < count; ++i) {
-        const uint32_t cid = pramin.read32(address + i * 0x8);
-        A3_LOG("FIFO playlist cid %u => %u\n", cid, ctx->get_phys_channel_id(cid));
-        page->write32(i * 0x8 + 0x0, ctx->get_phys_channel_id(cid));
-        page->write32(i * 0x8 + 0x4, 0x4);
+
+    // at first, clear ctx channel enables
+    for (uint32_t i = 0; i < A3_DOMAIN_CHANNELS; ++i) {
+        const uint32_t cid = ctx->get_phys_channel_id(i);
+        channels_.set(cid, 0);
     }
-    return page->address();
+
+    const uint32_t count = bit_mask<8, uint32_t>(cmd);
+    A3_LOG("playlist update %u\n", count);
+    for (uint32_t i = 0; i < count; ++i) {
+        const uint32_t cid = ctx->get_phys_channel_id(pramin.read32(address + i * 0x8));
+        channels_.set(cid, 1);
+    }
+
+    uint32_t phys_count = 0;
+    for (uint32_t i = 0; i < A3_CHANNELS; ++i) {
+        if (channels_[i]) {
+            A3_LOG("playlist update id %u\n", i);
+            page->write32(phys_count * 0x8 + 0x0, i);
+            page->write32(phys_count * 0x8 + 0x4, 0x4);
+            ++phys_count;
+        }
+    }
+
+    const uint64_t shadow = page->address();
+    const uint32_t phys_cmd = bit_clear<8, uint32_t>(cmd) | phys_count;
+    registers::write32(0x70000, 1);
+    registers::write32(0x2270, shadow >> 12);
+    registers::write32(0x2274, phys_cmd);
+    A3_LOG("playlist cmd from %u to %u\n", cmd, phys_cmd);
 }
 
-page* playlist::toggle() {
+page* playlist_t::toggle() {
     cursor_ ^= 1;
     return &pages_[cursor_ & 0x1];
 }
