@@ -20,8 +20,6 @@ struct unique_ptr {
   typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
 };
 
-class playlist;
-
 class context : private boost::noncopyable {
  public:
     typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
@@ -48,8 +46,6 @@ class context : private boost::noncopyable {
     const barrier::table* barrier() const { return barrier_.get(); }
     channel_map* ramin_channel_map() { return &ramin_channel_map_; }
     const channel_map* ramin_channel_map() const { return &ramin_channel_map_; }
-    playlist* fifo_playlist() { return fifo_playlist_.get(); }
-    const playlist* fifo_playlist() const { return fifo_playlist_.get(); }
     uint64_t vram_size() const { return A3_2G; }
     uint64_t get_address_shift() const {
         return id() * vram_size();
@@ -74,7 +70,7 @@ class context : private boost::noncopyable {
 
  private:
     void initialize(int domid);
-    void fifo_playlist_update(uint32_t reg_addr, uint32_t cmd);
+    void playlist_update(uint32_t reg_addr, uint32_t cmd);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     uint32_t decode_to_virt_ramin(uint32_t value);
     uint32_t encode_to_shadow_ramin(uint32_t value);
@@ -89,7 +85,6 @@ class context : private boost::noncopyable {
     unique_ptr<fake_channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
-    unique_ptr<playlist>::type fifo_playlist_;
 
     uint64_t poll_area_;
 

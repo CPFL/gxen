@@ -80,13 +80,14 @@ void timer_t::run() {
                 if (current == handle.first || !device::instance()->is_active()) {
                     if (current != handle.first) {
                         // acquire GPU
-                        device::instance()->try_acquire_gpu();
                         current = handle.first;
+                        device::instance()->try_acquire_gpu(current);
+                        A3_LOG("Acquire GPU\n");
                     }
                     wait = false;
                     // FIXME(Yusuke Suzuki) thread unsafe
                     device::instance()->bar1()->write(handle.first, handle.second);
-                    // A3_LOG("timer thread fires FIRE [%s]\n", device::instance()->is_active() ? "OK" : "NG");
+                    A3_LOG("timer thread fires FIRE [%s]\n", device::instance()->is_active() ? "OK" : "NG");
                     will_be_sleep = false;
                 }
             }
