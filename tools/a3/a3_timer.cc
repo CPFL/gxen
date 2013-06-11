@@ -78,7 +78,11 @@ void timer_t::run() {
         if (wait) {
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
                 if (current == handle.first || !device::instance()->is_active()) {
-                    current = handle.first;
+                    if (current != handle.first) {
+                        // acquire GPU
+                        device::instance()->try_acquire_gpu();
+                        current = handle.first;
+                    }
                     wait = false;
                     // FIXME(Yusuke Suzuki) thread unsafe
                     device::instance()->bar1()->write(handle.first, handle.second);
