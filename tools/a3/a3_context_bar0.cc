@@ -270,7 +270,8 @@ void context::write_bar0(const command& cmd) {
         }
     }
 
-    registers::write32(cmd.offset, cmd.value);
+    registers::accessor regs;
+    regs.write(cmd.offset, cmd.value, cmd.size());
 }
 
 void context::read_bar0(const command& cmd) {
@@ -421,7 +422,8 @@ void context::read_bar0(const command& cmd) {
         }
     }
 
-    buffer()->value = registers::read32(cmd.offset);
+    registers::accessor regs;
+    buffer()->value = regs.read(cmd.offset, cmd.size());
 }
 
 // PCOPY channel inst decode
