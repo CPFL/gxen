@@ -180,7 +180,6 @@ bool context::flush(uint64_t pd, bool bar) {
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
-    // std::vector<uint64_t> addresses;
     const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
 
     uint64_t already = 0;
