@@ -1,5 +1,5 @@
 /*
- * A3 NVC0 PRAMIN
+ * A3 NVC0 PMEM
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_device.h"
 #include "a3_bit_mask.h"
 namespace a3 {
-namespace pramin {
+namespace pmem {
 
 accessor::accessor()
     : regs_()
@@ -72,11 +72,11 @@ void accessor::write8(uint64_t addr, uint8_t val) {
 
 void accessor::change_current(uint64_t addr) {
     const uint64_t shifted = (addr >> 16);
-//    if (a3::device::instance()->pramin() != shifted) {
-//        a3::device::instance()->set_pramin(shifted);
+//    if (a3::device::instance()->pmem() != shifted) {
+//        a3::device::instance()->set_pmem(shifted);
         regs_.write32(0x1700, shifted);
 //    }
 }
 
-} }  // namespace a3::pramin
+} }  // namespace a3::pmem
 /* vim: set sw=4 ts=4 et tw=80 : */

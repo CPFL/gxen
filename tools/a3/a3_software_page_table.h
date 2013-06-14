@@ -16,7 +16,7 @@ class software_page_entry {
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return phys_.present; }
  private:
-    void refresh(context* ctx, pramin::accessor* pramin, const struct page_entry& entry);
+    void refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
 
     struct page_entry phys_;
 };
@@ -27,7 +27,7 @@ class software_page_table {
      public:
         typedef std::vector<software_page_entry> software_page_entries;
 
-        void refresh(context* ctx, pramin::accessor* pramin, const struct page_directory& dir);
+        void refresh(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
         uint64_t resolve(uint64_t offset, struct software_page_entry* result);
         const software_page_entries* large_entries() const { return large_entries_.get(); }
         const software_page_entries* small_entries() const { return small_entries_.get(); }

@@ -24,7 +24,7 @@
 #include <cstdio>
 #include "a3.h"
 #include "a3_page.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 namespace a3 {
 
 page::page(std::size_t n)
@@ -43,32 +43,32 @@ page::~page() {
 }
 
 void page::clear() {
-    pramin::accessor pramin;
+    pmem::accessor pmem;
     for (std::size_t i = 0; i < (size() / sizeof(uint32_t)); i += sizeof(uint32_t)) {
-        pramin.write32(address() + i, 0);
+        pmem.write32(address() + i, 0);
     }
 }
 
 void page::write32(uint64_t offset, uint32_t value) {
     assert(offset < size());
-    pramin::write32(address() + offset, value);
+    pmem::write32(address() + offset, value);
 }
 
 uint32_t page::read32(uint64_t offset) {
     assert(offset < size());
-    return pramin::read32(address() + offset);
+    return pmem::read32(address() + offset);
 }
 
 void page::write(uint64_t offset, uint32_t value, std::size_t s) {
     assert(offset < size());
-    pramin::accessor pramin;
-    pramin.write(address() + offset, value, s);
+    pmem::accessor pmem;
+    pmem.write(address() + offset, value, s);
 }
 
 uint32_t page::read(uint64_t offset, std::size_t s) {
     assert(offset < size());
-    pramin::accessor pramin;
-    return pramin.read(address() + offset, s);
+    pmem::accessor pmem;
+    return pmem.read(address() + offset, s);
 }
 
 std::size_t page::page_size() const {

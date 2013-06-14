@@ -64,7 +64,7 @@ device::device()
     : device_()
     , virts_(2, -1)
     , mutex_handle_()
-    , pramin_()
+    , pmem_()
     , bars_()
     , bar1_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB

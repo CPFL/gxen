@@ -32,7 +32,7 @@
 #include "a3_bit_mask.h"
 #include "a3_registers.h"
 #include "a3_barrier.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_device_bar1.h"
 #include "a3_shadow_page_table.h"
 #include "a3_software_page_table.h"

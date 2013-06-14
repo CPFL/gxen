@@ -30,7 +30,7 @@
 #include "a3_registers.h"
 #include "a3_barrier.h"
 #include "a3_bit_mask.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_device_bar1.h"
 #include "a3_shadow_page_table.h"
 namespace a3 {
@@ -38,7 +38,7 @@ namespace a3 {
 void context::write_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700: {
-            // PRAMIN
+            // pmem
             reg_[cmd.offset] = cmd.value;
             return;
         }
@@ -213,7 +213,7 @@ void context::write_bar0(const command& cmd) {
         }
     }
 
-    // PRAMIN / PMEM
+    // pmem / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
         const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
         const uint64_t addr = base + bit_mask<16>(cmd.offset - 0x700000);
@@ -222,7 +222,7 @@ void context::write_bar0(const command& cmd) {
             // found
             write_barrier(addr, cmd);
         }
-        pramin::write32(addr, cmd.value);
+        pmem::write32(addr, cmd.value);
         return;
     }
 
@@ -369,7 +369,7 @@ void context::read_bar0(const command& cmd) {
         return;
     }
 
-    // PRAMIN / PMEM
+    // pmem / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
         const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
         const uint64_t addr = base + bit_mask<16>(cmd.offset - 0x700000);
@@ -379,7 +379,7 @@ void context::read_bar0(const command& cmd) {
             // found
             read_barrier(addr, cmd);
         }
-        buffer()->value = pramin::read32(addr);
+        buffer()->value = pmem::read32(addr);
         return;
     }
 
