@@ -22,12 +22,19 @@ class channel : private boost::noncopyable {
     const page* shadow_ramin() const { return shadow_ramin_.get(); }
     void shadow(context* ctx);
 
+    void write_shadow_page_table(context* ctx, uint64_t shadow);
+    void override_shadow(context* ctx, uint64_t shadow);
+    bool is_overridden_shadow(context* ctx);
+    void remove_overridden_shadow(context* ctx);
+
  private:
     void detach(context* ctx, uint64_t addr);
     void attach(context* ctx, uint64_t addr);
     int id_;
     bool enabled_;
+    bool overridden_;
     uint64_t ramin_address_;
+    uint64_t shared_address_;
     boost::scoped_ptr<shadow_page_table> table_;
     boost::scoped_ptr<page> shadow_ramin_;
 };
