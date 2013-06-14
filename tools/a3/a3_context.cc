@@ -180,10 +180,10 @@ bool context::flush(uint64_t pd, bool bar) {
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
-    std::vector<uint64_t> addresses;
+    // std::vector<uint64_t> addresses;
     const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
-    // const uint64_t vspace_phys = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
 
+    uint64_t already = 0;
     bool bar1 = false;
     bool bar1_only = true;
 
@@ -205,12 +205,20 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
     }
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
-        if (channels(i)->enabled()) {
-            A3_LOG("channel id %" PRIu64 " => 0x%" PRIx64 "\n", i, channels(i)->table()->page_directory_address());
-            if (channels(i)->table()->page_directory_address() == page_directory) {
+        channel* channel = channels(i);
+        if (channel->enabled()) {
+            A3_LOG("channel id %" PRIu64 " => 0x%" PRIx64 "\n", i, channel->table()->page_directory_address());
+            if (channel->table()->page_directory_address() == page_directory) {
                 bar1_only = false;
-                channels(i)->table()->refresh_page_directories(this, page_directory);
-                addresses.push_back(channels(i)->table()->shadow_address());
+                if (already) {
+                    channel->override_shadow(this, already);
+                } else {
+                    if (channel->is_overridden_shadow(this)) {
+                        channel->remove_overridden_shadow(this);
+                    }
+                    channel->table()->refresh_page_directories(this, page_directory);
+                    already = channel->table()->shadow_address();
+                }
             }
         }
     }
@@ -222,32 +230,13 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         }
     }
 
-    registers::accessor registers;
-    A3_LOG("flushing %" PRIu64 " addresses\n", addresses.size());
-    if (addresses.size() > 0) {
-        for (std::vector<uint64_t>::const_iterator it = addresses.begin(),
-             last = addresses.end(); it != last; ++it) {
-            // const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
-            const uint32_t vsp = static_cast<uint32_t>(*it >> 8);
-            A3_LOG("flush %" PRIx64 "\n", *it);
-            registers.write32(0x100cb8, vsp);
-            registers.write32(0x100cbc, trigger);
-            if ((it + 1) != last) {
-                // waiting flush
-                if (!registers.wait_eq(0x100c80, 0x00008000, 0x00008000)) {
-                    A3_LOG("error on wait flush 1\n");
-                    return;
-                }
-                if (!registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000)) {
-                    A3_LOG("error on wait flush 2\n");
-                    return;
-                }
-            }
-        }
+    if (already) {
+        const uint32_t vsp = static_cast<uint32_t>(already >> 8);
+        A3_LOG("flush %" PRIx64 "\n", already);
+        registers::accessor registers;
+        registers.write32(0x100cb8, vsp);
+        registers.write32(0x100cbc, trigger);
     }
-//     const uint64_t vsp = bit_clear<4, uint32_t>(vspace) | static_cast<uint32_t>(page_directory >> 8);
-//     registers.write32(0x100cb8, vsp);
-//     registers.write32(0x100cbc, trigger);
 }
 
 }  // namespace a3
