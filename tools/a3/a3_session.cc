@@ -80,7 +80,7 @@ void session::initialize(uint32_t id) {
         interprocess::message_queue::remove(name.data());
 
         // construct new queue
-        req_queue_.reset(new interprocess::message_queue(interprocess::create_only, name.data(), 0x1000, sizeof(a3::command)));
+        req_queue_.reset(new interprocess::message_queue(interprocess::create_only, name.data(), 0x100000, sizeof(a3::command)));
     }
 
     // response queue
@@ -96,7 +96,7 @@ void session::initialize(uint32_t id) {
         interprocess::message_queue::remove(name.data());
 
         // construct new queue
-        res_queue_.reset(new interprocess::message_queue(interprocess::create_only, name.data(), 0x1000, sizeof(a3::command)));
+        res_queue_.reset(new interprocess::message_queue(interprocess::create_only, name.data(), 0x100000, sizeof(a3::command)));
     }
 
     thread_.reset(new boost::thread(&session::main, this));
