@@ -79,7 +79,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) 
         offset,
         { a3::command::BAR0, sizeof(uint8_t) }
     };
-    return ctx->send(cmd).value;
+    return ctx->message(cmd, true).value;
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
@@ -93,7 +93,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
         offset,
         { a3::command::BAR0, sizeof(uint16_t) }
     };
-    return ctx->send(cmd).value;
+    return ctx->message(cmd, true).value;
 }
 
 extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
@@ -107,7 +107,7 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
         offset,
         { a3::command::BAR0, sizeof(uint8_t) }
     };
-    ctx->send(cmd);
+    ctx->message(cmd, false);
 }
 
 extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
@@ -121,7 +121,7 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
         offset,
         { a3::command::BAR0, sizeof(uint16_t) }
     };
-    ctx->send(cmd);
+    ctx->message(cmd, false);
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
@@ -157,7 +157,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
             offset,
             { a3::command::BAR0, sizeof(uint32_t) }
         };
-        ret = ctx->send(cmd).value;
+        ret = ctx->message(cmd, true).value;
     }
 
 end:
@@ -205,7 +205,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         offset,
         { a3::command::BAR0, sizeof(uint32_t) }
     };
-    ctx->send(cmd);
+    ctx->message(cmd, false);
     return;
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
