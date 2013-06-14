@@ -50,9 +50,12 @@ static void write64(T* pramin, uint64_t addr, uint64_t value) {
 channel::channel(int id)
     : id_(id)
     , enabled_(false)
+    , overridden_(false)
     , ramin_address_()
+    , shared_address_()
     , table_(new shadow_page_table(id))
-    , shadow_ramin_(new page(1)) {
+    , shadow_ramin_(new page(1))
+{
 }
 
 channel::~channel() {
@@ -111,9 +114,13 @@ void channel::shadow(context* ctx) {
 
     table()->refresh(ctx, page_directory_phys, page_directory_size);
     if (id() >= 0) {
-        shadow_ramin()->write32(0x0200, bit_mask<32>(table()->shadow_address()));
-        shadow_ramin()->write32(0x0204, table()->shadow_address() >> 32);
+        write_shadow_page_table(ctx, table()->shadow_address());
     }
+}
+
+void channel::write_shadow_page_table(context* ctx, uint64_t shadow) {
+    shadow_ramin()->write32(0x0200, bit_mask<32>(shadow));
+    shadow_ramin()->write32(0x0204, shadow >> 32);
 }
 
 void channel::attach(context* ctx, uint64_t addr) {
@@ -135,6 +142,20 @@ uint64_t channel::refresh(context* ctx, uint64_t addr) {
     ramin_address_ = addr;
     attach(ctx, addr);
     return shadow_ramin()->address();
+}
+
+void channel::override_shadow(context* ctx, uint64_t shadow) {
+    overridden_ = true;
+    write_shadow_page_table(ctx, shadow);
+}
+
+bool channel::is_overridden_shadow(context* ctx) {
+    return overridden_;
+}
+
+void channel::remove_overridden_shadow(context* ctx) {
+    overridden_ = false;
+    write_shadow_page_table(ctx, table()->shadow_address());
 }
 
 }  // namespace a3

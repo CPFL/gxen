@@ -15,6 +15,7 @@ class shadow_page_table {
     shadow_page_table(uint32_t channel_id);
     bool refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit);
     void refresh_page_directories(context* ctx, uint64_t address);
+    void temporary_replace(context* ctx, uint64_t shadow);
     void set_low_size(uint32_t value);
     void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
