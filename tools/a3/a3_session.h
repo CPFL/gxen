@@ -6,6 +6,8 @@
 #include <boost/type_traits/aligned_storage.hpp>
 #include <boost/type_traits/alignment_of.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
 #include "a3.h"
 namespace a3 {
 
@@ -21,14 +23,19 @@ class session : private boost::noncopyable {
     boost::asio::local::stream_protocol::socket& socket() { return socket_; }
     command* buffer() { return reinterpret_cast<a3::command*>(&buffer_); }
     context* ctx() const { return context_.get(); }
+    void initialize(uint32_t id);
 
  private:
     void handle_read(const boost::system::error_code& error);
     void handle_write(const boost::system::error_code& error);
+    void main();
 
     boost::asio::local::stream_protocol::socket socket_;
     boost::aligned_storage<kCommandSize, boost::alignment_of<command>::value>::type buffer_;
     boost::scoped_ptr<context> context_;
+    boost::scoped_ptr<boost::thread> thread_;
+    boost::scoped_ptr<interprocess::message_queue> req_queue_;
+    boost::scoped_ptr<interprocess::message_queue> res_queue_;
 };
 
 

@@ -71,13 +71,15 @@ void context::initialize(int dom) {
     domid_ = dom;
     initialized_ = true;
     A3_LOG("INIT domid %d & GPU id %u\n", domid(), id());
+    buffer()->value = id();
+    session_->initialize(id());
 }
 
 // main entry
-void context::handle(const command& cmd) {
+bool context::handle(const command& cmd) {
     if (cmd.type == command::TYPE_INIT) {
         initialize(cmd.value);
-        return;
+        return false;
     }
 
     if (cmd.type == command::TYPE_UTILITY) {
@@ -94,7 +96,7 @@ void context::handle(const command& cmd) {
             }
             break;
         }
-        return;
+        return false;
     }
 
     if (through()) {
@@ -103,11 +105,13 @@ void context::handle(const command& cmd) {
             const uint32_t bar = cmd.bar();
             if (cmd.type == command::TYPE_WRITE) {
                 device::instance()->write(bar, cmd.offset, cmd.value, cmd.size());
+                return false;
             } else if (cmd.type == command::TYPE_READ) {
                 buffer()->value = device::instance()->read(bar, cmd.offset, cmd.size());
+                return true;
             }
         }
-        return;
+        return false;
     }
 
     if (cmd.type == command::TYPE_WRITE) {
@@ -122,7 +126,7 @@ void context::handle(const command& cmd) {
             write_bar3(cmd);
             break;
         }
-        return;
+        return false;
     }
 
     if (cmd.type == command::TYPE_READ) {
@@ -137,8 +141,10 @@ void context::handle(const command& cmd) {
             read_bar3(cmd);
             break;
         }
-        return;
+        return true;
     }
+
+    return false;
 }
 
 void context::playlist_update(uint32_t reg_addr, uint32_t cmd) {

@@ -17,7 +17,7 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
         offset,
         { a3::command::BAR1, N }
     };
-    return ctx->send(cmd).value;
+    return ctx->message(cmd, true).value;
 }
 
 template<std::size_t N>
@@ -29,7 +29,7 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         offset,
         { a3::command::BAR1, N }
     };
-    ctx->send(cmd);
+    ctx->message(cmd, false);
 }
 
 template<std::size_t N>
@@ -41,7 +41,7 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
         offset,
         { a3::command::BAR3, N }
     };
-    return ctx->send(cmd).value;
+    return ctx->message(cmd, true).value;
 }
 
 template<std::size_t N>
@@ -53,7 +53,7 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         offset,
         { a3::command::BAR3, N }
     };
-    ctx->send(cmd);
+    ctx->message(cmd, false);
 }
 
 }  // namespace nvc0

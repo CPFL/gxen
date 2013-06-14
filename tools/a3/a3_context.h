@@ -26,7 +26,7 @@ class context : private boost::noncopyable {
 
     context(session* session, bool through);
     virtual ~context();
-    void handle(const command& command);
+    bool handle(const command& command);
     void write_bar0(const command& command);
     void write_bar1(const command& command);
     void write_bar3(const command& command);

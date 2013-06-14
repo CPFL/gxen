@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cassert>
 #include <stdint.h>
+#include <boost/interprocess/ipc/message_queue.hpp>
 namespace a3 {
 
 #define A3_VERSION "0.0.1"
@@ -25,6 +26,8 @@ namespace a3 {
 #define A3_LOG(fmt, args...) A3_FPRINTF(stdout, fmt, ##args)
 
 #define A3_UNREACHABLE() assert(0)
+
+namespace interprocess = boost::interprocess;
 
 class command {
  public:

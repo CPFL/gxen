@@ -34,7 +34,10 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     , pramin_()
     , io_service_()
     , socket_(io_service_)
-    , socket_mutex_() {
+    , socket_mutex_()
+    , req_queue_()
+    , res_queue_()
+{
 
     // initialize connection
     socket_.connect(boost::asio::local::stream_protocol::endpoint(A3_ENDPOINT));
@@ -44,7 +47,34 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
         a3::command::TYPE_INIT,
         nvc0_domid()
     };
-    send(cmd);
+    const a3::command res = send(cmd);
+    id_ = res.value;
+
+    // initialize req/res queue
+    std::vector<char> name(200);
+    {
+
+        const int ret = std::snprintf(name.data(), name.size() - 1, "a3_shared_req_queue_%u", id());
+        if (ret < 0) {
+            std::perror(NULL);
+            std::exit(1);
+        }
+        name[ret] = '\0';
+
+        req_queue_.reset(new a3::interprocess::message_queue(a3::interprocess::open_only, name.data()));
+    }
+
+    {
+        const int ret = std::snprintf(name.data(), name.size() - 1, "a3_shared_res_queue_%u", id());
+        if (ret < 0) {
+            std::perror(NULL);
+            std::exit(1);
+        }
+        name[ret] = '\0';
+
+        // construct new queue
+        res_queue_.reset(new a3::interprocess::message_queue(a3::interprocess::open_only, name.data()));
+    }
 }
 
 a3::command context::send(const a3::command& cmd) {
@@ -74,6 +104,19 @@ a3::command context::send(const a3::command& cmd) {
         }
     }
     return result;
+}
+
+a3::command context::message(const a3::command& cmd, bool read) {
+    boost::mutex::scoped_lock lock(socket_mutex_);
+    req_queue_->send(&cmd, sizeof(a3::command), 0);
+    if (read) {
+        a3::command result = { };
+        unsigned int priority;
+        std::size_t size;
+        res_queue_->receive(&result, sizeof(a3::command), size, priority);
+        return result;
+    }
+    return a3::command();
 }
 
 context* context::extract(nvc0_state_t* state) {
