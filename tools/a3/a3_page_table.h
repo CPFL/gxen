@@ -2,7 +2,7 @@
 #define A3_PAGE_TABLE_H_
 #include <stdint.h>
 #include <boost/static_assert.hpp>
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 namespace a3 {
 
 // We assume Little Endianess machine.
@@ -81,10 +81,10 @@ struct page_entry {
         };
     };
 
-    static struct page_entry create(pramin::accessor* pramin, uint64_t address) {
+    static struct page_entry create(pmem::accessor* pmem, uint64_t address) {
         struct page_entry entry = { { } };
-        entry.word0 = pramin->read32(address);
-        entry.word1 = pramin->read32(address + 0x4);
+        entry.word0 = pmem->read32(address);
+        entry.word1 = pmem->read32(address + 0x4);
         return entry;
     }
 };
@@ -124,10 +124,10 @@ struct page_directory {
         };
     };
 
-    static struct page_directory create(pramin::accessor* pramin, uint64_t address) {
+    static struct page_directory create(pmem::accessor* pmem, uint64_t address) {
         struct page_directory dir = { { } };
-        dir.word0 = pramin->read32(address);
-        dir.word1 = pramin->read32(address + 0x4);
+        dir.word0 = pmem->read32(address);
+        dir.word1 = pmem->read32(address + 0x4);
         return dir;
     }
 };

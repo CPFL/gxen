@@ -27,7 +27,7 @@
 #include "a3_inttypes.h"
 #include "a3_bit_mask.h"
 #include "a3_shadow_page_table.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_page.h"
 #include "a3_context.h"
 namespace a3 {
@@ -82,17 +82,17 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
 }
 
 void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
-    pramin::accessor pramin;
+    pmem::accessor pmem;
     page_directory_address_ = address;
     large_pages_pool_cursor_ = 0;
     small_pages_pool_cursor_ = 0;
 
     phys()->clear();
     for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
-        const struct page_directory res = page_directory::create(&pramin, page_directory_address() + offset);
+        const struct page_directory res = page_directory::create(&pmem, page_directory_address() + offset);
         struct page_directory result = { };
         if (res.large_page_table_present || res.small_page_table_present) {
-            result = refresh_directory(ctx, &pramin, res);
+            result = refresh_directory(ctx, &pmem, res);
         }
         phys()->write32(offset, result.word0);
         phys()->write32(offset + 0x4, result.word1);
@@ -120,7 +120,7 @@ boost::shared_ptr<page> shadow_page_table::allocate_small_page() {
     return p;
 }
 
-struct page_directory shadow_page_table::refresh_directory(context* ctx, pramin::accessor* pramin, const struct page_directory& dir) {
+struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
     struct page_directory result(dir);
     if (dir.large_page_table_present) {
         // TODO(Yusuke Suzuki): regression
@@ -129,7 +129,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pramin:
         boost::shared_ptr<page> large_page = allocate_large_page();
         for (uint64_t i = 0, iz = kLARGE_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
-            const struct page_entry res = refresh_entry(ctx, pramin, page_entry::create(pramin, address + item));
+            const struct page_entry res = refresh_entry(ctx, pmem, page_entry::create(pmem, address + item));
             large_page->write32(item, res.word0);
             large_page->write32(item + 0x4, res.word1);
         }
@@ -147,7 +147,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pramin:
         boost::shared_ptr<page> small_page = allocate_small_page();
         for (uint64_t i = 0, iz = kSMALL_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
-            const struct page_entry res = refresh_entry(ctx, pramin, page_entry::create(pramin, address + item));
+            const struct page_entry res = refresh_entry(ctx, pmem, page_entry::create(pmem, address + item));
             small_page->write32(item, res.word0);
             small_page->write32(item + 0x4, res.word1);
         }
@@ -160,7 +160,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pramin:
     return result;
 }
 
-struct page_entry shadow_page_table::refresh_entry(context* ctx, pramin::accessor* pramin, const struct page_entry& entry) {
+struct page_entry shadow_page_table::refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
     struct page_entry result(entry);
     if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address

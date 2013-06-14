@@ -27,7 +27,7 @@
 #include "a3_inttypes.h"
 #include "a3_bit_mask.h"
 #include "a3_device.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_page.h"
 #include <cstdio>
 namespace a3 {
@@ -51,8 +51,8 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
 //    switch (offset) {
 //    case 0x0200: {
 //            // lower 32bit
-//            pramin::accessor pramin;
-//            pramin.write32(addr, value + bit_mask<32>(get_address_shift()));
+//            pmem::accessor pmem;
+//            pmem.write32(addr, value + bit_mask<32>(get_address_shift()));
 //            break;
 //        }
 //    case 0x0204:  // upper 32bit
@@ -67,8 +67,8 @@ void context::read_barrier(uint64_t addr, const command& cmd) {
 //    switch (offset) {
 //    case 0x0200: {
 //            // lower 32bit
-//            pramin::accessor pramin;
-//            pramin.read32(addr, value + bit_mask<32>(get_address_shift()));
+//            pmem::accessor pmem;
+//            pmem.read32(addr, value + bit_mask<32>(get_address_shift()));
 //            break;
 //        }
 //    case 0x0204:  // upper 32bit

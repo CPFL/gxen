@@ -35,8 +35,8 @@ class device : private boost::noncopyable {
     mutex& mutex_handle() { return mutex_handle_; }
     uint32_t read(int bar, uint32_t offset, std::size_t size);
     void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
-    uint32_t pramin() const { return pramin_; }
-    void set_pramin(uint32_t pramin) { pramin_ = pramin; }
+    uint32_t pmem() const { return pmem_; }
+    void set_pmem(uint32_t pmem) { pmem_ = pmem; }
     device_bar1* bar1() { return bar1_.get(); }
     const device_bar1* bar1() const { return bar1_.get(); }
     vram_memory* malloc(std::size_t n);
@@ -55,7 +55,7 @@ class device : private boost::noncopyable {
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
     mutex mutex_handle_;
-    uint32_t pramin_;
+    uint32_t pmem_;
     boost::array<bar_t, 5> bars_;
     boost::scoped_ptr<device_bar1> bar1_;
     boost::scoped_ptr<vram> vram_;

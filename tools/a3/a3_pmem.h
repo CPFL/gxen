@@ -1,10 +1,10 @@
-#ifndef A3_PRAMIN_H_
-#define A3_PRAMIN_H_
+#ifndef A3_pmem_H_
+#define A3_pmem_H_
 #include <boost/noncopyable.hpp>
 #include "a3_device.h"
 #include "a3_registers.h"
 namespace a3 {
-namespace pramin {
+namespace pmem {
 
 class accessor : private boost::noncopyable {
  public:
@@ -29,15 +29,15 @@ class accessor : private boost::noncopyable {
 };
 
 inline uint32_t read32(uint64_t addr) {
-    accessor pramin;
-    return pramin.read32(addr);
+    accessor pmem;
+    return pmem.read32(addr);
 }
 
 inline void write32(uint64_t addr, uint32_t val) {
-    accessor pramin;
-    pramin.write32(addr, val);
+    accessor pmem;
+    pmem.write32(addr, val);
 }
 
-} }  // namespace a3::pramin
-#endif  // A3_PRAMIN_H_
+} }  // namespace a3::pmem
+#endif  // A3_pmem_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

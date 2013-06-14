@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include "a3.h"
 #include "a3_context.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_software_page_table.h"
 #include "a3_channel.h"
 #include "a3_barrier.h"
@@ -38,8 +38,8 @@ void context::write_bar3(const command& cmd) {
             // found
             write_barrier(gphys, cmd);
         }
-        pramin::accessor pramin;
-        pramin.write(gphys, cmd.value, cmd.size());
+        pmem::accessor pmem;
+        pmem.write(gphys, cmd.value, cmd.size());
         return;
     }
     A3_LOG("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
@@ -54,8 +54,8 @@ void context::read_bar3(const command& cmd) {
             read_barrier(gphys, cmd);
         }
 
-        pramin::accessor pramin;
-        const uint32_t ret = pramin.read(gphys, cmd.size());
+        pmem::accessor pmem;
+        const uint32_t ret = pmem.read(gphys, cmd.size());
         buffer()->value = ret;
         return;
     }

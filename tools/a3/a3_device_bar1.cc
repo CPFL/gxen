@@ -25,7 +25,7 @@
 #include "a3_inttypes.h"
 #include "a3_bit_mask.h"
 #include "a3_device_table.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_shadow_page_table.h"
 #include "a3_software_page_table.h"
 #include "a3_device_bar1.h"

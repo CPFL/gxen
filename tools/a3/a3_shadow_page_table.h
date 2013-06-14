@@ -28,8 +28,8 @@ class shadow_page_table {
     uint64_t shadow_address() const { return phys() ? phys()->address() : 0; }
 
  private:
-    struct page_directory refresh_directory(context* ctx, pramin::accessor* pramin, const struct page_directory& dir);
-    struct page_entry refresh_entry(context* ctx, pramin::accessor* pramin, const struct page_entry& entry);
+    struct page_directory refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
+    struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }

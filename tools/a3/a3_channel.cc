@@ -28,23 +28,23 @@
 #include "a3_channel.h"
 #include "a3_shadow_page_table.h"
 #include "a3_barrier.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_inttypes.h"
 #include "a3_page.h"
 #include "a3_bit_mask.h"
 namespace a3 {
 
 template<typename T>
-static uint64_t read64(T* pramin, uint64_t addr) {
-    const uint32_t lower = pramin->read32(addr);
-    const uint32_t upper = pramin->read32(addr + 0x4);
+static uint64_t read64(T* pmem, uint64_t addr) {
+    const uint32_t lower = pmem->read32(addr);
+    const uint32_t upper = pmem->read32(addr + 0x4);
     return lower | (static_cast<uint64_t>(upper) << 32);
 }
 
 template<typename T>
-static void write64(T* pramin, uint64_t addr, uint64_t value) {
-    pramin->write32(addr, bit_mask<32>(value));
-    pramin->write32(addr + 0x4, value >> 32);
+static void write64(T* pmem, uint64_t addr, uint64_t value) {
+    pmem->write32(addr, bit_mask<32>(value));
+    pmem->write32(addr + 0x4, value >> 32);
 }
 
 channel::channel(int id)
@@ -80,35 +80,35 @@ void channel::shadow(context* ctx) {
     uint64_t page_directory_phys = 0;
     uint64_t page_directory_size = 0;
 
-    pramin::accessor pramin;
+    pmem::accessor pmem;
 
     // shadow ramin
     for (uint64_t offset = 0; offset < 0x1000; offset += 0x4) {
-        const uint32_t value = pramin.read32(ramin_address() + offset);
+        const uint32_t value = pmem.read32(ramin_address() + offset);
         shadow_ramin()->write32(offset, value);
     }
 
     // and adjust address
     // page directory
-    page_directory_virt = read64(&pramin, ramin_address() + 0x0200);
+    page_directory_virt = read64(&pmem, ramin_address() + 0x0200);
     page_directory_phys = ctx->get_phys_address(page_directory_virt);
-    page_directory_size = read64(&pramin, ramin_address() + 0x0208);
+    page_directory_size = read64(&pmem, ramin_address() + 0x0208);
     write64(shadow_ramin(), 0x0200, page_directory_phys);
 
     write64(shadow_ramin(), 0x0208, page_directory_size);
     A3_LOG("id %d virt 0x%" PRIX64 " phys 0x%" PRIX64 "\n", id(), page_directory_virt, page_directory_phys);
 
     // fctx
-    const uint64_t fctx_virt = read64(&pramin, ramin_address() + 0x08);
+    const uint64_t fctx_virt = read64(&pmem, ramin_address() + 0x08);
     const uint64_t fctx_phys = ctx->get_phys_address(fctx_virt);
     write64(shadow_ramin(), 0x08, fctx_phys);
 
     // mpeg ctx
-    const uint64_t mpeg_ctx_limit_virt = pramin.read32(ramin_address() + 0x60 + 0x04);
+    const uint64_t mpeg_ctx_limit_virt = pmem.read32(ramin_address() + 0x60 + 0x04);
     const uint64_t mpeg_ctx_limit_phys = ctx->get_phys_address(mpeg_ctx_limit_virt);
     shadow_ramin()->write32(0x60 + 0x04, mpeg_ctx_limit_phys);
 
-    const uint64_t mpeg_ctx_virt = pramin.read32(ramin_address() + 0x60 + 0x08);
+    const uint64_t mpeg_ctx_virt = pmem.read32(ramin_address() + 0x60 + 0x08);
     const uint64_t mpeg_ctx_phys = ctx->get_phys_address(mpeg_ctx_virt);
     shadow_ramin()->write32(0x60 + 0x08, mpeg_ctx_phys);
 

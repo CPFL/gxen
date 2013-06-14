@@ -26,7 +26,7 @@
 #include "a3_page.h"
 #include "a3_playlist.h"
 #include "a3_context.h"
-#include "a3_pramin.h"
+#include "a3_pmem.h"
 #include "a3_bit_mask.h"
 namespace a3 {
 
@@ -40,7 +40,7 @@ playlist_t::playlist_t()
 void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     // scan fifo and update values
     page* page = toggle();
-    pramin::accessor pramin;
+    pmem::accessor pmem;
 
     // at first, clear ctx channel enables
     for (uint32_t i = 0; i < A3_DOMAIN_CHANNELS; ++i) {
@@ -51,7 +51,7 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     const uint32_t count = bit_mask<8, uint32_t>(cmd);
     A3_LOG("playlist update %u\n", count);
     for (uint32_t i = 0; i < count; ++i) {
-        const uint32_t cid = ctx->get_phys_channel_id(pramin.read32(address + i * 0x8));
+        const uint32_t cid = ctx->get_phys_channel_id(pmem.read32(address + i * 0x8));
         channels_.set(cid, 1);
     }
 
