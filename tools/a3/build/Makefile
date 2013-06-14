@@ -7,7 +7,7 @@ CPPFLAGS+= -g3 -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initial
 CXXFLAGS+= -std=c++0x
 LDFLAGS=
 TARGET=a3
-LIBS= -lpciaccess -lrt -lboost_system -lboost_thread -lpthread -lxenlight -lxenctrl
+LIBS= -lpciaccess -lrt -lboost_system -lboost_thread -lboost_date_time -lpthread -lxenlight -lxenctrl
 # http://wiki.xen.org/wiki/Choice_of_Toolstacks
 
 SRC=$(notdir $(wildcard $(SRCDIR)*.c) $(wildcard $(SRCDIR)*.cc) $(wildcard $(SRCDIR)*.asm))
