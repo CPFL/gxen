@@ -13,6 +13,7 @@
 namespace a3 {
 
 class device_bar1;
+class device_bar3;
 class vram;
 class vram_memory;
 class context;
@@ -39,6 +40,8 @@ class device : private boost::noncopyable {
     void set_pmem(uint32_t pmem) { pmem_ = pmem; }
     device_bar1* bar1() { return bar1_.get(); }
     const device_bar1* bar1() const { return bar1_.get(); }
+    device_bar3* bar3() { return bar3_.get(); }
+    const device_bar3* bar3() const { return bar3_.get(); }
     vram_memory* malloc(std::size_t n);
     void free(vram_memory* mem);
 
@@ -58,6 +61,7 @@ class device : private boost::noncopyable {
     uint32_t pmem_;
     boost::array<bar_t, 5> bars_;
     boost::scoped_ptr<device_bar1> bar1_;
+    boost::scoped_ptr<device_bar3> bar3_;
     boost::scoped_ptr<vram> vram_;
     boost::scoped_ptr<playlist_t> playlist_;
     timer_t timer_;

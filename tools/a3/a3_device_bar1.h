@@ -3,6 +3,7 @@
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "a3_page.h"
+#include "a3_device.h"
 namespace a3 {
 
 class context;
@@ -10,7 +11,7 @@ class context;
 // Only considers first 0x1000 tables
 class device_bar1 : private boost::noncopyable {
  public:
-    device_bar1();
+    device_bar1(device::bar_t bar);
     uint64_t address() const { return directory_.address(); }
     void refresh_channel(context* ctx);
     void refresh_poll_area();
