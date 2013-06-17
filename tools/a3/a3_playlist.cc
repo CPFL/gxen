@@ -67,9 +67,12 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
 
     const uint64_t shadow = page->address();
     const uint32_t phys_cmd = bit_clear<8, uint32_t>(cmd) | phys_count;
-    registers::write32(0x70000, 1);
-    registers::write32(0x2270, shadow >> 12);
-    registers::write32(0x2274, phys_cmd);
+    registers::accessor regs;
+    regs.write32(0x2270, shadow >> 12);
+    regs.write32(0x2274, phys_cmd);
+    if (!regs.wait_eq(0x00227c, 0x00100000, 0x00000000)) {
+        A3_LOG("playlist update failed\n");
+    }
     A3_LOG("playlist cmd from %u to %u\n", cmd, phys_cmd);
 }
 

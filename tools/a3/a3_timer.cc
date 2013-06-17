@@ -87,7 +87,7 @@ void timer_t::run() {
                     wait = false;
                     // FIXME(Yusuke Suzuki) thread unsafe
                     device::instance()->bar1()->write(handle.first, handle.second);
-                    A3_LOG("timer thread fires FIRE [%s]\n", device::instance()->is_active() ? "OK" : "NG");
+                    A3_LOG("timer thread fires FIRE [%s]\n", device::instance()->is_active() ? "ACTIVE" : "STOP");
                     will_be_sleep = false;
                 }
             }
