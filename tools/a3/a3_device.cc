@@ -39,6 +39,7 @@
 #include "a3_playlist.h"
 #include "a3_registers.h"
 #include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 #include "a3_bit_mask.h"
 
 #define NVC0_VENDOR 0x10DE
@@ -67,6 +68,7 @@ device::device()
     , pmem_()
     , bars_()
     , bar1_()
+    , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
     , timer_(boost::posix_time::milliseconds(1))
@@ -159,7 +161,10 @@ void device::initialize(const bdf& bdf) {
     A3_LOG("PCI device catch\n");
 
     // init bar1 device
-    bar1_.reset(new device_bar1());
+    bar1_.reset(new device_bar1(bars_[1]));
+
+    // init bar3 device
+    bar3_.reset(new device_bar3(bars_[3]));
 
     // list assignable devices
     int num = 0;

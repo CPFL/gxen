@@ -1,5 +1,5 @@
 /*
- * A3 device table
+ * A3 device BAR1
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -48,7 +48,7 @@ static uint64_t encode(uint64_t phys) {
 }
 #endif
 
-device_bar1::device_bar1()
+device_bar1::device_bar1(device::bar_t bar)
     : ramin_(2)
     , directory_(8)
     , entry_() {
