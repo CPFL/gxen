@@ -25,6 +25,7 @@
 #include "a3.h"
 #include "a3_timer.h"
 #include "a3_context.h"
+#include "a3_registers.h"
 #include "a3_device.h"
 #include "a3_device_bar1.h"
 namespace a3 {
@@ -80,19 +81,30 @@ void timer_t::run() {
                 if (current == handle.first || !device::instance()->is_active()) {
                     if (current != handle.first) {
                         // acquire GPU
+                        // context change.
+                        // To ensure all previous fires should be submitted, we flush BAR1.
+                        registers::accessor regs;
+                        regs.write32(0x070000, 0x00000001);
+                        if (!regs.wait_eq(0x070000, 0x00000002, 0x00000000)) {
+                            A3_LOG("BAR1 flush failed\n");
+                        }
+//                         boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+                        if (device::instance()->is_active()) {
+                            goto out;
+                        }
                         current = handle.first;
-                        device::instance()->try_acquire_gpu(current);
-                        A3_LOG("Acquire GPU\n");
+                        const bool res = device::instance()->try_acquire_gpu(current);
+                        A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
                     }
                     wait = false;
-                    // FIXME(Yusuke Suzuki) thread unsafe
-                    device::instance()->bar1()->write(handle.first, handle.second);
-                    A3_LOG("timer thread fires FIRE [%s]\n", device::instance()->is_active() ? "ACTIVE" : "STOP");
+                    device::instance()->bar1()->write(current, handle.second);
+                    A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active() ? "ACTIVE" : "STOP");
                     will_be_sleep = false;
                 }
             }
         }
 
+out:
         if (will_be_sleep) {
             if (wait) {
                 // A3_LOG("timer thread sleeps\n");
