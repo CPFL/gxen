@@ -41,7 +41,7 @@ device_bar3::device_bar3(device::bar_t bar)
     , size_(bar.size)
     , ramin_(2)
     , directory_(8)
-    , entries_(32)
+    , entries_(64)
     , xen_(bar.size / kPAGE_SIZE, false)
 {
     const uint64_t vm_size = size() - 1;
@@ -51,7 +51,7 @@ device_bar3::device_bar3(device::bar_t bar)
 
     // construct channel ramin
     ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, lower32(directory_.address()));
+    ramin_.write32(0x0204, upper32(directory_.address()));
     ramin_.write32(0x0208, lower32(vm_size));
     ramin_.write32(0x020c, upper32(vm_size));
 
