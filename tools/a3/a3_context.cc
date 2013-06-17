@@ -118,6 +118,7 @@ bool context::handle(const command& cmd) {
         switch (cmd.bar()) {
         case command::BAR0:
             write_bar0(cmd);
+            A3_LOG("BAR0 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR1:
             write_bar1(cmd);
@@ -133,6 +134,7 @@ bool context::handle(const command& cmd) {
         switch (cmd.bar()) {
         case command::BAR0:
             read_bar0(cmd);
+            A3_LOG("BAR0 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR1:
             read_bar1(cmd);
