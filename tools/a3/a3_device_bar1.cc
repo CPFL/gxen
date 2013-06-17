@@ -50,7 +50,7 @@ device_bar1::device_bar1(device::bar_t bar)
 
     // construct channel ramin
     ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, lower32(directory_.address()));
+    ramin_.write32(0x0204, upper32(directory_.address()));
     ramin_.write32(0x0208, lower32(vm_size));
     ramin_.write32(0x020c, upper32(vm_size));
 
