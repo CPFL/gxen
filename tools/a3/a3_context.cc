@@ -197,27 +197,25 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
 
     uint64_t already = 0;
-    bool bar1 = false;
-    bool bar1_only = true;
 
     A3_LOG("TLB flush 0x%" PRIX64 " pd [%s]\n", page_directory, device::instance()->is_active() ? "OK" : "NG");
 
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
-        bar1 = true;
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar1()->shadow(this);
+            device::instance()->bar1()->flush();
         }
     }
 
     if (bar3_channel()->table()->page_directory_address() == page_directory) {
         // BAR3
-        bar1_only = false;
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar3()->shadow(this);
+            device::instance()->bar3()->flush();
         }
     }
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
@@ -225,7 +223,6 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         if (channel->enabled()) {
             A3_LOG("channel id %" PRIu64 " => 0x%" PRIx64 "\n", i, channel->table()->page_directory_address());
             if (channel->table()->page_directory_address() == page_directory) {
-                bar1_only = false;
                 if (already) {
                     channel->override_shadow(this, already);
                 } else {
@@ -236,13 +233,6 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
                     already = channel->table()->shadow_address();
                 }
             }
-        }
-    }
-
-    if (bar1) {
-        device::instance()->bar1()->flush();
-        if (bar1_only) {
-            return;
         }
     }
 

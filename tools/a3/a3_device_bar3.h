@@ -20,6 +20,7 @@ class device_bar3 : private boost::noncopyable {
 
     uint64_t size() const { return size_; }
     uintptr_t address() const { return address_; }
+    void flush();
 
  private:
     void map(uint64_t index, uint64_t pdata);
