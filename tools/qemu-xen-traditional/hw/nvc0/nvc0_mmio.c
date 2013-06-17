@@ -110,7 +110,12 @@ void nvc0_mmio_init(nvc0_state_t* state) {
     nvc0_init_bar1(state);
 
     // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=64M]
-    pci_register_io_region(&state->device->dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    // pci_register_io_region(&state->device->dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    // nvc0_init_bar3(state);
+
+    // MODIFIED Region 3
+    // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=16M]
+    pci_register_io_region(&state->device->dev, 3, 0x1000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     nvc0_init_bar3(state);
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
