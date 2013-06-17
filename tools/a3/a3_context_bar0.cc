@@ -32,6 +32,7 @@
 #include "a3_bit_mask.h"
 #include "a3_pmem.h"
 #include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 #include "a3_shadow_page_table.h"
 namespace a3 {
 
@@ -51,7 +52,7 @@ void context::write_bar0(const command& cmd) {
             A3_LOG("0x1704 => 0x%" PRIX32 "\n", value);
             bar1_channel()->refresh(this, phys);
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                device::instance()->bar1()->refresh_channel(this);
+                device::instance()->bar1()->refresh();
             }
             return;
         }
@@ -63,6 +64,9 @@ void context::write_bar0(const command& cmd) {
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
             A3_LOG("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_channel()->refresh(this, phys);
+            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                device::instance()->bar3()->refresh();
+            }
             return;
         }
     case 0x002254: {

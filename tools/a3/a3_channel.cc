@@ -63,7 +63,11 @@ channel::~channel() {
 
 void channel::detach(context* ctx, uint64_t addr) {
     A3_LOG("detach from 0x%" PRIX64 " to 0x%" PRIX64 "\n", ramin_address(), addr);
-    ctx->barrier()->unmap(ramin_address());
+    if (!ctx->barrier()->unmap(ramin_address())) {
+        // TODO(Yusuke Suzuki):unmap device bar3 barrier
+        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        }
+    }
 
     typedef context::channel_map::iterator iter_t;
     const std::pair<iter_t, iter_t> range = ctx->ramin_channel_map()->equal_range(addr);

@@ -19,6 +19,7 @@ class context {
     a3::command send(const a3::command& cmd);
     // message passing
     a3::command message(const a3::command& cmd, bool read);
+    void notify_bar3_change();
 
     static context* extract(nvc0_state_t* state);
 

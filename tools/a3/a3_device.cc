@@ -145,12 +145,15 @@ void device::initialize(const bdf& bdf) {
     void* addr;
     ret = pci_device_map_range(dev, dev->regions[0].base_addr, dev->regions[0].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
     bars_[0].addr = addr;
+    bars_[0].base_addr = dev->regions[0].base_addr;
     bars_[0].size = dev->regions[0].size;
     ret = pci_device_map_range(dev, dev->regions[1].base_addr, dev->regions[1].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
     bars_[1].addr = addr;
+    bars_[1].base_addr = dev->regions[1].base_addr;
     bars_[1].size = dev->regions[1].size;
     ret = pci_device_map_range(dev, dev->regions[3].base_addr, dev->regions[3].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
     bars_[3].addr = addr;
+    bars_[3].base_addr = dev->regions[3].base_addr;
     bars_[3].size = dev->regions[3].size;
 
     if (!initialized()) {
@@ -244,19 +247,18 @@ void device::free(vram_memory* mem) {
 
 bool device::try_acquire_gpu(context* ctx) {
     A3_SYNCHRONIZED(mutex_handle()) {
-        // TODO(Yusuke Suzuki): check GPU doesn't work now
         if (domid_ >= 0) {
             if (domid_ == ctx->domid()) {
                 return true;
             }
-            const int rc = a3_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
+            const int rc = a3_xen_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
             if (rc < 0) {
                 A3_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
                 return false;
             }
         }
         domid_ = ctx->domid();
-        const int rc = a3_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
+        const int rc = a3_xen_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
         if (rc < 0) {
             A3_FPRINTF(stderr, "xc_assign_device failed - (%d)\n", rc);
             return false;

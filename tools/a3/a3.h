@@ -35,7 +35,8 @@ class command {
         TYPE_INIT,
         TYPE_WRITE,
         TYPE_READ,
-        TYPE_UTILITY
+        TYPE_UTILITY,
+        TYPE_BAR3
     };
 
     enum bar_t {

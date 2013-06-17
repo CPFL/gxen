@@ -123,6 +123,16 @@ context* context::extract(nvc0_state_t* state) {
     return static_cast<context*>(state->priv);
 }
 
+void context::notify_bar3_change() {
+    const uint64_t address = state_->bar[3].addr;
+    const a3::command cmd = {
+        a3::command::TYPE_BAR3,
+        static_cast<uint32_t>(address >> 32),
+        static_cast<uint32_t>(address)
+    };
+    send(cmd);
+}
+
 }  // namespace nvc0
 
 extern "C" void nvc0_context_init(nvc0_state_t* state) {

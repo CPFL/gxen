@@ -23,8 +23,12 @@ class device : private boost::noncopyable {
  public:
     struct bar_t {
         void* addr;
+        uintptr_t base_addr;
         std::size_t size;
     };
+
+    friend class device_bar1;
+    friend class device_bar3;
 
     device();
     ~device();
@@ -55,6 +59,8 @@ class device : private boost::noncopyable {
     void playlist_update(context* ctx, uint32_t address, uint32_t cmd);
 
  private:
+    libxl_ctx* xl_ctx() const { return xl_ctx_; }
+
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
     mutex mutex_handle_;
