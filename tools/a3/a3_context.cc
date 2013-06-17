@@ -34,8 +34,10 @@
 #include "a3_barrier.h"
 #include "a3_pmem.h"
 #include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 #include "a3_shadow_page_table.h"
 #include "a3_software_page_table.h"
+#include "a3_page_table.h"
 namespace a3 {
 
 context::context(session* s, bool through)
@@ -49,7 +51,9 @@ context::context(session* s, bool through)
     , barrier_()
     , poll_area_(0)
     , reg_()
-    , ramin_channel_map_() {
+    , ramin_channel_map_()
+    , bar3_address_()
+{
 }
 
 context::~context() {
@@ -79,6 +83,14 @@ void context::initialize(int dom) {
 bool context::handle(const command& cmd) {
     if (cmd.type == command::TYPE_INIT) {
         initialize(cmd.value);
+        return false;
+    }
+
+    if (cmd.type == command::TYPE_BAR3) {
+        uint64_t tmp = static_cast<uint64_t>(cmd.value) << 12;
+        tmp += cmd.offset;
+        bar3_address_ = tmp;
+        A3_LOG("BAR3 address notification %" PRIx64 "\n", bar3_address());
         return false;
     }
 
@@ -204,6 +216,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR3
         bar1_only = false;
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
+        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            device::instance()->bar3()->shadow(this);
+        }
     }
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channel* channel = channels(i);

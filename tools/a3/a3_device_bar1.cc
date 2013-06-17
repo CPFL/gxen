@@ -32,14 +32,6 @@
 #include "a3_context.h"
 namespace a3 {
 
-static uint32_t lower32(uint64_t data) {
-    return bit_mask<32>(data);
-}
-
-static uint32_t upper32(uint64_t data) {
-    return bit_mask<32>(data >> 32);
-}
-
 #if 0
 static uint64_t encode(uint64_t phys) {
     phys >>= 8;
@@ -52,9 +44,10 @@ device_bar1::device_bar1(device::bar_t bar)
     : ramin_(2)
     , directory_(8)
     , entry_() {
-    const uint64_t vm_size = 0x1000 * 128;
+    const uint64_t vm_size = (0x1000 * 128) - 1;
     ramin_.clear();
     directory_.clear();
+
     // construct channel ramin
     ramin_.write32(0x0200, lower32(directory_.address()));
     ramin_.write32(0x0204, lower32(directory_.address()));
@@ -74,7 +67,7 @@ device_bar1::device_bar1(device::bar_t bar)
     A3_LOG("construct shadow BAR1 channel %" PRIX64 " with PDE %" PRIX64 " PTE %" PRIX64 " \n", ramin_.address(), directory_.address(), entry_.address());
 }
 
-void device_bar1::refresh_channel(context* ctx) {
+void device_bar1::refresh() {
     // set ramin as BAR1 channel
     ramin_.write32(0x0200, lower32(directory_.address()));
     ramin_.write32(0x0204, upper32(directory_.address()));
