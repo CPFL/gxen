@@ -263,9 +263,9 @@ bool device::try_acquire_gpu(context* ctx) {
 bool device::is_active() {
     A3_SYNCHRONIZED(mutex_handle()) {
         // this is status register of pgraph
-        return registers::read32(0x400700) != 0;
+        return registers::read32(0x400700) & 0x1;
     }
-    return false;
+    return true;
 }
 
 void device::fire(context* ctx, const command& cmd) {
@@ -276,12 +276,7 @@ void device::fire(context* ctx, const command& cmd) {
 
 void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
     A3_SYNCHRONIZED(mutex_handle()) {
-        // const uint32_t count = bit_mask<8, uint32_t>(cmd);
         playlist_->update(ctx, address, cmd);
-        // device::instance()->try_acquire_gpu(this);
-        // registers::write32(0x70000, 1);
-//         registers::write32(0x2270, shadow >> 12);
-//         registers::write32(0x2274, cmd);
     }
 }
 
