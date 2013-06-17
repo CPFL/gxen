@@ -218,6 +218,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
             device::instance()->bar3()->flush();
         }
     }
+
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channel* channel = channels(i);
         if (channel->enabled()) {

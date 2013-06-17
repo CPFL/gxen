@@ -32,6 +32,7 @@
 #include "a3_inttypes.h"
 #include "a3_page.h"
 #include "a3_bit_mask.h"
+#include "a3_device_bar3.h"
 namespace a3 {
 
 template<typename T>
@@ -145,6 +146,9 @@ uint64_t channel::refresh(context* ctx, uint64_t addr) {
     enabled_ = true;
     ramin_address_ = addr;
     attach(ctx, addr);
+    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        device::instance()->bar3()->shadow(ctx);
+    }
     return shadow_ramin()->address();
 }
 
