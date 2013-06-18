@@ -65,10 +65,10 @@ void context::write_bar0(const command& cmd) {
             A3_LOG("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_channel()->refresh(this, phys);
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                device::instance()->bar3()->refresh();
+                device::instance()->bar3()->refresh(phys);
             }
             // FIXME(Yusuke Suzuki): fix it
-            registers::write32(0x001714, cmd.value);
+            // registers::write32(0x001714, cmd.value);
             return;
         }
     case 0x002254: {

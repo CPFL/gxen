@@ -61,15 +61,18 @@ device_bar3::device_bar3(device::bar_t bar)
     dir.word1 = (entries_.address()) >> 8 | 0x1;
     directory_.write32(0x0, dir.word0);
     directory_.write32(0x4, dir.word1);
-    refresh();
 }
 
-void device_bar3::refresh() {
+void device_bar3::refresh(uint64_t addr) {
     // set ramin as BAR3 channel
-    ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, upper32(directory_.address()));
-    // FIXME(Yusuke Suzuki): fix it
-    // registers::write32(0x001714, 0xc0000000 | ramin_.address() >> 12);
+//     ramin_.write32(0x0200, lower32(directory_.address()));
+//     ramin_.write32(0x0204, upper32(directory_.address()));
+    pmem::accessor pmem;
+    for (uint64_t offset = 0; offset < 0x2000; offset += 4) {
+        const uint32_t value = pmem.read32(addr + offset);
+        ramin_.write32(offset, value);
+    }
+    registers::write32(0x001714, 0xc0000000 | ramin_.address() >> 12);
 }
 
 void device_bar3::map_xen_page(context* ctx, uint64_t offset) {
@@ -86,45 +89,44 @@ void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
-void device_bar3::map(uint64_t index, uint64_t pdata) {
-    entries_.write32(0x8 * index, lower32(pdata));
-    entries_.write32(0x8 * index + 0x4, upper32(pdata));
+void device_bar3::map(uint64_t index, const struct page_entry& entry) {
+    entries_.write32(0x8 * index, entry.word0);
+    entries_.write32(0x8 * index + 0x4, entry.word1);
 }
 
 void device_bar3::shadow(context* ctx) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
     // At first map all
+//     ramin_.write32(0x0200, lower32(ctx->bar3_channel()->table()->page_directory_address()));
+//     ramin_.write32(0x0204, upper32(ctx->bar3_channel()->table()->page_directory_address()));
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kAreaSize) >> kPAGE_SHIFT, kAreaSize / 0x1000);
     for (uint64_t address = 0; address < kAreaSize; address += kPAGE_SIZE) {
         const uint64_t virt = ctx->id() * kAreaSize + address;
         struct software_page_entry entry;
         const uint64_t gphys = ctx->bar3_channel()->table()->resolve(address, &entry);
-        const uint64_t index = virt / kSMALL_PAGE_SIZE;
+        const uint64_t index = virt / kPAGE_SIZE;
         if (gphys != UINT64_MAX) {
             // check this is not ramin
             barrier::page_entry* barrier_entry = NULL;
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
                 // entry is found
-                map(index, entry.phys().raw);
+                map(index, entry.phys());
             } else {
                 unmap_xen_page(ctx, address);
             }
         } else {
-            map(index, 0);
+            const struct page_entry entry = { };
+            map(index, entry);
         }
     }
 }
 
 void device_bar3::flush() {
-    // FIXME(Yusuke Suzuki): fix it
-    return;
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;
-        registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
         registers.write32(0x100cb8, directory_.address() >> 8);
         registers.write32(0x100cbc, engine);
-        registers.wait_eq(0x100c80, 0x00008000, 0x00008000);
     }
 }
 
