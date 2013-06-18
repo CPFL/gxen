@@ -68,7 +68,8 @@ void device_bar3::refresh() {
     // set ramin as BAR3 channel
     ramin_.write32(0x0200, lower32(directory_.address()));
     ramin_.write32(0x0204, upper32(directory_.address()));
-    registers::write32(0x001714, 0xc0000000 | ramin_.address() >> 12);
+    // FIXME(Yusuke Suzuki): fix it
+    // registers::write32(0x001714, 0xc0000000 | ramin_.address() >> 12);
 }
 
 void device_bar3::map_xen_page(context* ctx, uint64_t offset) {
@@ -82,7 +83,7 @@ void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
     const uint64_t host = address() + ctx->id() * kAreaSize + offset;
     A3_LOG("unmapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
-    // a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
+    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
 void device_bar3::map(uint64_t index, uint64_t pdata) {
@@ -92,8 +93,8 @@ void device_bar3::map(uint64_t index, uint64_t pdata) {
 
 void device_bar3::shadow(context* ctx) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
-    // At first unmap all
-    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kAreaSize) >> kPAGE_SHIFT, kAreaSize / 0x1000);
+    // At first map all
+    a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kAreaSize) >> kPAGE_SHIFT, kAreaSize / 0x1000);
     for (uint64_t address = 0; address < kAreaSize; address += kPAGE_SIZE) {
         const uint64_t virt = ctx->id() * kAreaSize + address;
         struct software_page_entry entry;
@@ -105,23 +106,19 @@ void device_bar3::shadow(context* ctx) {
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
                 // entry is found
                 map(index, entry.phys().raw);
-//                 if (xen_[index]) {
-//                     unmap_xen_page(ctx, address);
-//                 }
-                map_xen_page(ctx, address);
-//                 xen_[index] = true;
-                continue;
+            } else {
+                unmap_xen_page(ctx, address);
             }
+        } else {
+            // FIXME(Yusuke Suzuki):
+            // unmap shadow
         }
-
-//         if (xen_[index]) {
-//             unmap_xen_page(ctx, address);
-//         }
-//         xen_[index] = false;
     }
 }
 
 void device_bar3::flush() {
+    // FIXME(Yusuke Suzuki): fix it
+    return;
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;

@@ -134,9 +134,11 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR1:
             write_bar1(cmd);
+            // A3_LOG("BAR1 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR3:
             write_bar3(cmd);
+            A3_LOG("BAR3 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         }
         return false;
@@ -150,9 +152,11 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR1:
             read_bar1(cmd);
+            // A3_LOG("BAR1 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR3:
             read_bar3(cmd);
+            A3_LOG("BAR3 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         }
         return true;
@@ -217,6 +221,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
             device::instance()->bar3()->shadow(this);
             device::instance()->bar3()->flush();
         }
+        // FIXME(Yusuke Suzuki): fix it
+        registers::write32(0x100cb8, vspace);
+        registers::write32(0x100cbc, trigger);
     }
 
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
