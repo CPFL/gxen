@@ -218,8 +218,8 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         // BAR3
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            device::instance()->bar3()->shadow(this);
-            device::instance()->bar3()->flush();
+            device::instance()->bar3()->shadow(this, page_directory);
+            device::instance()->bar3()->flush(page_directory);
         }
 //         registers::accessor regs;
 //         regs.write32(0x100cb8, vspace);

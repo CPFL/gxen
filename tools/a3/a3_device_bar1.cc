@@ -112,7 +112,7 @@ void device_bar1::flush() {
         registers::accessor registers;
         registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
         registers.write32(0x100cb8, directory_.address() >> 8);
-        registers.write32(0x100cbc, engine);
+        registers.write32(0x100cbc, 0x80000000 | engine);
         registers.wait_eq(0x100c80, 0x00008000, 0x00008000);
     }
 }
