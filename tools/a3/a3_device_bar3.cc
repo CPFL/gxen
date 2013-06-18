@@ -110,8 +110,7 @@ void device_bar3::shadow(context* ctx) {
                 unmap_xen_page(ctx, address);
             }
         } else {
-            // FIXME(Yusuke Suzuki):
-            // unmap shadow
+            map(index, 0);
         }
     }
 }
