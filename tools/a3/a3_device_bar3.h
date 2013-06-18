@@ -16,12 +16,12 @@ class device_bar3 : private boost::noncopyable {
     friend class device;
 
     device_bar3(device::bar_t bar);
-    void refresh(uint64_t addr);
+    void refresh();
     void shadow(context* ctx, uint64_t phys);
 
     uint64_t size() const { return size_; }
     uintptr_t address() const { return address_; }
-    void flush(uint64_t phys);
+    void flush();
 
  private:
     void map(uint64_t index, const struct page_entry& pdata);
