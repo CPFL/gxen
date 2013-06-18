@@ -24,7 +24,7 @@
 #include <libxl.h>
 #include "a3_xen.h"
 
-// FIXME(Yusuke Suzuki): This depends on libxl_internal.h
+// This depends on libxl_internal.h
 static xc_interface* libxl_ctx_xch(libxl_ctx* ctx) {
     struct temp {
         xentoollog_logger *lg;
