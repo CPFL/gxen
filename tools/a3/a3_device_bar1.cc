@@ -62,13 +62,13 @@ device_bar1::device_bar1(device::bar_t bar)
 
     // refresh_channel();
     refresh_poll_area();
+    refresh();
 
     A3_LOG("construct shadow BAR1 channel %" PRIX64 " with PDE %" PRIX64 " PTE %" PRIX64 " \n", ramin_.address(), directory_.address(), entry_.address());
 }
 
 void device_bar1::refresh() {
     // set ramin as BAR1 channel
-    mmio::write32(&ramin_, 0x0200, directory_.address());
     registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
 
