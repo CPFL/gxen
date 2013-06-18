@@ -65,7 +65,6 @@ device_bar3::device_bar3(device::bar_t bar)
 
 void device_bar3::refresh() {
     // set ramin as BAR3 channel
-    mmio::write64(&ramin_, 0x0200, directory_.address());
     registers::write32(0x001714, 0xc0000000 | ramin_.address() >> 12);
 }
 
