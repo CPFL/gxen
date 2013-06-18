@@ -219,11 +219,11 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar3()->shadow(this);
-            // device::instance()->bar3()->flush();
+            device::instance()->bar3()->flush();
         }
-        registers::accessor regs;
-        regs.write32(0x100cb8, vspace);
-        regs.write32(0x100cbc, trigger);
+//         registers::accessor regs;
+//         regs.write32(0x100cb8, vspace);
+//         regs.write32(0x100cbc, trigger);
     }
 
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
