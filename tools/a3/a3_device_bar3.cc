@@ -65,15 +65,13 @@ device_bar3::device_bar3(device::bar_t bar)
 
 void device_bar3::refresh(uint64_t addr) {
     // set ramin as BAR3 channel
-//     ramin_.write32(0x0200, lower32(directory_.address()));
-//     ramin_.write32(0x0204, upper32(directory_.address()));
     pmem::accessor pmem;
     for (uint64_t offset = 0; offset < 0x2000; offset += 4) {
         const uint32_t value = pmem.read32(addr + offset);
         ramin_.write32(offset, value);
     }
-    ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, upper32(directory_.address()));
+//     ramin_.write32(0x0200, lower32(directory_.address()));
+//     ramin_.write32(0x0204, upper32(directory_.address()));
     registers::write32(0x001714, 0xc0000000 | ramin_.address() >> 12);
 }
 
@@ -96,8 +94,17 @@ void device_bar3::map(uint64_t index, const struct page_entry& entry) {
     entries_.write32(0x8 * index + 0x4, entry.word1);
 }
 
-void device_bar3::shadow(context* ctx) {
+void device_bar3::shadow(context* ctx, uint64_t phys) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
+
+    if (phys) {
+        pmem::accessor pmem;
+        for (uint64_t offset = 0; offset < 0x8000; offset += 4) {
+            const uint32_t value = pmem.read32(phys + offset);
+            directory_.write32(offset, value);
+        }
+    }
+
     // At first map all
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kAreaSize) >> kPAGE_SHIFT, kAreaSize / 0x1000);
     for (uint64_t address = 0; address < kAreaSize; address += kPAGE_SIZE) {
@@ -121,12 +128,13 @@ void device_bar3::shadow(context* ctx) {
     }
 }
 
-void device_bar3::flush() {
+void device_bar3::flush(uint64_t phys) {
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;
-        registers.write32(0x100cb8, directory_.address() >> 8);
-        registers.write32(0x100cbc, engine);
+        // registers.write32(0x100cb8, directory_.address() >> 8);
+        registers.write32(0x100cb8, phys >> 8);
+        registers.write32(0x100cbc, 0x80000000 | engine);
     }
 }
 
