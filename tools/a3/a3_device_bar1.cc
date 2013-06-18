@@ -30,6 +30,7 @@
 #include "a3_software_page_table.h"
 #include "a3_device_bar1.h"
 #include "a3_context.h"
+#include "a3_mmio.h"
 namespace a3 {
 
 #if 0
@@ -49,10 +50,8 @@ device_bar1::device_bar1(device::bar_t bar)
     directory_.clear();
 
     // construct channel ramin
-    ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, upper32(directory_.address()));
-    ramin_.write32(0x0208, lower32(vm_size));
-    ramin_.write32(0x020c, upper32(vm_size));
+    mmio::write64(&ramin_, 0x0200, directory_.address());
+    mmio::write64(&ramin_, 0x0208, vm_size);
 
     // construct minimum page table
     struct page_directory dir = { };
@@ -69,8 +68,7 @@ device_bar1::device_bar1(device::bar_t bar)
 
 void device_bar1::refresh() {
     // set ramin as BAR1 channel
-    ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, upper32(directory_.address()));
+    mmio::write32(&ramin_, 0x0200, directory_.address());
     registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
 
@@ -90,20 +88,20 @@ void device_bar1::shadow(context* ctx) {
         struct software_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
-            map(virt, entry.phys().raw);
+            map(virt, entry.phys());
         }
     }
 }
 
-void device_bar1::map(uint64_t virt, uint64_t data) {
+void device_bar1::map(uint64_t virt, const struct page_entry& entry) {
     if ((virt / kPAGE_DIRECTORY_COVERED_SIZE) != 0) {
         return;
     }
     const uint64_t index = virt / kSMALL_PAGE_SIZE;
     assert((virt % kSMALL_PAGE_SIZE) == 0);
-    entry_.write32(0x8 * index, lower32(data));
-    entry_.write32(0x8 * index + 0x4, upper32(data));
-    A3_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, data);
+    entry_.write32(0x8 * index, entry.word0);
+    entry_.write32(0x8 * index + 0x4, entry.word1);
+    A3_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, entry.raw);
 }
 
 void device_bar1::flush() {

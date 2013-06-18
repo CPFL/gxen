@@ -33,20 +33,8 @@
 #include "a3_page.h"
 #include "a3_bit_mask.h"
 #include "a3_device_bar3.h"
+#include "a3_mmio.h"
 namespace a3 {
-
-template<typename T>
-static uint64_t read64(T* pmem, uint64_t addr) {
-    const uint32_t lower = pmem->read32(addr);
-    const uint32_t upper = pmem->read32(addr + 0x4);
-    return lower | (static_cast<uint64_t>(upper) << 32);
-}
-
-template<typename T>
-static void write64(T* pmem, uint64_t addr, uint64_t value) {
-    pmem->write32(addr, bit_mask<32>(value));
-    pmem->write32(addr + 0x4, value >> 32);
-}
 
 channel::channel(int id)
     : id_(id)
@@ -95,18 +83,18 @@ void channel::shadow(context* ctx) {
 
     // and adjust address
     // page directory
-    page_directory_virt = read64(&pmem, ramin_address() + 0x0200);
+    page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
     page_directory_phys = ctx->get_phys_address(page_directory_virt);
-    page_directory_size = read64(&pmem, ramin_address() + 0x0208);
-    write64(shadow_ramin(), 0x0200, page_directory_phys);
-    write64(shadow_ramin(), 0x0208, page_directory_size);
+    page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
+    mmio::write64(shadow_ramin(), 0x0200, page_directory_phys);
+    mmio::write64(shadow_ramin(), 0x0208, page_directory_size);
 
     A3_LOG("id %d virt 0x%" PRIX64 " phys 0x%" PRIX64 " size %" PRIu64 "\n", id(), page_directory_virt, page_directory_phys, page_directory_size);
 
     // fctx
-    const uint64_t fctx_virt = read64(&pmem, ramin_address() + 0x08);
+    const uint64_t fctx_virt = mmio::read64(&pmem, ramin_address() + 0x08);
     const uint64_t fctx_phys = ctx->get_phys_address(fctx_virt);
-    write64(shadow_ramin(), 0x08, fctx_phys);
+    mmio::write64(shadow_ramin(), 0x08, fctx_phys);
 
     // mpeg ctx
     const uint64_t mpeg_ctx_limit_virt = pmem.read32(ramin_address() + 0x60 + 0x04);
@@ -124,8 +112,7 @@ void channel::shadow(context* ctx) {
 }
 
 void channel::write_shadow_page_table(context* ctx, uint64_t shadow) {
-    shadow_ramin()->write32(0x0200, bit_mask<32>(shadow));
-    shadow_ramin()->write32(0x0204, shadow >> 32);
+    mmio::write64(shadow_ramin(), 0x0200, shadow);
 }
 
 void channel::attach(context* ctx, uint64_t addr) {

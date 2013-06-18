@@ -3,6 +3,7 @@
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "a3_page.h"
+#include "a3_page_table.h"
 #include "a3_device.h"
 namespace a3 {
 
@@ -21,7 +22,7 @@ class device_bar1 : private boost::noncopyable {
     uint32_t read(context* ctx, const command& cmd);
 
  private:
-    void map(uint64_t virt, uint64_t data);
+    void map(uint64_t virt, const struct page_entry& entry);
 
     page ramin_;
     page directory_;
