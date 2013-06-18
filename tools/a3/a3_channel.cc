@@ -146,6 +146,7 @@ uint64_t channel::refresh(context* ctx, uint64_t addr) {
     enabled_ = true;
     ramin_address_ = addr;
     attach(ctx, addr);
+    // FIXME(Yusuke Suzuki): optimize it
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
         device::instance()->bar3()->shadow(ctx);
     }
