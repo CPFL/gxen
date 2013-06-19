@@ -91,6 +91,8 @@ void device_bar3::shadow(context* ctx, uint64_t phys) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
     // At first map all
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kAreaSize) >> kPAGE_SHIFT, kAreaSize / 0x1000);
+
+    // FIXME(Yusuke Suzuki): optimize it
     for (uint64_t address = 0; address < kAreaSize; address += kPAGE_SIZE) {
         const uint64_t virt = ctx->id() * kAreaSize + address;
         struct software_page_entry entry;
