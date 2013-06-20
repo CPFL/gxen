@@ -96,10 +96,7 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
 
     for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
         const struct page_directory res = page_directory::create(&pmem, page_directory_address() + offset);
-        struct page_directory result = { };
-        if (res.large_page_table_present || res.small_page_table_present) {
-            result = refresh_directory(ctx, &pmem, res);
-        }
+        struct page_directory result = refresh_directory(ctx, &pmem, res);
         phys()->write32(offset, result.word0);
         phys()->write32(offset + 0x4, result.word1);
     }
@@ -112,8 +109,7 @@ boost::shared_ptr<page> shadow_page_table::allocate_large_page() {
         large_pages_pool_.push_back(p);
         return p;
     }
-    const boost::shared_ptr<page> p = large_pages_pool_[large_pages_pool_cursor_++];
-    return p;
+    return large_pages_pool_[large_pages_pool_cursor_++];
 }
 
 boost::shared_ptr<page> shadow_page_table::allocate_small_page() {
@@ -122,8 +118,7 @@ boost::shared_ptr<page> shadow_page_table::allocate_small_page() {
         small_pages_pool_.push_back(p);
         return p;
     }
-    const boost::shared_ptr<page> p = small_pages_pool_[small_pages_pool_cursor_++];
-    return p;
+    return small_pages_pool_[small_pages_pool_cursor_++];
 }
 
 struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
@@ -173,7 +168,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
 
 struct page_entry shadow_page_table::refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
     struct page_entry result(entry);
-    if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
+    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address
         const uint64_t g_field = result.address;
         const uint64_t g_address = g_field << 12;
