@@ -96,7 +96,7 @@ BOOST_STATIC_ASSERT(sizeof(struct page_entry) == sizeof(uint64_t));
 
 struct page_directory {
     enum size_type_t {
-        SIZE_TYPE_FULL = 0,
+        SIZE_TYPE_128M = 0,
         SIZE_TYPE_64M  = 1,
         SIZE_TYPE_32M  = 2,
         SIZE_TYPE_16M  = 3
