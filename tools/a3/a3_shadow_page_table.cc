@@ -87,10 +87,9 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     large_pages_pool_cursor_ = 0;
     small_pages_pool_cursor_ = 0;
 
-    phys()->clear();
-
     // 0 check
     if (!ctx->get_virt_address(address)) {
+        // FIXME(Yusuke Suzuki): Disable page table
         return;
     }
 
