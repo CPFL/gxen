@@ -105,7 +105,12 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
         assert(count <= kLARGE_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
-            (*large_entries_)[i].refresh(ctx, pmem, page_entry::create(pmem, address + item));
+            struct page_entry entry;
+            if (page_entry::create(pmem, address + item, &entry)) {
+                (*large_entries_)[i].refresh(ctx, pmem, entry);
+            } else {
+                (*large_entries_)[i].clear();
+            }
         }
     } else {
         large_entries_.reset();
@@ -120,7 +125,12 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
         assert(count <= kSMALL_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
-            (*small_entries_)[i].refresh(ctx, pmem, page_entry::create(pmem, address + item));
+            struct page_entry entry;
+            if (page_entry::create(pmem, address + item, &entry)) {
+                (*small_entries_)[i].refresh(ctx, pmem, entry);
+            } else {
+                (*small_entries_)[i].clear();
+            }
         }
     } else {
         small_entries_.reset();
@@ -129,7 +139,8 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
 
 void software_page_entry::refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
     struct page_entry result(entry);
-    if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
+    assert(entry.present);
+    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address
         const uint64_t g_field = result.address;
         const uint64_t g_address = g_field << 12;

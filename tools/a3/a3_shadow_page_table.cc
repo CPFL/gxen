@@ -133,9 +133,14 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
         boost::shared_ptr<page> large_page = allocate_large_page();
         for (uint64_t i = 0, iz = kLARGE_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
-            const struct page_entry res = refresh_entry(ctx, pmem, page_entry::create(pmem, address + item));
-            large_page->write32(item, res.word0);
-            large_page->write32(item + 0x4, res.word1);
+            struct page_entry entry;
+            if (page_entry::create(pmem, address + item, &entry)) {
+                struct page_entry res = refresh_entry(ctx, pmem, entry);
+                large_page->write32(item, res.word0);
+                large_page->write32(item + 0x4, res.word1);
+            } else {
+                large_page->write32(item, 0);
+            }
         }
         const uint64_t result_address = (large_page->address() >> 12);
         result.large_page_table_address = result_address;
@@ -148,9 +153,14 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
         boost::shared_ptr<page> small_page = allocate_small_page();
         for (uint64_t i = 0, iz = kSMALL_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
-            const struct page_entry res = refresh_entry(ctx, pmem, page_entry::create(pmem, address + item));
-            small_page->write32(item, res.word0);
-            small_page->write32(item + 0x4, res.word1);
+            struct page_entry entry;
+            if (page_entry::create(pmem, address + item, &entry)) {
+                struct page_entry res = refresh_entry(ctx, pmem, entry);
+                small_page->write32(item, res.word0);
+                small_page->write32(item + 0x4, res.word1);
+            } else {
+                small_page->write32(item, 0);
+            }
         }
         const uint64_t result_address = (small_page->address() >> 12);
         result.small_page_table_address = result_address;
