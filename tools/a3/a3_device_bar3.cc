@@ -38,17 +38,15 @@ device_bar3::device_bar3(device::bar_t bar)
     , size_(bar.size)
     , ramin_(2)
     , directory_(8)
-    , entries_(32)
-    , xen_(bar.size / kPAGE_SIZE, false)
+    , entries_(kBAR3_TOTAL_SIZE / 0x1000 / 0x1000 * 8)
 {
-    const uint64_t vm_size = size() - 1;
     ramin_.clear();
     directory_.clear();
     entries_.clear();
 
     // construct channel ramin
     mmio::write64(&ramin_, 0x0200, directory_.address());
-    mmio::write64(&ramin_, 0x0208, vm_size);
+    mmio::write64(&ramin_, 0x0208, kBAR3_TOTAL_SIZE - 1);
 
     // construct minimum page table
     struct page_directory dir = { };
