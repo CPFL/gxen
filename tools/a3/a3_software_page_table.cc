@@ -101,7 +101,7 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
         if (!large_entries()) {
             large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
         }
-        const std::size_t count = remain / kLARGE_PAGE_SIZE;
+        const std::size_t count = std::min(remain / kLARGE_PAGE_SIZE, page_directory::large_size_count(dir));
         assert(count <= kLARGE_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
