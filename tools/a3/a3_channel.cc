@@ -107,15 +107,19 @@ void channel::shadow(context* ctx) {
     const uint64_t mpeg_ctx_phys = ctx->get_phys_address(mpeg_ctx_virt);
     shadow_ramin()->write32(0x60 + 0x08, mpeg_ctx_phys);
 
+    // TODO(Yusuke Suzuki):
+    // optimize it. only mark it is OK or NG
     table()->refresh(ctx, page_directory_phys, page_directory_size);
-    if (id() >= 0) {
-        write_shadow_page_table(ctx, table()->shadow_address());
-        registers::accessor regs;
-        regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
-        regs.write32(0x100cb8, table()->shadow_address() >> 8);
-        regs.write32(0x100cbc, 0x80000000 | 0x1);
-        regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
-    }
+    write_shadow_page_table(ctx, table()->shadow_address());
+
+//     clear_tlb_flush_needed();
+//     remove_overridden_shadow(ctx);
+
+    registers::accessor regs;
+    regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
+    regs.write32(0x100cb8, table()->shadow_address() >> 8);
+    regs.write32(0x100cbc, 0x80000000 | 0x1);
+    regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
 }
 
 void channel::write_shadow_page_table(context* ctx, uint64_t shadow) {
