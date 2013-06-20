@@ -42,7 +42,7 @@ static uint64_t encode(uint64_t phys) {
 #endif
 
 device_bar1::device_bar1(device::bar_t bar)
-    : ramin_(2)
+    : ramin_(1)
     , directory_(8)
     , entry_() {
     const uint64_t vm_size = (0x1000 * 128) - 1;

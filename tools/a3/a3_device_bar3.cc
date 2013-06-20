@@ -36,7 +36,7 @@ namespace a3 {
 device_bar3::device_bar3(device::bar_t bar)
     : address_(bar.base_addr)
     , size_(bar.size)
-    , ramin_(2)
+    , ramin_(1)
     , directory_(8)
     , entries_(kBAR3_TOTAL_SIZE / 0x1000 / 0x1000 * 8)
 {
