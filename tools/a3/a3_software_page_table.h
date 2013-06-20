@@ -16,7 +16,7 @@ class software_page_entry {
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return phys_.present; }
  private:
-    void refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
+    inline void refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
     inline void clear() {
         struct page_entry result = {};
         phys_ = result;
@@ -77,5 +77,6 @@ class software_page_table {
 };
 
 }  // namespace a3
+#include "a3_software_page_table-inl.h"
 #endif  // A3_SOFTWARE_PAGE_TABLE_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -137,21 +137,6 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
     }
 }
 
-void software_page_entry::refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
-    struct page_entry result(entry);
-    assert(entry.present);
-    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-        // A3_LOG("Rewriting address 0x%" PRIx64 " to 0x%" PRIx64 "\n", g_address, h_address);
-    }
-    phys_ = result;
-}
-
 uint64_t software_page_table::resolve(uint64_t virtual_address, struct software_page_entry* result) {
     const uint32_t index = virtual_address / kPAGE_DIRECTORY_COVERED_SIZE;
     if (directories_.size() <= index) {
