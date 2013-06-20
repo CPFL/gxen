@@ -75,9 +75,11 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     registers::accessor regs;
     regs.write32(0x2270, shadow >> 12);
     regs.write32(0x2274, phys_cmd);
+#if 0
     if (!regs.wait_eq(0x00227c, 0x00100000, 0x00000000)) {
         A3_LOG("playlist update failed\n");
     }
+#endif
     A3_LOG("playlist cmd from %u to %u\n", cmd, phys_cmd);
 }
 
