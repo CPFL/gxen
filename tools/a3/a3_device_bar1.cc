@@ -1,5 +1,5 @@
 /*
- * A3 device table
+ * A3 device BAR1
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -30,15 +30,8 @@
 #include "a3_software_page_table.h"
 #include "a3_device_bar1.h"
 #include "a3_context.h"
+#include "a3_mmio.h"
 namespace a3 {
-
-static uint32_t lower32(uint64_t data) {
-    return bit_mask<32>(data);
-}
-
-static uint32_t upper32(uint64_t data) {
-    return bit_mask<32>(data >> 32);
-}
 
 #if 0
 static uint64_t encode(uint64_t phys) {
@@ -48,18 +41,17 @@ static uint64_t encode(uint64_t phys) {
 }
 #endif
 
-device_bar1::device_bar1()
+device_bar1::device_bar1(device::bar_t bar)
     : ramin_(2)
     , directory_(8)
     , entry_() {
-    const uint64_t vm_size = 0x1000 * 128;
+    const uint64_t vm_size = (0x1000 * 128) - 1;
     ramin_.clear();
     directory_.clear();
+
     // construct channel ramin
-    ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, lower32(directory_.address()));
-    ramin_.write32(0x0208, lower32(vm_size));
-    ramin_.write32(0x020c, upper32(vm_size));
+    mmio::write64(&ramin_, 0x0200, directory_.address());
+    mmio::write64(&ramin_, 0x0208, vm_size);
 
     // construct minimum page table
     struct page_directory dir = { };
@@ -70,14 +62,13 @@ device_bar1::device_bar1()
 
     // refresh_channel();
     refresh_poll_area();
+    refresh();
 
     A3_LOG("construct shadow BAR1 channel %" PRIX64 " with PDE %" PRIX64 " PTE %" PRIX64 " \n", ramin_.address(), directory_.address(), entry_.address());
 }
 
-void device_bar1::refresh_channel(context* ctx) {
+void device_bar1::refresh() {
     // set ramin as BAR1 channel
-    ramin_.write32(0x0200, lower32(directory_.address()));
-    ramin_.write32(0x0204, upper32(directory_.address()));
     registers::write32(0x001704, 0x80000000 | ramin_.address() >> 12);
 }
 
@@ -97,20 +88,20 @@ void device_bar1::shadow(context* ctx) {
         struct software_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
-            map(virt, entry.phys().raw);
+            map(virt, entry.phys());
         }
     }
 }
 
-void device_bar1::map(uint64_t virt, uint64_t data) {
+void device_bar1::map(uint64_t virt, const struct page_entry& entry) {
     if ((virt / kPAGE_DIRECTORY_COVERED_SIZE) != 0) {
         return;
     }
     const uint64_t index = virt / kSMALL_PAGE_SIZE;
     assert((virt % kSMALL_PAGE_SIZE) == 0);
-    entry_.write32(0x8 * index, lower32(data));
-    entry_.write32(0x8 * index + 0x4, upper32(data));
-    A3_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, data);
+    entry_.write32(0x8 * index, entry.word0);
+    entry_.write32(0x8 * index + 0x4, entry.word1);
+    A3_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, entry.raw);
 }
 
 void device_bar1::flush() {
@@ -119,7 +110,7 @@ void device_bar1::flush() {
         registers::accessor registers;
         registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
         registers.write32(0x100cb8, directory_.address() >> 8);
-        registers.write32(0x100cbc, engine);
+        registers.write32(0x100cbc, 0x80000000 | engine);
         registers.wait_eq(0x100c80, 0x00008000, 0x00008000);
     }
 }

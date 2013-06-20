@@ -71,6 +71,14 @@ inline bool bit_check(CharT ch) {
     return (one << N) & ch;
 }
 
+inline uint32_t lower32(uint64_t data) {
+    return bit_mask<32>(data);
+}
+
+inline uint32_t upper32(uint64_t data) {
+    return bit_mask<32>(data >> 32);
+}
+
 }  // namespace a3
 #endif  // A3_BIT_MASK_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

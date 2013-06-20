@@ -64,9 +64,9 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
     size_ = vspace_size;
 
     bool result = false;
-    if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
-        return result;
-    }
+//     if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
+//         return result;
+//     }
 
 //     const uint64_t page_directory_page_size =
 //         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
@@ -88,6 +88,12 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     small_pages_pool_cursor_ = 0;
 
     phys()->clear();
+
+    // 0 check
+    if (!ctx->get_virt_address(address)) {
+        return;
+    }
+
     for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
         const struct page_directory res = page_directory::create(&pmem, page_directory_address() + offset);
         struct page_directory result = { };
@@ -123,9 +129,7 @@ boost::shared_ptr<page> shadow_page_table::allocate_small_page() {
 struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
     struct page_directory result(dir);
     if (dir.large_page_table_present) {
-        // TODO(Yusuke Suzuki): regression
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
-//         const uint64_t address = (static_cast<uint64_t>(dir.large_page_table_address) << 12);
         boost::shared_ptr<page> large_page = allocate_large_page();
         for (uint64_t i = 0, iz = kLARGE_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
@@ -140,10 +144,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
     }
 
     if (dir.small_page_table_present) {
-        // TODO(Yusuke Suzuki): regression
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
-//         const uint64_t address = (static_cast<uint64_t>(dir.small_page_table_address) << 12);
-        A3_LOG("=> %" PRIX64 "\n", address);
         boost::shared_ptr<page> small_page = allocate_small_page();
         for (uint64_t i = 0, iz = kSMALL_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;

@@ -50,6 +50,11 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
 
     const uint32_t count = bit_mask<8, uint32_t>(cmd);
     A3_LOG("playlist update %u\n", count);
+
+    if (!count) {
+        return;
+    }
+
     for (uint32_t i = 0; i < count; ++i) {
         const uint32_t cid = ctx->get_phys_channel_id(pmem.read32(address + i * 0x8));
         channels_.set(cid, 1);
@@ -67,9 +72,14 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
 
     const uint64_t shadow = page->address();
     const uint32_t phys_cmd = bit_clear<8, uint32_t>(cmd) | phys_count;
-    registers::write32(0x70000, 1);
-    registers::write32(0x2270, shadow >> 12);
-    registers::write32(0x2274, phys_cmd);
+    registers::accessor regs;
+    regs.write32(0x2270, shadow >> 12);
+    regs.write32(0x2274, phys_cmd);
+#if 0
+    if (!regs.wait_eq(0x00227c, 0x00100000, 0x00000000)) {
+        A3_LOG("playlist update failed\n");
+    }
+#endif
     A3_LOG("playlist cmd from %u to %u\n", cmd, phys_cmd);
 }
 
