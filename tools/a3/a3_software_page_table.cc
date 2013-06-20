@@ -30,10 +30,12 @@
 #include "a3_context.h"
 namespace a3 {
 
-software_page_table::software_page_table(uint32_t channel_id)
+software_page_table::software_page_table(uint32_t channel_id, uint64_t predefined_max)
     : directories_()
     , size_(0)
-    , channel_id_(channel_id) {
+    , channel_id_(channel_id)
+    , predefined_max_(predefined_max)
+{
 }
 
 void software_page_table::set_low_size(uint32_t value) {
@@ -73,7 +75,6 @@ void software_page_table::refresh_page_directories(context* ctx, uint64_t addres
     pmem::accessor pmem;
     page_directory_address_ = address;
     directories_.resize(page_directory_size());
-    // directories_.resize(max);
     std::size_t i = 0;
     for (software_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
@@ -87,9 +88,7 @@ void software_page_table::refresh_page_directories(context* ctx, uint64_t addres
 
 void software_page_table::software_page_directory::refresh(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
     if (dir.large_page_table_present) {
-        // TODO(Yusuke Suzuki): regression
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
-//         const uint64_t address = (static_cast<uint64_t>(dir.large_page_table_address) << 12);
         if (!large_entries()) {
             large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
         }
@@ -104,13 +103,10 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
     }
 
     if (dir.small_page_table_present) {
-        // TODO(Yusuke Suzuki): regression
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
-//         const uint64_t address = (static_cast<uint64_t>(dir.small_page_table_address) << 12);
         if (!small_entries()) {
             small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
         }
-        A3_LOG("=> %" PRIX64 "\n", address);
         std::size_t i = 0;
         for (software_page_entries::iterator it = small_entries_->begin(),
              last = small_entries_->end(); it != last; ++it, ++i) {

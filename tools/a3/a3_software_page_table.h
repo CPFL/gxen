@@ -39,7 +39,7 @@ class software_page_table {
     typedef std::vector<software_page_directory> software_page_directories;
 
  public:
-    software_page_table(uint32_t channel_id);
+    software_page_table(uint32_t channel_id, uint64_t predefined_max = 0);
     bool refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit);
     void refresh_page_directories(context* ctx, uint64_t address);
     void set_low_size(uint32_t value);
@@ -69,6 +69,7 @@ class software_page_table {
     };
     uint64_t page_directory_address_;
     uint32_t channel_id_;
+    uint64_t predefined_max_;
 };
 
 }  // namespace a3
