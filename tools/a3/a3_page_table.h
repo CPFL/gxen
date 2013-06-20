@@ -82,11 +82,13 @@ struct page_entry {
         };
     };
 
-    static struct page_entry create(pmem::accessor* pmem, uint64_t address) {
-        struct page_entry entry = { { } };
-        entry.word0 = pmem->read32(address);
-        entry.word1 = pmem->read32(address + 0x4);
-        return entry;
+    static bool create(pmem::accessor* pmem, uint64_t address, struct page_entry* entry) {
+        entry->word0 = pmem->read32(address);
+        if (!entry->present) {
+            return false;
+        }
+        entry->word1 = pmem->read32(address + 0x4);
+        return true;
     }
 };
 
