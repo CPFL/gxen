@@ -50,12 +50,16 @@ void shadow_page_table::set_high_size(uint32_t value) {
     high_size_ = value;
 }
 
-bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
-    // allocate directories
+void shadow_page_table::allocate_shadow_address() {
     if (!phys()) {
         phys_.reset(new page(0x10));
         phys_->clear();
     }
+}
+
+bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit) {
+    // allocate directories
+    allocate_shadow_address();
 
     // directories size change
     page_directory_address_ = page_directory_address;

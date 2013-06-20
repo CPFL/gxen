@@ -39,11 +39,13 @@ namespace a3 {
 channel::channel(int id)
     : id_(id)
     , enabled_(false)
-    , overridden_(false)
+    , tlb_flush_needed_(false)
     , ramin_address_()
     , shared_address_()
     , table_(new shadow_page_table(id))
     , shadow_ramin_(new page(1))
+    , original_(A3_DOMAIN_CHANNELS)
+    , derived_(&original_)
 {
 }
 
@@ -108,6 +110,11 @@ void channel::shadow(context* ctx) {
     table()->refresh(ctx, page_directory_phys, page_directory_size);
     if (id() >= 0) {
         write_shadow_page_table(ctx, table()->shadow_address());
+        registers::accessor regs;
+        regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
+        regs.write32(0x100cb8, table()->shadow_address() >> 8);
+        regs.write32(0x100cbc, 0x80000000 | 0x1);
+        regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
     }
 }
 
@@ -140,18 +147,49 @@ uint64_t channel::refresh(context* ctx, uint64_t addr) {
     return shadow_ramin()->address();
 }
 
-void channel::override_shadow(context* ctx, uint64_t shadow) {
-    overridden_ = true;
+void channel::override_shadow(context* ctx, uint64_t shadow, page_table_reuse_t* reuse) {
+    derived_ = reuse;
+    reuse->set(id(), true);
     write_shadow_page_table(ctx, shadow);
 }
 
-bool channel::is_overridden_shadow(context* ctx) {
-    return overridden_;
+bool channel::is_overridden_shadow() {
+    return derived_ != &original_;
 }
 
 void channel::remove_overridden_shadow(context* ctx) {
-    overridden_ = false;
+    derived_->set(id(), false);
+    derived_ = &original_;
     write_shadow_page_table(ctx, table()->shadow_address());
+}
+
+void channel::tlb_flush_needed() {
+    tlb_flush_needed_ = true;
+}
+
+void channel::flush(context* ctx) {
+    if (!tlb_flush_needed_) {
+        return;
+    }
+
+    // clear dirty flags
+    channel* origin = NULL;
+    for (page_table_reuse_t::size_type pos = derived_->find_first(); pos != derived_->npos; pos = derived_->find_next(pos)) {
+        channel* channel = ctx->channels(pos);
+        channel->clear_tlb_flush_needed();
+        if (!channel->is_overridden_shadow()) {
+            origin = channel;
+        }
+    }
+
+    // shadowing...
+    origin->table()->refresh_page_directories(ctx, table()->page_directory_address());
+    registers::accessor regs;
+    A3_LOG("flush %d %" PRIx64 "\n", origin->id(), origin->table()->shadow_address());
+    regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
+    regs.write32(0x100cb8, origin->table()->shadow_address() >> 8);
+    regs.write32(0x100cbc, 0x80000000 | 0x1);
+    regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
 }
 
 }  // namespace a3
