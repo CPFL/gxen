@@ -34,8 +34,9 @@
 namespace a3 {
 
 // TODO(Yusuke Suzuki):
-// This is hard coded value 16MB
-static const uint64_t kAreaSize = 16 * size::MB;
+// This is hard coded value 16MB / 2
+// Because BAR3 effective area is limited to 16MB
+static const uint64_t kAreaSize = 8 * size::MB;
 
 device_bar3::device_bar3(device::bar_t bar)
     : address_(bar.base_addr)
