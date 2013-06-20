@@ -1,7 +1,6 @@
 #ifndef A3_DEVICE_BAR3_H_
 #define A3_DEVICE_BAR3_H_
 #include <boost/noncopyable.hpp>
-#include <boost/dynamic_bitset.hpp>
 #include "a3.h"
 #include "a3_page.h"
 #include "a3_device.h"
@@ -16,6 +15,7 @@ class context;
 // This is hard coded value 16MB / 2
 // Because BAR3 effective area is limited to 16MB
 static const uint64_t kBAR3_ARENA_SIZE = 8 * size::MB;
+static const uint64_t kBAR3_TOTAL_SIZE = 16 * size::MB;
 
 class device_bar3 : private boost::noncopyable {
  public:
@@ -39,7 +39,6 @@ class device_bar3 : private boost::noncopyable {
     page ramin_;
     page directory_;
     page entries_;
-    boost::dynamic_bitset<> xen_;
 };
 
 }  // namespace a3
