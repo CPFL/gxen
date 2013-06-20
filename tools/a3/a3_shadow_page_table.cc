@@ -125,7 +125,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
     if (dir.large_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
         boost::shared_ptr<page> large_page = allocate_large_page();
-        for (uint64_t i = 0, iz = kLARGE_PAGE_COUNT; i < iz; ++i) {
+        for (uint64_t i = 0, iz = page_directory::large_size_count(dir); i < iz; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
             if (page_entry::create(pmem, address + item, &entry)) {

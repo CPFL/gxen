@@ -82,7 +82,7 @@ struct page_entry {
         };
     };
 
-    static bool create(pmem::accessor* pmem, uint64_t address, struct page_entry* entry) {
+    static inline bool create(pmem::accessor* pmem, uint64_t address, struct page_entry* entry) {
         entry->word0 = pmem->read32(address);
         if (!entry->present) {
             return false;
@@ -127,11 +127,26 @@ struct page_directory {
         };
     };
 
-    static struct page_directory create(pmem::accessor* pmem, uint64_t address) {
+    static inline struct page_directory create(pmem::accessor* pmem, uint64_t address) {
         struct page_directory dir = { { } };
         dir.word0 = pmem->read32(address);
         dir.word1 = pmem->read32(address + 0x4);
         return dir;
+    }
+
+    static inline uint64_t large_size_count(const struct page_directory& dir) {
+        const uint8_t type = dir.size_type;
+        switch (type) {
+        case page_directory::SIZE_TYPE_128M:
+            return kLARGE_PAGE_COUNT;
+        case page_directory::SIZE_TYPE_64M:
+            return kLARGE_PAGE_COUNT / 2;
+        case page_directory::SIZE_TYPE_32M:
+            return kLARGE_PAGE_COUNT / 4;
+        case page_directory::SIZE_TYPE_16M:
+            return kLARGE_PAGE_COUNT / 8;
+        }
+        return 0;
     }
 };
 
