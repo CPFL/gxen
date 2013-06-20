@@ -112,6 +112,8 @@ void channel::shadow(context* ctx) {
     table()->refresh(ctx, page_directory_phys, page_directory_size);
     write_shadow_page_table(ctx, table()->shadow_address());
 
+    // FIXME(Yusuke Suzuki):
+    // Fix this
 //     clear_tlb_flush_needed();
 //     remove_overridden_shadow(ctx);
 
