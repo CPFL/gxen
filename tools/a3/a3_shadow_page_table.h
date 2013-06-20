@@ -29,7 +29,7 @@ class shadow_page_table {
 
  private:
     struct page_directory refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
-    struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
+    inline struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }
@@ -55,5 +55,6 @@ class shadow_page_table {
 };
 
 }  // namespace a3
+#include "a3_shadow_page_table-inl.h"
 #endif  // A3_SHADOW_PAGE_TABLE_H_
 /* vim: set sw=4 ts=4 et tw=80 : */
