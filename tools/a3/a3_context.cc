@@ -34,8 +34,10 @@
 #include "a3_barrier.h"
 #include "a3_pmem.h"
 #include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 #include "a3_shadow_page_table.h"
 #include "a3_software_page_table.h"
+#include "a3_page_table.h"
 namespace a3 {
 
 context::context(session* s, bool through)
@@ -49,7 +51,9 @@ context::context(session* s, bool through)
     , barrier_()
     , poll_area_(0)
     , reg_()
-    , ramin_channel_map_() {
+    , ramin_channel_map_()
+    , bar3_address_()
+{
 }
 
 context::~context() {
@@ -79,6 +83,14 @@ void context::initialize(int dom) {
 bool context::handle(const command& cmd) {
     if (cmd.type == command::TYPE_INIT) {
         initialize(cmd.value);
+        return false;
+    }
+
+    if (cmd.type == command::TYPE_BAR3) {
+        uint64_t tmp = static_cast<uint64_t>(cmd.value) << 12;
+        tmp += cmd.offset;
+        bar3_address_ = tmp;
+        A3_LOG("BAR3 address notification %" PRIx64 "\n", bar3_address());
         return false;
     }
 
@@ -118,12 +130,15 @@ bool context::handle(const command& cmd) {
         switch (cmd.bar()) {
         case command::BAR0:
             write_bar0(cmd);
+            // A3_LOG("BAR0 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR1:
             write_bar1(cmd);
+            // A3_LOG("BAR1 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR3:
             write_bar3(cmd);
+            A3_LOG("BAR3 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         }
         return false;
@@ -133,12 +148,15 @@ bool context::handle(const command& cmd) {
         switch (cmd.bar()) {
         case command::BAR0:
             read_bar0(cmd);
+            // A3_LOG("BAR0 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR1:
             read_bar1(cmd);
+            // A3_LOG("BAR1 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR3:
             read_bar3(cmd);
+            A3_LOG("BAR3 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         }
         return true;
@@ -183,32 +201,33 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
 
     uint64_t already = 0;
-    bool bar1 = false;
-    bool bar1_only = true;
 
     A3_LOG("TLB flush 0x%" PRIX64 " pd [%s]\n", page_directory, device::instance()->is_active() ? "OK" : "NG");
 
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
-        bar1 = true;
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar1()->shadow(this);
+            device::instance()->bar1()->flush();
         }
     }
 
     if (bar3_channel()->table()->page_directory_address() == page_directory) {
         // BAR3
-        bar1_only = false;
         bar3_channel()->table()->refresh_page_directories(this, page_directory);
+        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            device::instance()->bar3()->shadow(this, page_directory);
+            device::instance()->bar3()->flush();
+        }
     }
+
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channel* channel = channels(i);
         if (channel->enabled()) {
             A3_LOG("channel id %" PRIu64 " => 0x%" PRIx64 "\n", i, channel->table()->page_directory_address());
             if (channel->table()->page_directory_address() == page_directory) {
-                bar1_only = false;
                 if (already) {
                     channel->override_shadow(this, already);
                 } else {
@@ -222,19 +241,12 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         }
     }
 
-    if (bar1) {
-        device::instance()->bar1()->flush();
-        if (bar1_only) {
-            return;
-        }
-    }
-
     if (already) {
         const uint32_t vsp = static_cast<uint32_t>(already >> 8);
         A3_LOG("flush %" PRIx64 "\n", already);
-        registers::accessor registers;
-        registers.write32(0x100cb8, vsp);
-        registers.write32(0x100cbc, trigger);
+        registers::accessor regs;
+        regs.write32(0x100cb8, vsp);
+        regs.write32(0x100cbc, trigger);
     }
 }
 

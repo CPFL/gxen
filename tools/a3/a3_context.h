@@ -67,6 +67,7 @@ class context : private boost::noncopyable {
     uint64_t poll_area() const { return poll_area_; }
     bool flush(uint64_t pd, bool bar = false);
     command* buffer() { return session_->buffer(); }
+    uint64_t bar3_address() const { return bar3_address_; }
 
  private:
     void initialize(int domid);
@@ -90,6 +91,8 @@ class context : private boost::noncopyable {
 
     boost::scoped_array<uint32_t> reg_;
     channel_map ramin_channel_map_;
+
+    uint64_t bar3_address_;
 };
 
 }  // namespace a3

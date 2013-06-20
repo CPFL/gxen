@@ -83,6 +83,7 @@ static void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_
     bar->type = type;
 
     // get MMIO virtual address to real devices
+#if 0
     if (!bar->real) {
         ret = pci_device_map_range(
                 state->access,
@@ -94,8 +95,14 @@ static void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_
             NVC0_PRINTF("failed to map virt addr %d\n", ret);
         }
     }
+#endif
 
     cpu_register_physical_memory(addr, size, io_index);
+
+    // notify BAR3 to A3
+    if (region_num == 3) {
+        nvc0_mmio_bar3_notify(state);
+    }
 
     NVC0_PRINTF("BAR%d MMIO 0x%X - 0x%X, size %d, io index 0x%X\n", region_num, addr, addr + size, size, io_index);
 }
@@ -110,7 +117,14 @@ void nvc0_mmio_init(nvc0_state_t* state) {
     nvc0_init_bar1(state);
 
     // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=64M]
-    pci_register_io_region(&state->device->dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    // pci_register_io_region(&state->device->dev, 3, 0x4000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    // nvc0_init_bar3(state);
+
+    // MODIFIED Region 3
+    // Region 3: Memory at cc000000 (64-bit, prefetchable) [disabled] [size=16M]
+    // BAR3 effective area is limited to 16MB (24bits)
+    // So we should split this area. hard coded 8MB
+    pci_register_io_region(&state->device->dev, 3, 0x1000000 / 2, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     nvc0_init_bar3(state);
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

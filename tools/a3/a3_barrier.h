@@ -56,7 +56,7 @@ class table {
     table(uint64_t base, uint64_t size);
     // returns previous definition exists
     bool map(uint64_t page_start_address);
-    void unmap(uint64_t page_start_address);
+    bool unmap(uint64_t page_start_address);
     bool lookup(uint64_t address, page_entry** entry, bool force_create = true);
     uint64_t base() const { return base_; }
     uint64_t size() const { return size_; }

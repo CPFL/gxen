@@ -32,6 +32,7 @@
 #include "a3_bit_mask.h"
 #include "a3_pmem.h"
 #include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 #include "a3_shadow_page_table.h"
 namespace a3 {
 
@@ -51,7 +52,7 @@ void context::write_bar0(const command& cmd) {
             A3_LOG("0x1704 => 0x%" PRIX32 "\n", value);
             bar1_channel()->refresh(this, phys);
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                device::instance()->bar1()->refresh_channel(this);
+                device::instance()->bar1()->refresh();
             }
             return;
         }
@@ -63,6 +64,9 @@ void context::write_bar0(const command& cmd) {
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
             A3_LOG("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_channel()->refresh(this, phys);
+            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                device::instance()->bar3()->refresh();
+            }
             return;
         }
     case 0x002254: {
@@ -222,7 +226,8 @@ void context::write_bar0(const command& cmd) {
             // found
             write_barrier(addr, cmd);
         }
-        pmem::write32(addr, cmd.value);
+        pmem::accessor pmem;
+        pmem.write(addr, cmd.value, cmd.size());
         return;
     }
 
@@ -379,7 +384,8 @@ void context::read_bar0(const command& cmd) {
             // found
             read_barrier(addr, cmd);
         }
-        buffer()->value = pmem::read32(addr);
+        pmem::accessor pmem;
+        buffer()->value = pmem.read(addr, cmd.size());
         return;
     }
 
@@ -408,7 +414,6 @@ void context::read_bar0(const command& cmd) {
 
             const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
             const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
-//             A3_LOG("channel shift from 0x%"PRIx64" to 0x%"PRIx64"\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id);
 
             if (ramin_area) {
                 // channel ramin

@@ -39,6 +39,7 @@
 #include "a3_playlist.h"
 #include "a3_registers.h"
 #include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 #include "a3_bit_mask.h"
 
 #define NVC0_VENDOR 0x10DE
@@ -67,6 +68,7 @@ device::device()
     , pmem_()
     , bars_()
     , bar1_()
+    , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
     , timer_(boost::posix_time::milliseconds(1))
@@ -143,12 +145,15 @@ void device::initialize(const bdf& bdf) {
     void* addr;
     ret = pci_device_map_range(dev, dev->regions[0].base_addr, dev->regions[0].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
     bars_[0].addr = addr;
+    bars_[0].base_addr = dev->regions[0].base_addr;
     bars_[0].size = dev->regions[0].size;
     ret = pci_device_map_range(dev, dev->regions[1].base_addr, dev->regions[1].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
     bars_[1].addr = addr;
+    bars_[1].base_addr = dev->regions[1].base_addr;
     bars_[1].size = dev->regions[1].size;
     ret = pci_device_map_range(dev, dev->regions[3].base_addr, dev->regions[3].size, PCI_DEV_MAP_FLAG_WRITABLE, &addr);
     bars_[3].addr = addr;
+    bars_[3].base_addr = dev->regions[3].base_addr;
     bars_[3].size = dev->regions[3].size;
 
     if (!initialized()) {
@@ -159,7 +164,10 @@ void device::initialize(const bdf& bdf) {
     A3_LOG("PCI device catch\n");
 
     // init bar1 device
-    bar1_.reset(new device_bar1());
+    bar1_.reset(new device_bar1(bars_[1]));
+
+    // init bar3 device
+    bar3_.reset(new device_bar3(bars_[3]));
 
     // list assignable devices
     int num = 0;
@@ -239,19 +247,18 @@ void device::free(vram_memory* mem) {
 
 bool device::try_acquire_gpu(context* ctx) {
     A3_SYNCHRONIZED(mutex_handle()) {
-        // TODO(Yusuke Suzuki): check GPU doesn't work now
         if (domid_ >= 0) {
             if (domid_ == ctx->domid()) {
                 return true;
             }
-            const int rc = a3_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
+            const int rc = a3_xen_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
             if (rc < 0) {
                 A3_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
                 return false;
             }
         }
         domid_ = ctx->domid();
-        const int rc = a3_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
+        const int rc = a3_xen_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
         if (rc < 0) {
             A3_FPRINTF(stderr, "xc_assign_device failed - (%d)\n", rc);
             return false;
@@ -263,9 +270,9 @@ bool device::try_acquire_gpu(context* ctx) {
 bool device::is_active() {
     A3_SYNCHRONIZED(mutex_handle()) {
         // this is status register of pgraph
-        return registers::read32(0x400700) != 0;
+        return registers::read32(0x400700) & 0x1;
     }
-    return false;
+    return true;
 }
 
 void device::fire(context* ctx, const command& cmd) {
@@ -276,12 +283,7 @@ void device::fire(context* ctx, const command& cmd) {
 
 void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
     A3_SYNCHRONIZED(mutex_handle()) {
-        // const uint32_t count = bit_mask<8, uint32_t>(cmd);
         playlist_->update(ctx, address, cmd);
-        // device::instance()->try_acquire_gpu(this);
-        // registers::write32(0x70000, 1);
-//         registers::write32(0x2270, shadow >> 12);
-//         registers::write32(0x2274, cmd);
     }
 }
 

@@ -28,6 +28,7 @@
 #include "nvc0_vm.h"
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar3.h"
+#include "nvc0_context.h"
 
 // BAR3 ramin bar
 extern "C" void nvc0_init_bar3(nvc0_state_t* state) {
@@ -71,5 +72,9 @@ extern "C" void nvc0_mmio_bar3_writed(void *opaque, target_phys_addr_t addr, uin
     nvc0_state_t* state = nvc0_state(opaque);
     const target_phys_addr_t offset = addr - state->bar[3].addr;
     nvc0::vm_bar3_write<sizeof(uint32_t)>(state, offset, val);
+}
+
+extern "C" void nvc0_mmio_bar3_notify(nvc0_state_t* state) {
+    nvc0::context::extract(state)->notify_bar3_change();
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

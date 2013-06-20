@@ -7,6 +7,7 @@ namespace a3 {
 
 // We assume Little Endianess machine.
 
+static const unsigned kPAGE_SHIFT = 12;
 static const unsigned kSMALL_PAGE_SHIFT = 12;
 static const unsigned kLARGE_PAGE_SHIFT = 17;
 static const unsigned kPAGE_TABLE_BITS = 27 - 12;

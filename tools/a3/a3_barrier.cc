@@ -52,12 +52,14 @@ bool table::map(uint64_t page_start_address) {
     return result;
 }
 
-void table::unmap(uint64_t page_start_address) {
+bool table::unmap(uint64_t page_start_address) {
     page_entry* entry = NULL;
     lookup(page_start_address, &entry, false);
     if (entry) {
         entry->release();
+        return entry->present();
     }
+    return false;
 }
 
 bool table::lookup(uint64_t address, page_entry** entry, bool force_create) {
