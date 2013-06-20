@@ -83,11 +83,13 @@ void timer_t::run() {
                         // acquire GPU
                         // context change.
                         // To ensure all previous fires should be submitted, we flush BAR1.
+#if 0
                         registers::accessor regs;
                         regs.write32(0x070000, 0x00000001);
                         if (!regs.wait_eq(0x070000, 0x00000002, 0x00000000)) {
                             A3_LOG("BAR1 flush failed\n");
                         }
+#endif
 //                         boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
                         if (device::instance()->is_active()) {
                             goto out;
