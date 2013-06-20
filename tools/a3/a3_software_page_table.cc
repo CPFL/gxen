@@ -36,6 +36,9 @@ software_page_table::software_page_table(uint32_t channel_id, uint64_t predefine
     , channel_id_(channel_id)
     , predefined_max_(predefined_max)
 {
+    if (predefined_max_) {
+        size_ = predefined_max_;
+    }
 }
 
 void software_page_table::set_low_size(uint32_t value) {
@@ -50,22 +53,15 @@ bool software_page_table::refresh(context* ctx, uint64_t page_directory_address,
     // directories size change
     page_directory_address_ = page_directory_address;
 
-    const uint64_t vspace_size = page_limit + 1;
-    size_ = vspace_size;
+    if (!predefined_max_) {
+        const uint64_t vspace_size = page_limit + 1;
+        size_ = vspace_size;
+    }
 
     bool result = false;
     if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
         return result;
     }
-
-//     const uint64_t page_directory_page_size =
-//         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
-//     if (page_directory_page_size) {
-//         if (!phys() || phys()->size() < page_directory_page_size) {
-//             result = true;
-//             phys_.reset(new page(page_directory_page_size));
-//         }
-//     }
 
     refresh_page_directories(ctx, page_directory_address);
     return result;
@@ -76,27 +72,40 @@ void software_page_table::refresh_page_directories(context* ctx, uint64_t addres
     page_directory_address_ = address;
     directories_.resize(page_directory_size());
     std::size_t i = 0;
+    const std::size_t count = directories_.size();
+    std::size_t remain = size() % kPAGE_DIRECTORY_COVERED_SIZE;
+    if (!remain) {
+        remain = kPAGE_DIRECTORY_COVERED_SIZE;
+    }
     for (software_page_directories::iterator it = directories_.begin(),
          last = directories_.end(); it != last; ++it, ++i) {
         const uint64_t item = 0x8 * i;
-        it->refresh(ctx, &pmem, page_directory::create(&pmem, page_directory_address() + item));
+        if (!predefined_max_) {
+            it->refresh(ctx, &pmem, page_directory::create(&pmem, page_directory_address() + item), kPAGE_DIRECTORY_COVERED_SIZE);
+        } else {
+            if ((i + 1) == count) {
+                it->refresh(ctx, &pmem, page_directory::create(&pmem, page_directory_address() + item), remain);
+            } else {
+                it->refresh(ctx, &pmem, page_directory::create(&pmem, page_directory_address() + item), kPAGE_DIRECTORY_COVERED_SIZE);
+            }
+        }
     }
 
     A3_LOG("scan page table of channel id 0x%" PRIi32 " : pd 0x%" PRIX64 " size %" PRIu64 "\n", channel_id(), page_directory_address(), directories_.size());
     // dump();
 }
 
-void software_page_table::software_page_directory::refresh(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
+void software_page_table::software_page_directory::refresh(context* ctx, pmem::accessor* pmem, const struct page_directory& dir, std::size_t remain) {
     if (dir.large_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
         if (!large_entries()) {
             large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
         }
-        std::size_t i = 0;
-        for (software_page_entries::iterator it = large_entries_->begin(),
-             last = large_entries_->end(); it != last; ++it, ++i) {
+        const std::size_t count = remain / kLARGE_PAGE_SIZE;
+        assert(count <= kLARGE_PAGE_COUNT);
+        for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
-            it->refresh(ctx, pmem, page_entry::create(pmem, address + item));
+            (*large_entries_)[i].refresh(ctx, pmem, page_entry::create(pmem, address + item));
         }
     } else {
         large_entries_.reset();
@@ -107,11 +116,11 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
         if (!small_entries()) {
             small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
         }
-        std::size_t i = 0;
-        for (software_page_entries::iterator it = small_entries_->begin(),
-             last = small_entries_->end(); it != last; ++it, ++i) {
+        const std::size_t count = remain / kSMALL_PAGE_SIZE;
+        assert(count <= kSMALL_PAGE_COUNT);
+        for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
-            it->refresh(ctx, pmem, page_entry::create(pmem, address + item));
+            (*small_entries_)[i].refresh(ctx, pmem, page_entry::create(pmem, address + item));
         }
     } else {
         small_entries_.reset();

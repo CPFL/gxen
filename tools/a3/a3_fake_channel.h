@@ -10,7 +10,7 @@ class page;
 
 class fake_channel : private boost::noncopyable {
  public:
-    fake_channel(int id);
+    fake_channel(int id, uint64_t predefined_max = 0);
     ~fake_channel();
     void refresh(context* ctx, uint64_t addr);
     int id() const { return id_; }

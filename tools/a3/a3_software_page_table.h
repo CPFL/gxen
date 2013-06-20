@@ -27,7 +27,7 @@ class software_page_table {
      public:
         typedef std::vector<software_page_entry> software_page_entries;
 
-        void refresh(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
+        void refresh(context* ctx, pmem::accessor* pmem, const struct page_directory& dir, std::size_t remain);
         uint64_t resolve(uint64_t offset, struct software_page_entry* result);
         const software_page_entries* large_entries() const { return large_entries_.get(); }
         const software_page_entries* small_entries() const { return small_entries_.get(); }

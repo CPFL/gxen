@@ -65,8 +65,8 @@ context::~context() {
 
 void context::initialize(int dom) {
     id_ = device::instance()->acquire_virt();
-    bar1_channel_.reset(new fake_channel(-1));
-    bar3_channel_.reset(new fake_channel(-3));
+    bar1_channel_.reset(new fake_channel(-1, kBAR1_ARENA_SIZE));
+    bar3_channel_.reset(new fake_channel(-3, kBAR3_ARENA_SIZE));
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
     reg_.reset(new uint32_t[32ULL * 1024 * 1024]);
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {

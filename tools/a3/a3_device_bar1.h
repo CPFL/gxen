@@ -5,9 +5,14 @@
 #include "a3_page.h"
 #include "a3_page_table.h"
 #include "a3_device.h"
+#include "a3_size.h"
 namespace a3 {
 
 class context;
+
+// TODO(Yusuke Suzuki):
+// This is raw BAR1 value 128MB
+static const uint64_t kBAR1_ARENA_SIZE = 128 * size::MB;
 
 // Only considers first 0x1000 tables
 class device_bar1 : private boost::noncopyable {

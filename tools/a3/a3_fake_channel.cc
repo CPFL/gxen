@@ -47,11 +47,11 @@ static void write64(T* pmem, uint64_t addr, uint64_t value) {
     pmem->write32(addr + 0x4, value >> 32);
 }
 
-fake_channel::fake_channel(int id)
+fake_channel::fake_channel(int id, uint64_t predefined_max)
     : id_(id)
     , enabled_(false)
     , ramin_address_()
-    , table_(new software_page_table(id)) {
+    , table_(new software_page_table(id, predefined_max)) {
 }
 
 fake_channel::~fake_channel() {
