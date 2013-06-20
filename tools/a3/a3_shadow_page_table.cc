@@ -64,9 +64,9 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
     size_ = vspace_size;
 
     bool result = false;
-    if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
-        return result;
-    }
+//     if (page_directory_size() > kMAX_PAGE_DIRECTORIES) {
+//         return result;
+//     }
 
 //     const uint64_t page_directory_page_size =
 //         round_up(page_directory_size() * sizeof(struct page_directory), kPAGE_SIZE) / kPAGE_SIZE;
@@ -88,6 +88,12 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     small_pages_pool_cursor_ = 0;
 
     phys()->clear();
+
+    // 0 check
+    if (!ctx->get_virt_address(address)) {
+        return;
+    }
+
     for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
         const struct page_directory res = page_directory::create(&pmem, page_directory_address() + offset);
         struct page_directory result = { };
