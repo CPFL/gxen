@@ -3,7 +3,8 @@ VPATH+=:$(SRCDIR)
 
 
 CPPFLAGS+= -g3 -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
-# CPPFLAGS+= -O3 -DNDEBUG
+# release option
+# CPPFLAGS+= -O3 -DNDEBUG -flto
 CXXFLAGS+= -std=c++0x
 LDFLAGS=
 TARGET=a3
