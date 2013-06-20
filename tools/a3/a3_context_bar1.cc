@@ -39,6 +39,8 @@ void context::write_bar1(const command& cmd) {
             switch (res.offset) {
             case 0x8C: {
                     // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
+                    // When target TLB is not flushed, we should flush it lazily
+                    channels(res.channel)->flush(this);
                     device::instance()->fire(this, cmd);
                 }
                 break;

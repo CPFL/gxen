@@ -160,13 +160,17 @@ void context::write_bar0(const command& cmd) {
                 } else {
                     // channel found
                     // channel ramin shift
+                    // FIXME(Yusuke Suzuki): do FIRE like code
                     A3_LOG("WRCMD start cmd %" PRIX32 "\n", cmd.value);
                     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
                         for (iter_t it = range.first; it != range.second; ++it) {
                             const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
+                            it->second->flush(this);
                             A3_LOG("    channel %d ramin graph with cmd %" PRIX32 " with addr %" PRIX64 " : %" PRIX32 " => %" PRIX32 "\n", it->second->id(), cmd.value, it->second->shadow_ramin()->address(), data, res);
+
                             // Because we doesn't recognize PCOPY engine initialization
                             // it->second->shadow(this);
+
                             registers::write32(0x409500, res);
                             registers::write32(0x409504, cmd.value);
                         }
@@ -175,6 +179,7 @@ void context::write_bar0(const command& cmd) {
                     return;
                 }
             }
+
             // fire cmd
             // TODO(Yusuke Suzuki): queued system needed
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
@@ -434,6 +439,9 @@ void context::read_bar0(const command& cmd) {
 // PCOPY channel inst decode
 uint32_t context::decode_to_virt_ramin(uint32_t value) {
     A3_LOG("decoding channel 0x%" PRIX32 "\n", value);
+    if (!value) {
+        return value;
+    }
     // This is address of channel ramin (shadow)
     const uint64_t shadow = bit_mask<28, uint64_t>(value) << 12;
     uint64_t phys = 0;
@@ -462,6 +470,10 @@ bool context::shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys) {
 uint32_t context::encode_to_shadow_ramin(uint32_t value) {
     A3_LOG("encoding channel 0x%" PRIX32 "\n", value);
     // This is address of channel ramin (shadow)
+    if (!value) {
+        return value;
+    }
+
     const uint64_t virt = bit_mask<28, uint64_t>(value) << 12;
     const uint64_t phys = get_phys_address(virt);
     typedef context::channel_map::iterator iter_t;
@@ -473,6 +485,7 @@ uint32_t context::encode_to_shadow_ramin(uint32_t value) {
     } else {
         for (iter_t it = range.first; it != range.second; ++it) {
             A3_LOG("encode: virt %" PRIX64 " to shadow ramin %" PRIX64 "\n", virt, it->second->shadow_ramin()->address());
+            it->second->flush(this);
             return bit_clear<28>(value) | (it->second->shadow_ramin()->address() >> 12);
         }
     }

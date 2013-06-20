@@ -44,6 +44,9 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
         for (iter_t it = range.first; it != range.second; ++it) {
             A3_LOG("write reflect shadow 0x%" PRIX64 " : rest 0x%" PRIX64 "\n", it->second->shadow_ramin()->address(), rest);
+            if (cmd.value) {
+                it->second->flush(this);
+            }
             it->second->shadow_ramin()->write(rest, cmd.value, cmd.size());
         }
     }

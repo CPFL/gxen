@@ -201,6 +201,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
 
     uint64_t already = 0;
+    channel::page_table_reuse_t* reuse;
 
     A3_LOG("TLB flush 0x%" PRIX64 " pd [%s]\n", page_directory, device::instance()->is_active() ? "OK" : "NG");
 
@@ -228,14 +229,18 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         if (channel->enabled()) {
             A3_LOG("channel id %" PRIu64 " => 0x%" PRIx64 "\n", i, channel->table()->page_directory_address());
             if (channel->table()->page_directory_address() == page_directory) {
+                channel->tlb_flush_needed();
                 if (already) {
-                    channel->override_shadow(this, already);
+                    channel->override_shadow(this, already, reuse);
                 } else {
-                    if (channel->is_overridden_shadow(this)) {
+                    if (channel->is_overridden_shadow()) {
                         channel->remove_overridden_shadow(this);
                     }
-                    channel->table()->refresh_page_directories(this, page_directory);
+                    // channel->table()->refresh_page_directories(this, page_directory);
+                    channel->table()->allocate_shadow_address();
                     already = channel->table()->shadow_address();
+                    reuse = channel->generate_original();
+                    // channel->flush(this);
                 }
             }
         }

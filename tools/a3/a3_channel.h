@@ -2,6 +2,7 @@
 #define A3_CHANNEL_H_
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include "a3.h"
 namespace a3 {
 class shadow_page_table;
@@ -10,6 +11,8 @@ class page;
 
 class channel : private boost::noncopyable {
  public:
+    typedef boost::dynamic_bitset<> page_table_reuse_t;
+
     channel(int id);
     ~channel();
     uint64_t refresh(context* ctx, uint64_t addr);
@@ -22,21 +25,36 @@ class channel : private boost::noncopyable {
     const page* shadow_ramin() const { return shadow_ramin_.get(); }
     void shadow(context* ctx);
 
+    void flush(context* ctx);
+    void tlb_flush_needed();
+
     void write_shadow_page_table(context* ctx, uint64_t shadow);
-    void override_shadow(context* ctx, uint64_t shadow);
-    bool is_overridden_shadow(context* ctx);
+    void override_shadow(context* ctx, uint64_t shadow, page_table_reuse_t* reuse);
+    bool is_overridden_shadow();
     void remove_overridden_shadow(context* ctx);
 
+    inline page_table_reuse_t* generate_original() {
+        original_.reset();
+        original_.set(id(), 1);
+        return &original_;
+    }
+
  private:
+    void clear_tlb_flush_needed() {
+        tlb_flush_needed_ = false;
+    }
     void detach(context* ctx, uint64_t addr);
     void attach(context* ctx, uint64_t addr);
     int id_;
     bool enabled_;
-    bool overridden_;
+    bool tlb_flush_needed_;
     uint64_t ramin_address_;
     uint64_t shared_address_;
     boost::scoped_ptr<shadow_page_table> table_;
     boost::scoped_ptr<page> shadow_ramin_;
+
+    page_table_reuse_t original_;
+    page_table_reuse_t* derived_;
 };
 
 }  // namespace a3

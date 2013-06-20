@@ -25,6 +25,7 @@ class shadow_page_table {
     }
     uint32_t channel_id() const { return channel_id_; }
     uint64_t page_directory_address() const { return page_directory_address_; }
+    void allocate_shadow_address();
     uint64_t shadow_address() const { return phys() ? phys()->address() : 0; }
 
  private:
