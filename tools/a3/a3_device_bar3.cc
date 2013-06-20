@@ -33,11 +33,6 @@
 #include "a3_mmio.h"
 namespace a3 {
 
-// TODO(Yusuke Suzuki):
-// This is hard coded value 16MB / 2
-// Because BAR3 effective area is limited to 16MB
-static const uint64_t kAreaSize = 8 * size::MB;
-
 device_bar3::device_bar3(device::bar_t bar)
     : address_(bar.base_addr)
     , size_(bar.size)
@@ -71,14 +66,14 @@ void device_bar3::refresh() {
 
 void device_bar3::map_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
-    const uint64_t host = address() + ctx->id() * kAreaSize + offset;
+    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
     A3_LOG("mapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
 void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
-    const uint64_t host = address() + ctx->id() * kAreaSize + offset;
+    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
     A3_LOG("unmapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
@@ -91,11 +86,11 @@ void device_bar3::map(uint64_t index, const struct page_entry& entry) {
 void device_bar3::shadow(context* ctx, uint64_t phys) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
     // At first map all
-    a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kAreaSize) >> kPAGE_SHIFT, kAreaSize / 0x1000);
+    a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
 
     // FIXME(Yusuke Suzuki): optimize it
-    for (uint64_t address = 0; address < kAreaSize; address += kPAGE_SIZE) {
-        const uint64_t virt = ctx->id() * kAreaSize + address;
+    for (uint64_t address = 0; address < kBAR3_ARENA_SIZE; address += kPAGE_SIZE) {
+        const uint64_t virt = ctx->id() * kBAR3_ARENA_SIZE + address;
         struct software_page_entry entry;
         const uint64_t gphys = ctx->bar3_channel()->table()->resolve(address, &entry);
         const uint64_t index = virt / kPAGE_SIZE;

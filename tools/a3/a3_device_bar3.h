@@ -7,9 +7,15 @@
 #include "a3_device.h"
 #include "a3_inttypes.h"
 #include "a3_page_table.h"
+#include "a3_size.h"
 namespace a3 {
 
 class context;
+
+// TODO(Yusuke Suzuki):
+// This is hard coded value 16MB / 2
+// Because BAR3 effective area is limited to 16MB
+static const uint64_t kBAR3_ARENA_SIZE = 8 * size::MB;
 
 class device_bar3 : private boost::noncopyable {
  public:
