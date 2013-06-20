@@ -61,7 +61,6 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
     // allocate directories
     allocate_shadow_address();
 
-    // directories size change
     page_directory_address_ = page_directory_address;
 
     const uint64_t vspace_size = page_limit + 1;
