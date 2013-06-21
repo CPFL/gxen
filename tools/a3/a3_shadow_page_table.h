@@ -36,8 +36,8 @@ class shadow_page_table {
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }
-    page* allocate_large_page();
-    page* allocate_small_page();
+    inline page* allocate_large_page();
+    inline page* allocate_small_page();
     page* phys() { return phys_.get(); };
     const page* phys() const { return phys_.get(); };
 
