@@ -4,6 +4,8 @@
 #include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <memory>
 #include "a3_page_table.h"
 #include "a3_page.h"
 namespace a3 {
@@ -34,8 +36,8 @@ class shadow_page_table {
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }
-    boost::shared_ptr<page> allocate_large_page();
-    boost::shared_ptr<page> allocate_small_page();
+    page* allocate_large_page();
+    page* allocate_small_page();
     page* phys() { return phys_.get(); };
     const page* phys() const { return phys_.get(); };
 
@@ -49,8 +51,8 @@ class shadow_page_table {
     uint64_t page_directory_address_;
     uint32_t channel_id_;
     boost::scoped_ptr<page> phys_;
-    std::vector<boost::shared_ptr<page> > large_pages_pool_;
-    std::vector<boost::shared_ptr<page> > small_pages_pool_;
+    boost::ptr_vector<page> large_pages_pool_;
+    boost::ptr_vector<page> small_pages_pool_;
     std::size_t large_pages_pool_cursor_;
     std::size_t small_pages_pool_cursor_;
 };

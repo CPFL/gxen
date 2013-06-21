@@ -105,29 +105,29 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     A3_LOG("scan page table of channel id 0x%" PRIi32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
 }
 
-boost::shared_ptr<page> shadow_page_table::allocate_large_page() {
+page* shadow_page_table::allocate_large_page() {
     if (large_pages_pool_cursor_ == large_pages_pool_.size()) {
-        const boost::shared_ptr<page> p = boost::make_shared<page>(kLARGE_PAGE_COUNT * 0x8 / kPAGE_SIZE);
-        large_pages_pool_.push_back(p);
-        return p;
+        page* ptr(new page(kLARGE_PAGE_COUNT * 0x8 / kPAGE_SIZE));
+        large_pages_pool_.push_back(ptr);
+        return ptr;
     }
-    return large_pages_pool_[large_pages_pool_cursor_++];
+    return &large_pages_pool_[large_pages_pool_cursor_++];
 }
 
-boost::shared_ptr<page> shadow_page_table::allocate_small_page() {
+page* shadow_page_table::allocate_small_page() {
     if (small_pages_pool_cursor_ == small_pages_pool_.size()) {
-        const boost::shared_ptr<page> p = boost::make_shared<page>(kSMALL_PAGE_COUNT * 0x8 / kPAGE_SIZE);
-        small_pages_pool_.push_back(p);
-        return p;
+        page* ptr = new page(kSMALL_PAGE_COUNT * 0x8 / kPAGE_SIZE);
+        small_pages_pool_.push_back(ptr);
+        return ptr;
     }
-    return small_pages_pool_[small_pages_pool_cursor_++];
+    return &small_pages_pool_[small_pages_pool_cursor_++];
 }
 
 struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
     struct page_directory result(dir);
     if (dir.large_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
-        boost::shared_ptr<page> large_page = allocate_large_page();
+        page* large_page = allocate_large_page();
         for (uint64_t i = 0, iz = page_directory::large_size_count(dir); i < iz; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
@@ -147,7 +147,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
 
     if (dir.small_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
-        boost::shared_ptr<page> small_page = allocate_small_page();
+        page* small_page = allocate_small_page();
         for (uint64_t i = 0, iz = kSMALL_PAGE_COUNT; i < iz; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
