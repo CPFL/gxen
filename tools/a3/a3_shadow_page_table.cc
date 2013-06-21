@@ -105,24 +105,6 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
     A3_LOG("scan page table of channel id 0x%" PRIi32 " : pd 0x%" PRIX64 "\n", channel_id(), page_directory_address());
 }
 
-page* shadow_page_table::allocate_large_page() {
-    if (large_pages_pool_cursor_ == large_pages_pool_.size()) {
-        page* ptr(new page(kLARGE_PAGE_COUNT * 0x8 / kPAGE_SIZE));
-        large_pages_pool_.push_back(ptr);
-        return ptr;
-    }
-    return &large_pages_pool_[large_pages_pool_cursor_++];
-}
-
-page* shadow_page_table::allocate_small_page() {
-    if (small_pages_pool_cursor_ == small_pages_pool_.size()) {
-        page* ptr = new page(kSMALL_PAGE_COUNT * 0x8 / kPAGE_SIZE);
-        small_pages_pool_.push_back(ptr);
-        return ptr;
-    }
-    return &small_pages_pool_[small_pages_pool_cursor_++];
-}
-
 struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir) {
     struct page_directory result(dir);
     if (dir.large_page_table_present) {
