@@ -224,7 +224,7 @@ void context::write_bar0(const command& cmd) {
 
     // pmem / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        const uint64_t base = (get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16)) & 0xffffff00000ULL;
+        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
         pmem.write(addr, cmd.value, cmd.size());
@@ -382,7 +382,7 @@ void context::read_bar0(const command& cmd) {
 
     // pmem / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        const uint64_t base = (get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16)) & 0xffffff00000ULL;
+        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
         buffer()->value = pmem.read(addr, cmd.size());
