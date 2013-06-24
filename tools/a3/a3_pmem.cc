@@ -38,12 +38,12 @@ accessor::~accessor() {
 
 uint32_t accessor::read(uint64_t addr, std::size_t size) {
     change_current(addr);
-    return regs_.read(0x700000 + bit_mask<16>(addr), size);
+    return regs_.read(0x700000 + (addr & 0x000000fffffULL), size);
 }
 
 void accessor::write(uint64_t addr, uint32_t val, std::size_t size) {
     change_current(addr);
-    regs_.write(0x700000 + bit_mask<16>(addr), val, size);
+    regs_.write(0x700000 + (addr & 0x000000fffffULL), val, size);
 }
 
 uint32_t accessor::read32(uint64_t addr) {
@@ -71,7 +71,7 @@ void accessor::write8(uint64_t addr, uint8_t val) {
 }
 
 void accessor::change_current(uint64_t addr) {
-    const uint64_t shifted = (addr >> 16);
+    const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
 //    if (a3::device::instance()->pmem() != shifted) {
 //        a3::device::instance()->set_pmem(shifted);
         regs_.write32(0x1700, shifted);
