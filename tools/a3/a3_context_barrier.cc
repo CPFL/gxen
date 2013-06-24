@@ -51,6 +51,18 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
         }
     }
 
+    // BAR3
+    if (page == bar3_channel()->ramin_address()) {
+        A3_LOG("write reflect shadow BAR3 : rest 0x%" PRIX64 "\n", rest);
+        bar3_channel()->shadow(this);
+    }
+
+    // BAR1
+    if (page == bar1_channel()->ramin_address()) {
+        A3_LOG("write reflect shadow BAR1 : rest 0x%" PRIX64 "\n", rest);
+        bar1_channel()->shadow(this);
+    }
+
 //    switch (offset) {
 //    case 0x0200: {
 //            // lower 32bit

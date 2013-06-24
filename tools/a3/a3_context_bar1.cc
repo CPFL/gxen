@@ -55,13 +55,13 @@ void context::write_bar1(const command& cmd) {
 
     const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
+        pmem::accessor pmem;
+        pmem.write(gphys, cmd.value, cmd.size());
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             write_barrier(gphys, cmd);
         }
-        pmem::accessor pmem;
-        pmem.write(gphys, cmd.value, cmd.size());
         return;
     }
     // A3_LOG("VM BAR1 invalid write 0x%" PRIX32 " access\n", cmd.offset);
@@ -77,14 +77,14 @@ void context::read_bar1(const command& cmd) {
 
     const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
+        pmem::accessor pmem;
+        const uint32_t ret = pmem.read(gphys, cmd.size());
+        buffer()->value = ret;
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             read_barrier(gphys, cmd);
         }
-        pmem::accessor pmem;
-        const uint32_t ret = pmem.read(gphys, cmd.size());
-        buffer()->value = ret;
         // A3_LOG("VM BAR1 read 0x%" PRIX32 " access value 0x%" PRIX32 "\n", cmd.offset, ret);
         return;
     }

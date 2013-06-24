@@ -33,13 +33,13 @@ namespace a3 {
 void context::write_bar3(const command& cmd) {
     const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
+        pmem::accessor pmem;
+        pmem.write(gphys, cmd.value, cmd.size());
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             write_barrier(gphys, cmd);
         }
-        pmem::accessor pmem;
-        pmem.write(gphys, cmd.value, cmd.size());
         return;
     }
     A3_LOG("VM BAR3 invalid write 0x%" PRIX32 " access\n", cmd.offset);
@@ -48,15 +48,14 @@ void context::write_bar3(const command& cmd) {
 void context::read_bar3(const command& cmd) {
     const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
+        pmem::accessor pmem;
+        const uint32_t ret = pmem.read(gphys, cmd.size());
+        buffer()->value = ret;
         barrier::page_entry* entry = NULL;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             read_barrier(gphys, cmd);
         }
-
-        pmem::accessor pmem;
-        const uint32_t ret = pmem.read(gphys, cmd.size());
-        buffer()->value = ret;
         return;
     }
 

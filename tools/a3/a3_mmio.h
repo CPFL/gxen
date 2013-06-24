@@ -55,8 +55,8 @@ inline void write32(void* ptr, ptrdiff_t offset, uint32_t data) {
 
 template<typename T>
 static uint64_t read64(T* pmem, uint64_t addr) {
-    const uint32_t lower = pmem->read32(addr);
-    const uint32_t upper = pmem->read32(addr + 0x4);
+    const uint64_t lower = pmem->read32(addr);
+    const uint64_t upper = pmem->read32(addr + 0x4);
     return lower | (static_cast<uint64_t>(upper) << 32);
 }
 

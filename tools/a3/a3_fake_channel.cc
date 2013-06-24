@@ -32,20 +32,8 @@
 #include "a3_inttypes.h"
 #include "a3_page.h"
 #include "a3_bit_mask.h"
+#include "a3_mmio.h"
 namespace a3 {
-
-template<typename T>
-static uint64_t read64(T* pmem, uint64_t addr) {
-    const uint32_t lower = pmem->read32(addr);
-    const uint32_t upper = pmem->read32(addr + 0x4);
-    return lower | (static_cast<uint64_t>(upper) << 32);
-}
-
-template<typename T>
-static void write64(T* pmem, uint64_t addr, uint64_t value) {
-    pmem->write32(addr, bit_mask<32>(value));
-    pmem->write32(addr + 0x4, value >> 32);
-}
 
 fake_channel::fake_channel(int id, uint64_t predefined_max)
     : id_(id)
@@ -69,13 +57,14 @@ void fake_channel::shadow(context* ctx) {
     pmem::accessor pmem;
     // and adjust address
     // page directory
-    page_directory_virt = read64(&pmem, ramin_address() + 0x0200);
+    page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
     page_directory_phys = ctx->get_phys_address(page_directory_virt);
-    page_directory_size = read64(&pmem, ramin_address() + 0x0208);
+    page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
     table()->refresh(ctx, page_directory_phys, page_directory_size);
 }
 
 void fake_channel::attach(context* ctx, uint64_t addr) {
+    A3_LOG("attach to 0x%" PRIX64 "\n", ramin_address());
     shadow(ctx);
     ctx->barrier()->map(ramin_address());
 }
