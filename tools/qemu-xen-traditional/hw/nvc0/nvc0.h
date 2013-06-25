@@ -55,7 +55,7 @@ typedef struct nvc0_bar {
 
 typedef struct {
     struct pt_dev* device;
-    nvc0_bar_t bar[6];
+    nvc0_bar_t bar[7];
     struct pci_dev* real;           // from pci.h
     struct pci_device* access;      // from pciaccess.h. Basically we use this to access device.
     uint32_t guest;                 // guest index

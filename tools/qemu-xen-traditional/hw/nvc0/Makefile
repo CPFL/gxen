@@ -11,6 +11,7 @@ OBJS += nvc0_mmio.o
 OBJS += nvc0_mmio_bar0.o
 OBJS += nvc0_mmio_bar1.o
 OBJS += nvc0_mmio_bar3.o
+OBJS += nvc0_mmio_rom.o
 OBJS += nvc0_context.o
 
 # link pciaccess and boost libraries
