@@ -32,7 +32,6 @@
 #include "nvc0_mmio.h"
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_context.h"
-#include "nvc0_vbios.inc"
 #include "nvc0_vm.h"
 
 // crystal freq is 27000KHz
@@ -72,7 +71,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) 
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // return nvc0_mmio_read8(state->bar[0].real, offset);
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0xdeadface,
@@ -86,7 +84,6 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // return nvc0_mmio_read16(state->bar[0].real, offset);
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0xdeadface,
@@ -100,7 +97,6 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // nvc0_mmio_write8(state->bar[0].real, offset, val);
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         val,
@@ -114,7 +110,6 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
-    // nvc0_mmio_write16(state->bar[0].real, offset, val);
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         val,
