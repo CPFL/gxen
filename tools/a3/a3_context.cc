@@ -53,6 +53,7 @@ context::context(session* s, bool through)
     , reg_()
     , ramin_channel_map_()
     , bar3_address_()
+    , para_virtualized_(false)
 {
 }
 
@@ -63,7 +64,7 @@ context::~context() {
     }
 }
 
-void context::initialize(int dom) {
+void context::initialize(int dom, bool para) {
     id_ = device::instance()->acquire_virt();
     bar1_channel_.reset(new fake_channel(-1, kBAR1_ARENA_SIZE));
     bar3_channel_.reset(new fake_channel(-3, kBAR3_ARENA_SIZE));
@@ -73,8 +74,9 @@ void context::initialize(int dom) {
         channels_[i].reset(new channel(i));
     }
     domid_ = dom;
+    para_virtualized_ = para;
     initialized_ = true;
-    A3_LOG("INIT domid %d & GPU id %u\n", domid(), id());
+    A3_LOG("INIT domid %d & GPU id %u with %s\n", domid(), id(), para_virtualized() ? "Para-virt" : "Full-virt");
     buffer()->value = id();
     session_->initialize(id());
 }
@@ -82,7 +84,7 @@ void context::initialize(int dom) {
 // main entry
 bool context::handle(const command& cmd) {
     if (cmd.type == command::TYPE_INIT) {
-        initialize(cmd.value);
+        initialize(cmd.value, cmd.offset != 0);
         return false;
     }
 

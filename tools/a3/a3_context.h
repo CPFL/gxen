@@ -68,9 +68,10 @@ class context : private boost::noncopyable {
     bool flush(uint64_t pd, bool bar = false);
     command* buffer() { return session_->buffer(); }
     uint64_t bar3_address() const { return bar3_address_; }
+    bool para_virtualized() const { return para_virtualized_; }
 
  private:
-    void initialize(int domid);
+    void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
     void flush_tlb(uint32_t vspace, uint32_t trigger);
     uint32_t decode_to_virt_ramin(uint32_t value);
@@ -93,6 +94,7 @@ class context : private boost::noncopyable {
     channel_map ramin_channel_map_;
 
     uint64_t bar3_address_;
+    bool para_virtualized_;
 };
 
 }  // namespace a3
