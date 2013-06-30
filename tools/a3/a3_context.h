@@ -30,9 +30,11 @@ class context : private boost::noncopyable {
     void write_bar0(const command& command);
     void write_bar1(const command& command);
     void write_bar3(const command& command);
+    void write_bar4(const command& command);
     void read_bar0(const command& command);
     void read_bar1(const command& command);
     void read_bar3(const command& command);
+    void read_bar4(const command& command);
     void read_barrier(uint64_t addr, const command& command);
     void write_barrier(uint64_t addr, const command& command);
     bool through() const { return through_; }
