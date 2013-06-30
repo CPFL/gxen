@@ -26,11 +26,8 @@
 #include <signal.h>
 #include "nvc0.h"
 #include "nvc0_context.h"
+#include "nvc0_para_virt.h"
 #include "a3.h"
-
-extern "C" {
-    extern long nvc0_guest_id;
-}
 
 namespace nvc0 {
 
