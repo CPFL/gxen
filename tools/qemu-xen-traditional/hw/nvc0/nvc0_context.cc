@@ -27,6 +27,11 @@
 #include "nvc0.h"
 #include "nvc0_context.h"
 #include "a3.h"
+
+extern "C" {
+    extern long nvc0_guest_id;
+}
+
 namespace nvc0 {
 
 context::context(nvc0_state_t* state, uint64_t memory_size)
@@ -45,7 +50,8 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     // send guest id to a3
     a3::command cmd = {
         a3::command::TYPE_INIT,
-        nvc0_domid()
+        nvc0_domid(),
+        nvc0_guest_id
     };
     const a3::command res = send(cmd);
     id_ = res.value;
