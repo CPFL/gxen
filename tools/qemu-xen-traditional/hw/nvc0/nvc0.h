@@ -108,14 +108,6 @@ static inline void nvc0_write32(uint32_t b, volatile void *addr) {
 
 // channel function
 
-static inline uint32_t nvc0_channel_get_phys_id(nvc0_state_t* state, uint32_t virt) {
-    return virt + state->guest * NVC0_CHANNELS_SHIFT;
-}
-
-static inline uint32_t nvc0_channel_get_virt_id(nvc0_state_t* state, uint32_t phys) {
-    return phys - state->guest * NVC0_CHANNELS_SHIFT;
-}
-
 uint32_t nvc0_domid(void);
 
 #ifdef __cplusplus
