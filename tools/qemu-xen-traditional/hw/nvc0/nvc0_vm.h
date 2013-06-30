@@ -56,6 +56,30 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
     ctx->message(cmd, false);
 }
 
+template<std::size_t N>
+uint32_t vm_bar4_read(nvc0_state_t* state, target_phys_addr_t offset) {
+    context* ctx = context::extract(state);
+    const a3::command cmd = {
+        a3::command::TYPE_READ,
+        0,
+        offset,
+        { a3::command::BAR4, N }
+    };
+    return ctx->message(cmd, true).value;
+}
+
+template<std::size_t N>
+void vm_bar4_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
+    context* ctx = context::extract(state);
+    const a3::command cmd = {
+        a3::command::TYPE_WRITE,
+        value,
+        offset,
+        { a3::command::BAR4, N }
+    };
+    ctx->message(cmd, false);
+}
+
 }  // namespace nvc0
 #endif  // HW_NVC0_NVC0_VM_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

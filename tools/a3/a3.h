@@ -42,7 +42,8 @@ class command {
     enum bar_t {
         BAR0 = 0,
         BAR1 = 1,
-        BAR3 = 3
+        BAR3 = 3,
+        BAR4 = 4
     };
 
     enum utility_t {

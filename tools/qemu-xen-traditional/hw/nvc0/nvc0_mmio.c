@@ -27,31 +27,46 @@
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_mmio_bar1.h"
 #include "nvc0_mmio_bar3.h"
+#include "nvc0_mmio_bar4.h"
 #include "nvc0_mmio_rom.h"
+#include "nvc0_para_virt.h"
 #include "pass-through.h"
 
 // function to access byte (index 0), word (index 1) and dword (index 2)
 typedef CPUReadMemoryFunc* CPUReadMemoryFuncBlock[3];
 static CPUReadMemoryFuncBlock mmio_read_table[7] = {
     {
+        // bar0
         nvc0_mmio_bar0_readb,
         nvc0_mmio_bar0_readw,
         nvc0_mmio_bar0_readd,
     },
     {
+        // bar1
         nvc0_mmio_bar1_readb,
         nvc0_mmio_bar1_readw,
         nvc0_mmio_bar1_readd,
     },
-    {},  // bar2
     {
+        // bar2
+    },
+    {
+        // bar3
         nvc0_mmio_bar3_readb,
         nvc0_mmio_bar3_readw,
         nvc0_mmio_bar3_readd,
     },
-    {},  // bar4
-    {},  // bar5
     {
+        // bar4
+        nvc0_mmio_bar4_readb,
+        nvc0_mmio_bar4_readw,
+        nvc0_mmio_bar4_readd,
+    },
+    {
+        // bar5
+    },
+    {
+        // bar6
         nvc0_mmio_rom_readb,
         nvc0_mmio_rom_readw,
         nvc0_mmio_rom_readd,
@@ -61,24 +76,37 @@ static CPUReadMemoryFuncBlock mmio_read_table[7] = {
 typedef CPUWriteMemoryFunc* CPUWriteMemoryFuncBlock[3];
 static CPUWriteMemoryFuncBlock mmio_write_table[7] = {
     {
+        // bar0
         nvc0_mmio_bar0_writeb,
         nvc0_mmio_bar0_writew,
         nvc0_mmio_bar0_writed,
     },
     {
+        // bar1
         nvc0_mmio_bar1_writeb,
         nvc0_mmio_bar1_writew,
         nvc0_mmio_bar1_writed,
     },
-    {},  // bar2
     {
+        // bar2
+    },
+    {
+        // bar3
         nvc0_mmio_bar3_writeb,
         nvc0_mmio_bar3_writew,
         nvc0_mmio_bar3_writed,
     },
-    {},  // bar4
-    {},  // bar5
     {
+        // bar4
+        nvc0_mmio_bar4_writeb,
+        nvc0_mmio_bar4_writew,
+        nvc0_mmio_bar4_writed,
+    },
+    {
+        // bar5
+    },
+    {
+        // bar6
         nvc0_mmio_rom_writeb,
         nvc0_mmio_rom_writew,
         nvc0_mmio_rom_writed,
@@ -145,5 +173,11 @@ void nvc0_mmio_init(nvc0_state_t* state) {
     // Region ROM : Meomory
     // pci_register_io_region(&state->device->dev, PCI_ROM_SLOT, 512 * 1024, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     // nvc0_init_rom(state);
+
+    if (nvc0_guest_id > 0) {
+        // para virtualized
+        // BAR4 4KB (1 page)
+        pci_register_io_region(&state->device->dev, 4, 0x1000, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
+    }
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
