@@ -49,4 +49,8 @@ int a3_xen_remove_memory_mapping(libxl_ctx* ctx, int domid, unsigned long first_
     return xc_domain_memory_mapping(libxl_ctx_xch(ctx), domid, first_gfn, first_mfn, nr_mfns, DPCI_REMOVE_MAPPING);
 }
 
+void* a3_xen_map_foreign_range(libxl_ctx* ctx, int domid, int size, int prot, unsigned long mfn) {
+    return xc_map_foreign_range(libxl_ctx_xch(ctx), domid, size, prot, mfn);
+}
+
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -58,9 +58,9 @@ class device : private boost::noncopyable {
 
     void playlist_update(context* ctx, uint32_t address, uint32_t cmd);
 
- private:
     libxl_ctx* xl_ctx() const { return xl_ctx_; }
 
+ private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
     mutex mutex_handle_;
