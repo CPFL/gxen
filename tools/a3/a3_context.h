@@ -79,6 +79,12 @@ class context : private boost::noncopyable {
     uint32_t decode_to_virt_ramin(uint32_t value);
     uint32_t encode_to_shadow_ramin(uint32_t value);
     bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
+    uint32_t& reg32(uint64_t offset) {
+        return reg32_[offset / sizeof(uint32_t)];
+    }
+    uint32_t& pv32(uint64_t offset) {
+        return pv32_[offset / sizeof(uint32_t)];
+    }
 
     session* session_;
     bool through_;
@@ -90,13 +96,13 @@ class context : private boost::noncopyable {
     boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
     uint64_t poll_area_;
-    boost::scoped_array<uint32_t> reg_;
+    boost::scoped_array<uint32_t> reg32_;
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
 
     // PV
     bool para_virtualized_;
-    boost::scoped_array<uint32_t> bar4_;
+    boost::scoped_array<uint32_t> pv32_;
     uint8_t* guest_;
 };
 

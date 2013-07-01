@@ -40,12 +40,12 @@ void context::write_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700: {
             // pmem
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             return;
         }
     case 0x001704: {
             // BAR1 channel
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
@@ -58,7 +58,7 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x001714: {
             // BAR3 channel
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
@@ -72,7 +72,7 @@ void context::write_bar0(const command& cmd) {
     case 0x002254: {
             // POLL_AREA
             poll_area_ = bit_mask<28, uint64_t>(cmd.value) << 12;
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
                 device::instance()->bar1()->refresh_poll_area();
             }
@@ -81,18 +81,18 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x002270: {
             // playlist
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             return;
         }
     case 0x002274: {
             // playlist update
-            reg_[cmd.offset] = cmd.value;
-            playlist_update(reg_[0x2270], cmd.value);
+            reg32(cmd.offset) = cmd.value;
+            playlist_update(reg32(0x2270), cmd.value);
             return;
         }
     case 0x002634: {
             // channel kill
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             if (cmd.value >= A3_DOMAIN_CHANNELS) {
                 return;
             }
@@ -107,13 +107,13 @@ void context::write_bar0(const command& cmd) {
 
     case 0x100cb8:
         // TLB vspace
-        reg_[cmd.offset] = cmd.value;
+        reg32(cmd.offset) = cmd.value;
         return;
 
     case 0x100cbc:
         // TLB flush trigger
-        reg_[cmd.offset] = cmd.value;
-        flush_tlb(reg_[0x100cb8], cmd.value);
+        reg32(cmd.offset) = cmd.value;
+        flush_tlb(reg32(0x100cb8), cmd.value);
         return;
 
     case 0x104050:
@@ -136,13 +136,13 @@ void context::write_bar0(const command& cmd) {
 
     case 0x409500:
         // WRCMD_DATA
-        reg_[cmd.offset] = cmd.value;
+        reg32(cmd.offset) = cmd.value;
         return;
 
     case 0x409504: {
             // WRCMD_CMD
-            reg_[cmd.offset] = cmd.value;
-            uint32_t data = reg_[0x409500];
+            reg32(cmd.offset) = cmd.value;
+            uint32_t data = reg32(0x409500);
             if (bit_check<31>(data)) {
                 // VRAM address
                 const uint64_t virt = (bit_mask<28, uint64_t>(data) << 12);
@@ -195,7 +195,7 @@ void context::write_bar0(const command& cmd) {
 
     case 0x4188b4: {
             // GPC_BCAST(0x08b4)
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             const uint64_t virt = (static_cast<uint64_t>(cmd.value) << 8);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = phys >> 8;
@@ -205,7 +205,7 @@ void context::write_bar0(const command& cmd) {
 
     case 0x4188b8: {
             // GPC_BCAST(0x08b8)
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             const uint64_t virt = (static_cast<uint64_t>(cmd.value) << 8);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = phys >> 8;
@@ -215,7 +215,7 @@ void context::write_bar0(const command& cmd) {
 
     case 0x610010: {
             // NV50 PDISPLAY OBJECTS
-            reg_[cmd.offset] = cmd.value;
+            reg32(cmd.offset) = cmd.value;
             const uint32_t value = cmd.value + (get_address_shift() >> 8);
             registers::write32(cmd.offset, value);
             return;
@@ -224,7 +224,7 @@ void context::write_bar0(const command& cmd) {
 
     // pmem / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
+        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg32(0x1700)) << 16);
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
         pmem.write(addr, cmd.value, cmd.size());
@@ -266,7 +266,7 @@ void context::write_bar0(const command& cmd) {
             if (ramin_area) {
                 // channel ramin
                 // VRAM shift
-                reg_[cmd.offset] = cmd.value;
+                reg32(cmd.offset) = cmd.value;
                 const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
                 const uint64_t phys = get_phys_address(virt);
                 const uint64_t shadow = channels(virt_channel_id)->refresh(this, phys);
@@ -288,23 +288,23 @@ void context::write_bar0(const command& cmd) {
 void context::read_bar0(const command& cmd) {
     switch (cmd.offset) {
     case 0x001700:
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x001704:
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x001714:
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x002254:
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x002270:
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x002274:
@@ -312,7 +312,7 @@ void context::read_bar0(const command& cmd) {
 
     case 0x002634:
         // channel kill
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x022438:
@@ -321,12 +321,12 @@ void context::read_bar0(const command& cmd) {
 
     case 0x100cb8:
         // TLB vspace
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x100cbc:
         // TLB flush trigger
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x104050:
@@ -349,12 +349,12 @@ void context::read_bar0(const command& cmd) {
 
     case 0x409500:
         // WRCMD_DATA
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x409504:
         // WRCMD_CMD
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x409b00: {
@@ -366,23 +366,23 @@ void context::read_bar0(const command& cmd) {
 
     case 0x4188b4:
         // GPC_BCAST(0x08b4)
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x4188b8:
         // GPC_BCAST(0x08b8)
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x610010:
         // NV50 PDISPLAY OBJECTS
-        buffer()->value = reg_[cmd.offset];
+        buffer()->value = reg32(cmd.offset);
         return;
     }
 
     // pmem / PMEM
     if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
-        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg_[0x1700]) << 16);
+        const uint64_t base = get_phys_address(static_cast<uint64_t>(reg32(0x1700)) << 16);
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
         buffer()->value = pmem.read(addr, cmd.size());
@@ -423,7 +423,7 @@ void context::read_bar0(const command& cmd) {
 
             if (ramin_area) {
                 // channel ramin
-                buffer()->value = reg_[cmd.offset];
+                buffer()->value = reg32(cmd.offset);
             } else {
                 // status
                 buffer()->value = registers::read32(adjusted_offset);
