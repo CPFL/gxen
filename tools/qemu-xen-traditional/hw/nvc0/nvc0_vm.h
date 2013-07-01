@@ -77,7 +77,7 @@ void vm_bar4_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         offset,
         { a3::command::BAR4, N }
     };
-    ctx->message(cmd, false);
+    ctx->message(cmd, true  /* specialized */);
 }
 
 }  // namespace nvc0

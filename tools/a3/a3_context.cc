@@ -149,7 +149,7 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR4:
             write_bar4(cmd);
-            break;
+            return true; // speicialized
         }
         return false;
     }
@@ -170,7 +170,7 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR4:
             read_bar4(cmd);
-            break;
+            return true;
         }
         return true;
     }
