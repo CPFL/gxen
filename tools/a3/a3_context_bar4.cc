@@ -59,7 +59,8 @@ void context::read_bar4(const command& cmd) {
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
                 guest_ = reinterpret_cast<uint8_t*>(a3_xen_map_foreign_range(device::instance()->xl_ctx(), domid(), A3_GUEST_DATA_SIZE, PROT_READ | PROT_WRITE, gp >> 12));
             }
-            // A3_LOG("Guest physical call data cookie %" PRIx32 "\n", reinterpret_cast<uint32_t*>(guest_)[0]);
+            A3_LOG("Guest physical call data cookie %" PRIx32 "\n", reinterpret_cast<uint32_t*>(guest_)[0]);
+            buffer()->value = 0x0;
         }
         break;
     }
