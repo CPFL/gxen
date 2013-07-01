@@ -31,9 +31,38 @@
 namespace a3 {
 
 void context::write_bar4(const command& cmd) {
+    switch (cmd.offset) {
+    case 0x000000:
+        break;
+
+    case 0x000004:
+        bar4_[cmd.offset] = cmd.value;
+        break;
+
+    case 0x000008:
+        bar4_[cmd.offset] = cmd.value;
+        break;
+    }
 }
 
 void context::read_bar4(const command& cmd) {
+    switch (cmd.offset) {
+    case 0x000000: {
+            const uint64_t lower = bar4_[0x4];
+            const uint64_t upper = bar4_[0x8];
+            const uint64_t gp = lower | (upper << 32);
+            A3_LOG("Guest physical call data address %" PRIx64 "\n", gp);
+            if (guest_) {
+                munmap(guest_, A3_GUEST_DATA_SIZE);
+                guest_ = NULL;
+            }
+            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                guest_ = reinterpret_cast<uint8_t*>(a3_xen_map_foreign_range(device::instance()->xl_ctx(), domid(), A3_GUEST_DATA_SIZE, PROT_READ | PROT_WRITE, gp >> 12));
+            }
+            A3_LOG("Guest physical call data cookie %" PRIx32 "\n", reinterpret_cast<uint32_t*>(guest_)[0]);
+        }
+        break;
+    }
 }
 
 }  // namespace a3

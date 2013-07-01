@@ -13,6 +13,9 @@ namespace a3 {
 #define A3_1G 0x40000000ULL
 #define A3_2G (A3_1G * 2)
 #define A3_GPC_BCAST(r) (0x418000 + (r))
+#define A3_BAR0_SIZE (32ULL << 20)
+#define A3_BAR4_SIZE (0x1000ULL)
+#define A3_GUEST_DATA_SIZE (0x1000ULL * 4)
 
 #if defined(NDEBUG)
     #define A3_FPRINTF(stream, fmt, args...) do { } while (0)

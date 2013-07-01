@@ -54,6 +54,8 @@ context::context(session* s, bool through)
     , ramin_channel_map_()
     , bar3_address_()
     , para_virtualized_(false)
+    , bar4_()
+    , guest_()
 {
 }
 
@@ -69,12 +71,15 @@ void context::initialize(int dom, bool para) {
     bar1_channel_.reset(new fake_channel(-1, kBAR1_ARENA_SIZE));
     bar3_channel_.reset(new fake_channel(-3, kBAR3_ARENA_SIZE));
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    reg_.reset(new uint32_t[32ULL * 1024 * 1024]);
+    reg_.reset(new uint32_t[A3_BAR0_SIZE / sizeof(uint32_t)]);
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
         channels_[i].reset(new channel(i));
     }
     domid_ = dom;
     para_virtualized_ = para;
+    if (para_virtualized()) {
+        bar4_.reset(new uint32_t[A3_BAR4_SIZE / sizeof(uint32_t)]);
+    }
     initialized_ = true;
     A3_LOG("INIT domid %d & GPU id %u with %s\n", domid(), id(), para_virtualized() ? "Para-virt" : "Full-virt");
     buffer()->value = id();

@@ -89,14 +89,15 @@ class context : private boost::noncopyable {
     unique_ptr<fake_channel>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
-
     uint64_t poll_area_;
-
     boost::scoped_array<uint32_t> reg_;
     channel_map ramin_channel_map_;
-
     uint64_t bar3_address_;
+
+    // PV
     bool para_virtualized_;
+    boost::scoped_array<uint32_t> bar4_;
+    uint8_t* guest_;
 };
 
 }  // namespace a3
