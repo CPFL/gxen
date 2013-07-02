@@ -20,6 +20,8 @@ struct unique_ptr {
   typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
 };
 
+struct slot_t;
+
 class context : private boost::noncopyable {
  public:
     typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
@@ -79,6 +81,7 @@ class context : private boost::noncopyable {
     uint32_t decode_to_virt_ramin(uint32_t value);
     uint32_t encode_to_shadow_ramin(uint32_t value);
     bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
+    int a3_call(const command& command, slot_t* slot);
     uint32_t& reg32(uint64_t offset) {
         return reg32_[offset / sizeof(uint32_t)];
     }
@@ -104,6 +107,7 @@ class context : private boost::noncopyable {
     bool para_virtualized_;
     boost::scoped_array<uint32_t> pv32_;
     uint8_t* guest_;
+    boost::unordered_map<uint32_t, page*> allocated_;
 };
 
 }  // namespace a3
