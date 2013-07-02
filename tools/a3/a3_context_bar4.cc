@@ -28,7 +28,58 @@
 #include "a3_software_page_table.h"
 #include "a3_channel.h"
 #include "a3_barrier.h"
+#include "a3_pv_slot.h"
 namespace a3 {
+
+int context::a3_call(const command& cmd, slot_t* slot) {
+    switch (slot->u8[0]) {
+    case NOUVEAU_PV_OP_SET_PGD: {
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_MAP_PGT: {
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_MAP: {
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_VM_FLUSH: {
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_MEM_ALLOC: {
+            const uint32_t size = slot->u32[1];
+            if (!(size % kPAGE_SIZE)) {
+                A3_LOG("Invalid size allocation %" PRIu32 "\n", size);
+                return -EINVAL;
+            }
+            page* page(new page(size / kPAGE_SIZE));
+            // address is 40bits => shift 12 & get 28bit page frame number
+            const uint32_t id = page->address() >> 12;
+            allocated_.insert(std::make_pair(id, page));
+            slot->u32[1] = id;
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_MEM_FREE: {
+            const uint32_t id = slot->u32[1];
+            auto it = allocated_.find(id);
+            if (it == allocated_.end()) {
+                return -EINVAL;
+            }
+            delete it->second;
+            allocated_.erase(it);
+        }
+        return 0;
+
+    default:
+        return -EINVAL;
+    }
+    A3_UNREACHABLE();
+    return 0;  // makes compiler happy
+}
 
 void context::write_bar4(const command& cmd) {
     switch (cmd.offset) {
@@ -41,6 +92,27 @@ void context::write_bar4(const command& cmd) {
 
     case 0x000008:
         pv32(cmd.offset) = cmd.value;
+        break;
+
+    case 0x00000c: {  // A3 call
+            uint32_t pos = cmd.value;
+
+            // validate slot
+            if (pos >= NOUVEAU_PV_SLOT_NUM) {
+                buffer()->value = -EINVAL;
+                break;
+            }
+
+            if (!guest_) {
+                buffer()->value = -EINVAL;
+                break;
+            }
+
+            // lookup slot
+            slot_t* slot = reinterpret_cast<slot_t*>(guest_ + NOUVEAU_PV_SLOT_SIZE * pos);
+            // result code
+            slot->u32[0] = a3_call(cmd, slot);
+        }
         break;
     }
 }
@@ -61,7 +133,7 @@ void context::read_bar4(const command& cmd) {
             }
 
             if (!guest_) {
-                buffer()->value = -1;
+                buffer()->value = -EINVAL;
                 break;
             }
 
