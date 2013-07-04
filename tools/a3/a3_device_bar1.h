@@ -25,6 +25,8 @@ class device_bar1 : private boost::noncopyable {
     void flush();
     void write(context* ctx, const command& cmd);
     uint32_t read(context* ctx, const command& cmd);
+    void pv_scan(context* ctx);
+    void pv_reflect_entry(context* ctx, bool big, uint32_t index, uint64_t entry);
 
  private:
     void map(uint64_t virt, const struct page_entry& entry);

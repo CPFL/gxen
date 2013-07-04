@@ -127,5 +127,30 @@ uint32_t device_bar1::read(context* ctx, const command& cmd) {
     return device::instance()->read(1, offset, cmd.size());
 }
 
+void device_bar1::pv_scan(context* ctx) {
+    A3_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
+    for (uint32_t vcid = 0; vcid < A3_DOMAIN_CHANNELS; ++vcid) {
+        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area();
+        const uint32_t pcid = ctx->get_phys_channel_id(vcid);
+        const uint64_t virt = pcid * 0x1000ULL;
+        struct software_page_entry entry;
+        const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
+        if (gphys != UINT64_MAX) {
+            map(virt, entry.phys());
+        }
+    }
+}
+
+
+void device_bar1::pv_reflect_entry(context* ctx, bool big, uint32_t index, uint64_t host) {
+    A3_LOG("%" PRIu32 " BAR1 reflect entry %" PRIx32 "\n", ctx->id(), index);
+    struct page_entry entry;
+    entry.raw = host;
+    if (big) {
+    } else {
+        map(index * kSMALL_PAGE_SIZE, entry);
+    }
+}
+
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */

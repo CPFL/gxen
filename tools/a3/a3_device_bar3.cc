@@ -66,14 +66,14 @@ void device_bar3::map_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
     const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
     A3_LOG("mapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
-    // a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
+    a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
 void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
     const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
     A3_LOG("unmapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
-    // a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
+    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
 void device_bar3::map(uint64_t index, const struct page_entry& entry) {
@@ -96,7 +96,6 @@ void device_bar3::shadow(context* ctx, uint64_t phys) {
             // check this is not ramin
             barrier::page_entry* barrier_entry = NULL;
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
-                // entry is found
                 map(index, entry.phys());
             } else {
                 unmap_xen_page(ctx, address);
@@ -118,7 +117,7 @@ void device_bar3::flush() {
 }
 
 void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t pte) {
-    const uint64_t hindex = index + (ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE;
+    const uint64_t hindex = index + ((ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE);
     const uint64_t guest = (index * kPAGE_SIZE);
     struct page_entry entry;
     entry.raw = pte;
@@ -126,9 +125,8 @@ void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t pte) {
         // check this is not ramin
         barrier::page_entry* barrier_entry = NULL;
         const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
+        map(hindex, entry);
         if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
-            // entry is found
-            map(hindex, entry);
             map_xen_page(ctx, guest);
         } else {
             unmap_xen_page(ctx, guest);
