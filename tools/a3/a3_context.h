@@ -121,6 +121,9 @@ class context : private boost::noncopyable {
     uint8_t* guest_;
     boost::ptr_unordered_map<uint32_t, page> allocated_;
     boost::array<page*, A3_DOMAIN_CHANNELS> pgds_;
+    page* pv_bar1_pgd_;
+    page* pv_bar3_pgd_;
+    page* pv_bar3_pgt_;
 };
 
 }  // namespace a3

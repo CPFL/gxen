@@ -57,6 +57,9 @@ context::context(session* s, bool through)
     , pv32_()
     , guest_()
     , pgds_()
+    , pv_bar1_pgd_()
+    , pv_bar3_pgd_()
+    , pv_bar3_pgt_()
 {
 }
 
