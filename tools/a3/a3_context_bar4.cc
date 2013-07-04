@@ -36,6 +36,11 @@
 #include "a3_device_bar3.h"
 namespace a3 {
 
+
+static uint64_t round_up(uint64_t x, uint64_t y) {
+    return (((x) + (y - 1)) & ~(y - 1));
+}
+
 static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
     struct page_entry result;
     result.raw = guest;
@@ -51,10 +56,12 @@ static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
+    A3_LOG("A3 call %d\n", static_cast<int>(slot->u8[0]));
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
+                A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
             const int cid = slot->u32[2];
@@ -74,6 +81,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MAP_PGT: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
+                A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
 
@@ -81,6 +89,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             if (slot->u32[2]) {
                 pgt0 = lookup_by_pv_id(slot->u32[2]);
                 if (!pgt0) {
+                    A3_LOG("INVALID...\n");
                     return -EINVAL;
                 }
             }
@@ -89,6 +98,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             if (slot->u32[3]) {
                 pgt1 = lookup_by_pv_id(slot->u32[3]);
                 if (!pgt1) {
+                    A3_LOG("INVALID...\n");
                     return -EINVAL;
                 }
             }
@@ -110,6 +120,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
 
             const uint64_t index = slot->u32[4];
             if ((0x8 * (index + 1)) >= pgd->size()) {
+                A3_LOG("INVALID...\n");
                 return -ERANGE;
             }
             // CAUTION: inverted (pgt1 & pgt0)
@@ -121,6 +132,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MAP: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
+                A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
 
@@ -142,6 +154,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             }
 
             if ((0x8 * (index + 1)) >= pgt->size()) {
+                A3_LOG("INVALID...\n");
                 return -ERANGE;
             }
             pgt->write32(0x8 * index + 0x0, lower32(host));
@@ -152,6 +165,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_VM_FLUSH: {
             page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
+                A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
 
@@ -185,11 +199,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
 
     case NOUVEAU_PV_OP_MEM_ALLOC: {
             const uint32_t size = slot->u32[1];
-            if (!(size % kPAGE_SIZE)) {
-                A3_LOG("Invalid size allocation %" PRIu32 "\n", size);
-                return -EINVAL;
-            }
-            pv_page* p(new pv_page(size / kPAGE_SIZE));
+            pv_page* p(new pv_page(round_up(size, kPAGE_SIZE) / kPAGE_SIZE));
             // address is 40bits => shift 12 & get 28bit page frame number
             uint32_t id = p->address() >> 12;
             slot->u32[1] = id;
@@ -205,6 +215,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_BAR3_PGT: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
+                A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
             pv_bar3_pgt_ = pgt;
