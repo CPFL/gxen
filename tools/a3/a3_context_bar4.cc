@@ -119,7 +119,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             }
 
             const uint64_t index = slot->u32[4];
-            if ((0x8 * (index + 1)) >= pgd->size()) {
+            if ((0x8 * (index + 1)) > pgd->size()) {
                 A3_LOG("INVALID...\n");
                 return -ERANGE;
             }
@@ -153,7 +153,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 return 0;
             }
 
-            if ((0x8 * (index + 1)) >= pgt->size()) {
+            if ((0x8 * (index + 1)) > pgt->size()) {
                 A3_LOG("INVALID...\n");
                 return -ERANGE;
             }
@@ -200,6 +200,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MEM_ALLOC: {
             const uint32_t size = slot->u32[1];
             pv_page* p(new pv_page(round_up(size, kPAGE_SIZE) / kPAGE_SIZE));
+            p->clear();
             // address is 40bits => shift 12 & get 28bit page frame number
             uint32_t id = p->address() >> 12;
             slot->u32[1] = id;
