@@ -93,6 +93,21 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 }
             }
 
+            if (pgd == pv_bar1_pgd_) {
+                // CAUTION: inverted (pgt1 & pgt0)
+                if (pv_bar1_large_pgt_ != pgt1) {
+                    pv_bar1_large_pgt_ = pgt1;
+                    bar1_channel()->table()->pv_scan(this, 0, true, pgt1);
+                }
+                if (pv_bar1_small_pgt_ != pgt0) {
+                    pv_bar1_small_pgt_ = pgt0;
+                    bar1_channel()->table()->pv_scan(this, 0, false, pgt0);
+                }
+                return 0;
+            } else if (pgd == pv_bar3_pgd_) {
+                return 0;
+            }
+
             const uint64_t index = slot->u32[4];
             if ((0x8 * (index + 1)) >= pgd->size()) {
                 return -ERANGE;
@@ -117,13 +132,20 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
                     device::instance()->bar3()->pv_reflect(this, index, host);
                 }
-            } else {
-                if ((0x8 * (index + 1)) >= pgt->size()) {
-                    return -ERANGE;
-                }
-                pgt->write32(0x8 * index + 0x0, lower32(host));
-                pgt->write32(0x8 * index + 0x4, upper32(host));
+                return 0;
+            } else if (pgt == pv_bar1_large_pgt_) {
+                bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, slot->u64[2]);
+                return 0;
+            } else if (pgt == pv_bar1_small_pgt_) {
+                bar1_channel()->table()->pv_reflect_entry(this, 0, false, index, slot->u64[2]);
+                return 0;
             }
+
+            if ((0x8 * (index + 1)) >= pgt->size()) {
+                return -ERANGE;
+            }
+            pgt->write32(0x8 * index + 0x0, lower32(host));
+            pgt->write32(0x8 * index + 0x4, upper32(host));
         }
         return 0;
 
@@ -134,6 +156,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             }
 
             if (pgd == pv_bar1_pgd_) {
+                device::instance()->bar1()->flush();
                 return 0;
             }
 
@@ -191,8 +214,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     default:
         return -EINVAL;
     }
-    A3_UNREACHABLE();
-    return 0;  // makes compiler happy
+    return 0;
 }
 
 void context::write_bar4(const command& cmd) {

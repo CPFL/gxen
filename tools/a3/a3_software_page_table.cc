@@ -27,6 +27,7 @@
 #include "a3_bit_mask.h"
 #include "a3_software_page_table.h"
 #include "a3_pmem.h"
+#include "a3_pv_page.h"
 #include "a3_context.h"
 namespace a3 {
 
@@ -242,6 +243,45 @@ void software_page_table::software_page_directory::pv_reflect(context* ctx, bool
 void software_page_table::pv_reflect_entry(context* ctx, uint32_t d, bool big, uint32_t index, uint64_t entry) {
     struct software_page_directory& dir = directories_[d];
     dir.pv_reflect(ctx, big, index, entry);
+}
+
+void software_page_table::software_page_directory::pv_scan(context* ctx, bool big, pv_page* pgt, std::size_t remain) {
+    if (big) {
+        if (!large_entries()) {
+            large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
+        }
+        const std::size_t count = remain / kLARGE_PAGE_SIZE;
+        assert(count <= kLARGE_PAGE_COUNT);
+        for (std::size_t i = 0; i < count; ++i) {
+            const uint64_t item = 0x8 * i;
+            struct page_entry entry;
+            if (page_entry::create(pgt, item, &entry)) {
+                (*large_entries_)[i].assign(entry);
+            } else {
+                (*large_entries_)[i].clear();
+            }
+        }
+    } else {
+        if (!small_entries()) {
+            small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
+        }
+        const std::size_t count = remain / kSMALL_PAGE_SIZE;
+        assert(count <= kSMALL_PAGE_COUNT);
+        for (std::size_t i = 0; i < count; ++i) {
+            const uint64_t item = 0x8 * i;
+            struct page_entry entry;
+            if (page_entry::create(pgt, item, &entry)) {
+                (*small_entries_)[i].assign(entry);
+            } else {
+                (*small_entries_)[i].clear();
+            }
+        }
+    }
+}
+
+void software_page_table::pv_scan(context* ctx, uint32_t d, bool big, pv_page* pgt) {
+    struct software_page_directory& dir = directories_[d];
+    dir.pv_scan(ctx, big, pgt, predefined_max_);
 }
 
 }  // namespace a3

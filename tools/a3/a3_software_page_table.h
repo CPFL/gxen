@@ -8,6 +8,7 @@
 namespace a3 {
 class context;
 class page;
+class pv_page;
 class software_page_table;
 
 class software_page_entry {
@@ -17,6 +18,7 @@ class software_page_entry {
     bool present() const { return phys_.present; }
  private:
     inline void refresh(context* ctx, const struct page_entry& entry);
+    inline void assign(const struct page_entry& entry);
     inline void clear() {
         struct page_entry result = {};
         phys_ = result;
@@ -36,6 +38,7 @@ class software_page_table {
         const software_page_entries* large_entries() const { return large_entries_.get(); }
         const software_page_entries* small_entries() const { return small_entries_.get(); }
         void pv_reflect(context* ctx, bool big, uint32_t index, uint64_t entry);
+        void pv_scan(context* ctx, bool big, pv_page* pgt, std::size_t remain);
 
      private:
         boost::shared_ptr<software_page_entries> large_entries_;
@@ -60,6 +63,7 @@ class software_page_table {
     void dump() const;
 
     void pv_reflect_entry(context* ctx, uint32_t dir, bool big, uint32_t index, uint64_t entry);
+    void pv_scan(context* ctx, uint32_t dir, bool big, pv_page* pgt);
 
  private:
     static uint64_t round_up(uint64_t x, uint64_t y) {
