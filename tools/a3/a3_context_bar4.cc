@@ -64,7 +64,8 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
-            const int cid = slot->u32[2];
+            const int cid = static_cast<int32_t>(slot->u32[2]);
+            A3_LOG("cid %d\n", cid);
             if (cid < 0) {
                 // BAR1 OR BAR3
                 if (cid == -3) {
@@ -110,10 +111,16 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                     // TODO(Yusuke Suzuki)
                     // set xen shadow for PV
                     bar1_channel()->table()->pv_scan(this, 0, true, pgt1);
+                    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                        device::instance()->bar1()->pv_scan(this);
+                    }
                 }
                 if (pv_bar1_small_pgt_ != pgt0) {
                     pv_bar1_small_pgt_ = pgt0;
                     bar1_channel()->table()->pv_scan(this, 0, false, pgt0);
+                    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                        device::instance()->bar1()->pv_scan(this);
+                    }
                 }
                 return 0;
             } else if (pgd == pv_bar3_pgd_) {
@@ -149,9 +156,16 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 return 0;
             } else if (pgt == pv_bar1_large_pgt_) {
                 bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, slot->u64[2]);
+                // TODO(Yusuke Suzuki) sync
+//                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+//                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);
+//                 }
                 return 0;
             } else if (pgt == pv_bar1_small_pgt_) {
                 bar1_channel()->table()->pv_reflect_entry(this, 0, false, index, slot->u64[2]);
+                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    device::instance()->bar1()->pv_reflect_entry(this, false, index, host);
+                }
                 return 0;
             }
 
@@ -172,14 +186,19 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             }
 
             if (pgd == pv_bar1_pgd_) {
-                device::instance()->bar1()->flush();
+                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    device::instance()->bar1()->flush();
+                }
                 return 0;
             }
 
             if (pgd == pv_bar3_pgd_) {
+                A3_LOG("BAR3 flush\n");
                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                    pgd = device::instance()->bar3()->directory();
+                    device::instance()->bar3()->flush();
+                    // pgd = device::instance()->bar3()->directory();
                 }
+                return 0;
             }
 
             const uint32_t engine = slot->u32[2];

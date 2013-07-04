@@ -119,6 +119,7 @@ void channel::shadow(context* ctx) {
     } else {
         page* page = ctx->pgds(id());
         if (page) {
+            A3_LOG("set pgd %d channel page %" PRIx64 "\n", id(), page->address());
             write_shadow_page_table(ctx, page->address());
         }
     }
