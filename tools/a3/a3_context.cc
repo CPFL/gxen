@@ -72,17 +72,17 @@ context::~context() {
 
 void context::initialize(int dom, bool para) {
     id_ = device::instance()->acquire_virt();
-    bar1_channel_.reset(new fake_channel(-1, kBAR1_ARENA_SIZE));
-    bar3_channel_.reset(new fake_channel(-3, kBAR3_ARENA_SIZE));
-    barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
-    reg32_.reset(new uint32_t[A3_BAR0_SIZE / sizeof(uint32_t)]);
-    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
-        channels_[i].reset(new channel(i));
-    }
     domid_ = dom;
     para_virtualized_ = para;
     if (para_virtualized()) {
         pv32_.reset(new uint32_t[A3_BAR4_SIZE / sizeof(uint32_t)]);
+    }
+    bar1_channel_.reset(new fake_channel(this, -1, kBAR1_ARENA_SIZE));
+    bar3_channel_.reset(new fake_channel(this, -3, kBAR3_ARENA_SIZE));
+    barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
+    reg32_.reset(new uint32_t[A3_BAR0_SIZE / sizeof(uint32_t)]);
+    for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
+        channels_[i].reset(new channel(i));
     }
     initialized_ = true;
     A3_LOG("INIT domid %d & GPU id %u with %s\n", domid(), id(), para_virtualized() ? "Para-virt" : "Full-virt");

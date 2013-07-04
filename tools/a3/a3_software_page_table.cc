@@ -30,7 +30,7 @@
 #include "a3_context.h"
 namespace a3 {
 
-software_page_table::software_page_table(uint32_t channel_id, uint64_t predefined_max)
+software_page_table::software_page_table(uint32_t channel_id, bool para, uint64_t predefined_max)
     : directories_()
     , size_(0)
     , channel_id_(channel_id)
@@ -38,6 +38,10 @@ software_page_table::software_page_table(uint32_t channel_id, uint64_t predefine
 {
     if (predefined_max_) {
         size_ = predefined_max_;
+    }
+    if (para) {
+        // initialize directory at this time
+        directories_.resize(page_directory_size());
     }
 }
 
@@ -217,6 +221,27 @@ void software_page_table::dump() const {
             }
         }
     }
+}
+
+void software_page_table::software_page_directory::pv_reflect(context* ctx, bool big, uint32_t index, uint64_t guest) {
+    struct page_entry entry;
+    entry.raw = guest;
+    if (big) {
+        if (!large_entries()) {
+            large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
+        }
+        (*large_entries_)[index].refresh(ctx, entry);
+    } else {
+        if (!small_entries()) {
+            small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
+        }
+        (*small_entries_)[index].refresh(ctx, entry);
+    }
+}
+
+void software_page_table::pv_reflect_entry(context* ctx, uint32_t d, bool big, uint32_t index, uint64_t entry) {
+    struct software_page_directory& dir = directories_[d];
+    dir.pv_reflect(ctx, big, index, entry);
 }
 
 }  // namespace a3

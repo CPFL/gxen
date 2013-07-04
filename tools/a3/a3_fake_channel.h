@@ -10,7 +10,7 @@ class page;
 
 class fake_channel : private boost::noncopyable {
  public:
-    fake_channel(int id, uint64_t predefined_max = 0);
+    fake_channel(context* ctx, int id, uint64_t predefined_max = 0);
     ~fake_channel();
     void refresh(context* ctx, uint64_t addr);
     int id() const { return id_; }
@@ -18,8 +18,6 @@ class fake_channel : private boost::noncopyable {
     uint64_t ramin_address() const { return ramin_address_; }
     void shadow(context* ctx);
     software_page_table* table() const { return table_.get(); }
-
-    void pv_initialize(context* ctx);
 
  private:
     void detach(context* ctx, uint64_t addr);

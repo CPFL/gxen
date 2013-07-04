@@ -108,18 +108,18 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             if (!pgt) {
                 return -EINVAL;
             }
+            // TODO(Yusuke Suzuki): validation
+            const uint64_t index = slot->u32[2];
+            const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
             if (pgt == pv_bar3_pgt_) {
-                const uint64_t index = slot->u32[2];
+                bar3_channel()->table()->pv_reflect_entry(this, 0, false, index, slot->u64[2]);
                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                    device::instance()->bar3()->pv_reflect(this, index, guest_to_host_pte(this, slot->u64[2]));
+                    device::instance()->bar3()->pv_reflect(this, index, host);
                 }
             } else {
-                const uint64_t index = slot->u32[2];
                 if ((0x8 * (index + 1)) >= pgt->size()) {
                     return -ERANGE;
                 }
-                // TODO(Yusuke Suzuki): validation
-                const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
                 pgt->write32(0x8 * index + 0x0, lower32(host));
                 pgt->write32(0x8 * index + 0x4, upper32(host));
             }
@@ -184,7 +184,6 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 return -EINVAL;
             }
             pv_bar3_pgt_ = pgt;
-            bar3_channel()->pv_initialize(this);
         }
         return 0;
 
