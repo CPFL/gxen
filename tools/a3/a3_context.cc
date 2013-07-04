@@ -38,6 +38,7 @@
 #include "a3_shadow_page_table.h"
 #include "a3_software_page_table.h"
 #include "a3_page_table.h"
+#include "a3_pv_page.h"
 namespace a3 {
 
 context::context(session* s, bool through)
