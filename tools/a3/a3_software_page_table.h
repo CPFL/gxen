@@ -35,6 +35,7 @@ class software_page_table {
         uint64_t resolve(uint64_t offset, struct software_page_entry* result);
         const software_page_entries* large_entries() const { return large_entries_.get(); }
         const software_page_entries* small_entries() const { return small_entries_.get(); }
+        void pv_reflect(context* ctx, bool big, uint32_t index, uint64_t entry);
 
      private:
         boost::shared_ptr<software_page_entries> large_entries_;
@@ -43,7 +44,7 @@ class software_page_table {
     typedef std::vector<software_page_directory> software_page_directories;
 
  public:
-    software_page_table(uint32_t channel_id, uint64_t predefined_max = 0);
+    software_page_table(uint32_t channel_id, bool para, uint64_t predefined_max = 0);
     bool refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit);
     void refresh_page_directories(context* ctx, uint64_t address);
     void set_low_size(uint32_t value);
@@ -57,6 +58,8 @@ class software_page_table {
     uint64_t resolve(uint64_t virtual_address, struct software_page_entry* result);
     uint64_t page_directory_address() const { return page_directory_address_; }
     void dump() const;
+
+    void pv_reflect_entry(context* ctx, uint32_t dir, bool big, uint32_t index, uint64_t entry);
 
  private:
     static uint64_t round_up(uint64_t x, uint64_t y) {

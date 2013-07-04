@@ -35,11 +35,11 @@
 #include "a3_mmio.h"
 namespace a3 {
 
-fake_channel::fake_channel(int id, uint64_t predefined_max)
+fake_channel::fake_channel(context* ctx, int id, uint64_t predefined_max)
     : id_(id)
     , enabled_(false)
     , ramin_address_()
-    , table_(new software_page_table(id, predefined_max)) {
+    , table_(new software_page_table(id, ctx->para_virtualized(), predefined_max)) {
 }
 
 fake_channel::~fake_channel() {
@@ -82,9 +82,6 @@ void fake_channel::refresh(context* ctx, uint64_t addr) {
     ramin_address_ = addr;
     attach(ctx, addr);
     return;
-}
-
-void fake_channel::pv_initialize(context* ctx) {
 }
 
 }  // namespace a3
