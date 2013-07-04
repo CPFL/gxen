@@ -56,6 +56,7 @@ context::context(session* s, bool through)
     , para_virtualized_(false)
     , pv32_()
     , guest_()
+    , pgds_()
 {
 }
 

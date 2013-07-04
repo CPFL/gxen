@@ -70,11 +70,11 @@ inline bool bit_check(CharT ch) {
 }
 
 inline uint32_t lower32(uint64_t data) {
-    return bit_mask<32>(data);
+    return static_cast<uint32_t>(data);
 }
 
 inline uint32_t upper32(uint64_t data) {
-    return bit_mask<32>(data >> 32);
+    return static_cast<uint32_t>((data >> 16) >> 16);
 }
 
 }  // namespace a3
