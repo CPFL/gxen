@@ -31,6 +31,8 @@
 #include "a3_barrier.h"
 #include "a3_pv_slot.h"
 #include "a3_page.h"
+#include "a3_device_bar1.h"
+#include "a3_device_bar3.h"
 namespace a3 {
 
 
@@ -58,6 +60,11 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const int cid = slot->u32[2];
             if (cid < 0) {
                 // BAR1 OR BAR3
+                if (cid == -3) {
+                    pv_bar3_pgd_ = pgd;
+                } else {
+                    pv_bar1_pgd_ = pgd;
+                }
             } else {
                 pgds_[cid] = pgd;
             }
@@ -101,19 +108,40 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             if (!pgt) {
                 return -EINVAL;
             }
-            const uint64_t index = slot->u32[2];
-            if ((0x8 * (index + 1)) >= pgt->size()) {
-                return -ERANGE;
+            if (pgt == pv_bar3_pgt_) {
+                const uint64_t index = slot->u32[2];
+                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    device::instance()->bar3()->pv_reflect(this, index, guest_to_host_pte(this, slot->u64[2]));
+                }
+            } else {
+                const uint64_t index = slot->u32[2];
+                if ((0x8 * (index + 1)) >= pgt->size()) {
+                    return -ERANGE;
+                }
+                // TODO(Yusuke Suzuki): validation
+                const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
+                pgt->write32(0x8 * index + 0x0, lower32(host));
+                pgt->write32(0x8 * index + 0x4, upper32(host));
             }
-            // TODO(Yusuke Suzuki): validation
-            const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
-            pgt->write32(0x8 * index + 0x0, lower32(host));
-            pgt->write32(0x8 * index + 0x4, upper32(host));
         }
         return 0;
 
     case NOUVEAU_PV_OP_VM_FLUSH: {
             page* pgd = lookup_by_pv_id(slot->u32[1]);
+            if (!pgd) {
+                return -EINVAL;
+            }
+
+            if (pgd == pv_bar1_pgd_) {
+                return 0;
+            }
+
+            if (pgd == pv_bar3_pgd_) {
+                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    pgd = device::instance()->bar3()->directory();
+                }
+            }
+
             const uint32_t engine = slot->u32[2];
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
                 registers::accessor regs;
@@ -147,6 +175,16 @@ int context::a3_call(const command& cmd, slot_t* slot) {
 
     case NOUVEAU_PV_OP_MEM_FREE: {
             allocated_.erase(slot->u32[1]);
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_BAR3_PGT: {
+            page* pgt = lookup_by_pv_id(slot->u32[1]);
+            if (!pgt) {
+                return -EINVAL;
+            }
+            pv_bar3_pgt_ = pgt;
+            bar3_channel()->pv_initialize(this);
         }
         return 0;
 

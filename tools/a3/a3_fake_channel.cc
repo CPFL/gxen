@@ -51,15 +51,16 @@ void fake_channel::detach(context* ctx, uint64_t addr) {
 }
 
 void fake_channel::shadow(context* ctx) {
-    uint64_t page_directory_virt = 0;
-    uint64_t page_directory_phys = 0;
-    uint64_t page_directory_size = 0;
+    if (ctx->para_virtualized()) {
+        return;
+    }
+
     pmem::accessor pmem;
     // and adjust address
     // page directory
-    page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
-    page_directory_phys = ctx->get_phys_address(page_directory_virt);
-    page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
+    uint64_t page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
+    uint64_t page_directory_phys = ctx->get_phys_address(page_directory_virt);
+    uint64_t page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
     table()->refresh(ctx, page_directory_phys, page_directory_size);
 }
 
@@ -81,6 +82,9 @@ void fake_channel::refresh(context* ctx, uint64_t addr) {
     ramin_address_ = addr;
     attach(ctx, addr);
     return;
+}
+
+void fake_channel::pv_initialize(context* ctx) {
 }
 
 }  // namespace a3

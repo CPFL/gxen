@@ -117,5 +117,27 @@ void device_bar3::flush() {
     }
 }
 
+void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t pte) {
+    const uint64_t hindex = index + (ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE;
+    const uint64_t guest = (index * kPAGE_SIZE);
+    struct page_entry entry;
+    entry.raw = pte;
+    if (pte) {
+        // check this is not ramin
+        barrier::page_entry* barrier_entry = NULL;
+        const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
+        if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
+            // entry is found
+            map(hindex, entry);
+            map_xen_page(ctx, guest);
+        } else {
+            unmap_xen_page(ctx, guest);
+        }
+    } else {
+        map(hindex, entry);
+        unmap_xen_page(ctx, guest);
+    }
+}
+
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */

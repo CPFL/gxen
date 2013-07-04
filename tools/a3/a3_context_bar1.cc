@@ -38,9 +38,11 @@ void context::write_bar1(const command& cmd) {
             const poll_area::channel_and_offset_t res = poll_area::extract_channel_and_offset(this, cmd.offset);
             switch (res.offset) {
             case 0x8C: {
-                    // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
-                    // When target TLB is not flushed, we should flush it lazily
-                    channels(res.channel)->flush(this);
+                    if (!para_virtualized()) {
+                        // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
+                        // When target TLB is not flushed, we should flush it lazily
+                        channels(res.channel)->flush(this);
+                    }
                     device::instance()->fire(this, cmd);
                 }
                 break;

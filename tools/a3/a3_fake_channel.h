@@ -19,6 +19,8 @@ class fake_channel : private boost::noncopyable {
     void shadow(context* ctx);
     software_page_table* table() const { return table_.get(); }
 
+    void pv_initialize(context* ctx);
+
  private:
     void detach(context* ctx, uint64_t addr);
     void attach(context* ctx, uint64_t addr);

@@ -77,8 +77,7 @@ void software_page_table::refresh_page_directories(context* ctx, uint64_t addres
     if (!remain) {
         remain = kPAGE_DIRECTORY_COVERED_SIZE;
     }
-    for (software_page_directories::iterator it = directories_.begin(),
-         last = directories_.end(); it != last; ++it, ++i) {
+    for (software_page_directories::iterator it = directories_.begin(), last = directories_.end(); it != last; ++it, ++i) {
         const uint64_t item = 0x8 * i;
         if (!predefined_max_) {
             it->refresh(ctx, &pmem, page_directory::create(&pmem, page_directory_address() + item), kPAGE_DIRECTORY_COVERED_SIZE);
