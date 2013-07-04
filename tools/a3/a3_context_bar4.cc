@@ -107,6 +107,8 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 // CAUTION: inverted (pgt1 & pgt0)
                 if (pv_bar1_large_pgt_ != pgt1) {
                     pv_bar1_large_pgt_ = pgt1;
+                    // TODO(Yusuke Suzuki)
+                    // set xen shadow for PV
                     bar1_channel()->table()->pv_scan(this, 0, true, pgt1);
                 }
                 if (pv_bar1_small_pgt_ != pgt0) {
