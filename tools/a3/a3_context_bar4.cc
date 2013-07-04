@@ -30,6 +30,7 @@
 #include "a3_bit_mask.h"
 #include "a3_barrier.h"
 #include "a3_pv_slot.h"
+#include "a3_page.h"
 namespace a3 {
 
 
@@ -105,7 +106,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 return -ERANGE;
             }
             // TODO(Yusuke Suzuki): validation
-            const uint64_t host = guest_to_host_pte(slot->u64[2]);
+            const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
             pgt->write32(0x8 * index + 0x0, lower32(host));
             pgt->write32(0x8 * index + 0x4, upper32(host));
         }
@@ -136,11 +137,11 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 A3_LOG("Invalid size allocation %" PRIu32 "\n", size);
                 return -EINVAL;
             }
-            page* page(new page(size / kPAGE_SIZE));
+            page* p(new page(size / kPAGE_SIZE));
             // address is 40bits => shift 12 & get 28bit page frame number
-            const uint32_t id = page->address() >> 12;
-            allocated_.insert(std::make_pair(id, page));
+            uint32_t id = p->address() >> 12;
             slot->u32[1] = id;
+            allocated_.insert(id, p);
         }
         return 0;
 

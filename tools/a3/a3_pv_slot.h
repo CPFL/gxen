@@ -18,14 +18,15 @@ enum {
 	NOUVEAU_PV_OP_MAP,
 	NOUVEAU_PV_OP_VM_FLUSH,
 	NOUVEAU_PV_OP_MEM_ALLOC,
+	NOUVEAU_PV_OP_MEM_FREE
 };
 
 struct slot_t {
 	union {
-		u8   u8[NOUVEAU_PV_SLOT_SIZE / sizeof(u8) ];
-		u16 u16[NOUVEAU_PV_SLOT_SIZE / sizeof(u16)];
-		u32 u32[NOUVEAU_PV_SLOT_SIZE / sizeof(u32)];
-		u64 u64[NOUVEAU_PV_SLOT_SIZE / sizeof(u64)];
+		uint8_t   u8[NOUVEAU_PV_SLOT_SIZE / sizeof(uint8_t) ];
+		uint16_t u16[NOUVEAU_PV_SLOT_SIZE / sizeof(uint16_t)];
+		uint32_t u32[NOUVEAU_PV_SLOT_SIZE / sizeof(uint32_t)];
+		uint64_t u64[NOUVEAU_PV_SLOT_SIZE / sizeof(uint64_t)];
 	};
 };
 
