@@ -73,7 +73,11 @@ class context : private boost::noncopyable {
     bool flush(uint64_t pd, bool bar = false);
     command* buffer() { return session_->buffer(); }
     uint64_t bar3_address() const { return bar3_address_; }
+
     bool para_virtualized() const { return para_virtualized_; }
+    page* pgds(uint32_t id) {
+        return pgds_[id];
+    }
 
  private:
     void initialize(int domid, bool para);
@@ -89,7 +93,7 @@ class context : private boost::noncopyable {
     uint32_t& pv32(uint64_t offset) {
         return pv32_[offset / sizeof(uint32_t)];
     }
-    page* lookup_by_pv_id(uint32_t id) const {
+    page* lookup_by_pv_id(uint32_t id) {
         auto it = allocated_.find(id);
         if (it == allocated_.end()) {
             return NULL;
@@ -115,7 +119,7 @@ class context : private boost::noncopyable {
     bool para_virtualized_;
     boost::scoped_array<uint32_t> pv32_;
     uint8_t* guest_;
-    boost::ptr_unordered_map<uint32_t, page*> allocated_;
+    boost::ptr_unordered_map<uint32_t, page> allocated_;
     boost::array<page*, A3_DOMAIN_CHANNELS> pgds_;
 };
 

@@ -86,7 +86,7 @@ void channel::shadow(context* ctx) {
     // and adjust address
     // page directory
 
-    if (!para_virtualized()) {
+    if (!ctx->para_virtualized()) {
         page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
         page_directory_phys = ctx->get_phys_address(page_directory_virt);
         page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
@@ -112,17 +112,17 @@ void channel::shadow(context* ctx) {
 
     // TODO(Yusuke Suzuki):
     // optimize it. only mark it is OK or NG
-    if (!para_virtualized()) {
+    if (!ctx->para_virtualized()) {
         table()->refresh(ctx, page_directory_phys, page_directory_size);
         write_shadow_page_table(ctx, table()->shadow_address());
     } else {
-        page* page = pgds_[id()];
+        page* page = ctx->pgds(id());
         if (page) {
             write_shadow_page_table(ctx, page->address());
         }
     }
 
-    if (!para_virtualized()) {
+    if (!ctx->para_virtualized()) {
         // FIXME(Yusuke Suzuki):
         // Fix this
 //     clear_tlb_flush_needed();

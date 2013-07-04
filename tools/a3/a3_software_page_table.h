@@ -16,7 +16,7 @@ class software_page_entry {
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return phys_.present; }
  private:
-    inline void refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
+    inline void refresh(context* ctx, const struct page_entry& entry);
     inline void clear() {
         struct page_entry result = {};
         phys_ = result;
