@@ -31,10 +31,10 @@
 #include "a3_barrier.h"
 #include "a3_pv_slot.h"
 #include "a3_page.h"
+#include "a3_pv_page.h"
 #include "a3_device_bar1.h"
 #include "a3_device_bar3.h"
 namespace a3 {
-
 
 static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
     struct page_entry result;
@@ -53,7 +53,7 @@ static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
 int context::a3_call(const command& cmd, slot_t* slot) {
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
-            page* pgd = lookup_by_pv_id(slot->u32[1]);
+            pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
                 return -EINVAL;
             }
@@ -72,12 +72,12 @@ int context::a3_call(const command& cmd, slot_t* slot) {
         return 0;
 
     case NOUVEAU_PV_OP_MAP_PGT: {
-            page* pgd = lookup_by_pv_id(slot->u32[1]);
+            pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
                 return -EINVAL;
             }
 
-            page* pgt0 = NULL;
+            pv_page* pgt0 = NULL;
             if (slot->u32[2]) {
                 pgt0 = lookup_by_pv_id(slot->u32[2]);
                 if (!pgt0) {
@@ -85,7 +85,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 }
             }
 
-            page* pgt1 = NULL;
+            pv_page* pgt1 = NULL;
             if (slot->u32[3]) {
                 pgt1 = lookup_by_pv_id(slot->u32[3]);
                 if (!pgt1) {
@@ -104,10 +104,11 @@ int context::a3_call(const command& cmd, slot_t* slot) {
         return 0;
 
     case NOUVEAU_PV_OP_MAP: {
-            page* pgt = lookup_by_pv_id(slot->u32[1]);
+            pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
                 return -EINVAL;
             }
+
             // TODO(Yusuke Suzuki): validation
             const uint64_t index = slot->u32[2];
             const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
@@ -165,7 +166,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 A3_LOG("Invalid size allocation %" PRIu32 "\n", size);
                 return -EINVAL;
             }
-            page* p(new page(size / kPAGE_SIZE));
+            pv_page* p(new pv_page(size / kPAGE_SIZE));
             // address is 40bits => shift 12 & get 28bit page frame number
             uint32_t id = p->address() >> 12;
             slot->u32[1] = id;
@@ -179,7 +180,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
         return 0;
 
     case NOUVEAU_PV_OP_BAR3_PGT: {
-            page* pgt = lookup_by_pv_id(slot->u32[1]);
+            pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
                 return -EINVAL;
             }

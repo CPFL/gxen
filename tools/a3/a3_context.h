@@ -22,6 +22,7 @@ struct unique_ptr {
 };
 
 struct slot_t;
+class pv_page;
 
 class context : private boost::noncopyable {
  public:
@@ -75,7 +76,7 @@ class context : private boost::noncopyable {
     uint64_t bar3_address() const { return bar3_address_; }
 
     bool para_virtualized() const { return para_virtualized_; }
-    page* pgds(uint32_t id) {
+    pv_page* pgds(uint32_t id) {
         return pgds_[id];
     }
 
@@ -93,7 +94,7 @@ class context : private boost::noncopyable {
     uint32_t& pv32(uint64_t offset) {
         return pv32_[offset / sizeof(uint32_t)];
     }
-    page* lookup_by_pv_id(uint32_t id) {
+    pv_page* lookup_by_pv_id(uint32_t id) {
         auto it = allocated_.find(id);
         if (it == allocated_.end()) {
             return NULL;
@@ -119,11 +120,11 @@ class context : private boost::noncopyable {
     bool para_virtualized_;
     boost::scoped_array<uint32_t> pv32_;
     uint8_t* guest_;
-    boost::ptr_unordered_map<uint32_t, page> allocated_;
-    boost::array<page*, A3_DOMAIN_CHANNELS> pgds_;
-    page* pv_bar1_pgd_;
-    page* pv_bar3_pgd_;
-    page* pv_bar3_pgt_;
+    boost::ptr_unordered_map<uint32_t, pv_page> allocated_;
+    boost::array<pv_page*, A3_DOMAIN_CHANNELS> pgds_;
+    pv_page* pv_bar1_pgd_;
+    pv_page* pv_bar3_pgd_;
+    pv_page* pv_bar3_pgt_;
 };
 
 }  // namespace a3

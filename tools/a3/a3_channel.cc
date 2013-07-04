@@ -31,6 +31,7 @@
 #include "a3_pmem.h"
 #include "a3_inttypes.h"
 #include "a3_page.h"
+#include "a3_pv_page.h"
 #include "a3_bit_mask.h"
 #include "a3_device_bar3.h"
 #include "a3_mmio.h"
