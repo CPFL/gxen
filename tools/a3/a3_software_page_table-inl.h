@@ -5,7 +5,6 @@ namespace a3 {
 
 inline void software_page_entry::refresh(context* ctx, const struct page_entry& entry) {
     struct page_entry result(entry);
-    assert(entry.present);
     if (entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address
         const uint64_t g_field = result.address;
