@@ -3,7 +3,7 @@
 #include "a3_context.h"
 namespace a3 {
 
-inline void software_page_entry::refresh(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
+inline void software_page_entry::refresh(context* ctx, const struct page_entry& entry) {
     struct page_entry result(entry);
     assert(entry.present);
     if (entry.target == page_entry::TARGET_TYPE_VRAM) {

@@ -85,13 +85,16 @@ void channel::shadow(context* ctx) {
 
     // and adjust address
     // page directory
-    page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
-    page_directory_phys = ctx->get_phys_address(page_directory_virt);
-    page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
-    mmio::write64(shadow_ramin(), 0x0200, page_directory_phys);
-    mmio::write64(shadow_ramin(), 0x0208, page_directory_size);
 
-    A3_LOG("id %d virt 0x%" PRIX64 " phys 0x%" PRIX64 " size %" PRIu64 "\n", id(), page_directory_virt, page_directory_phys, page_directory_size);
+    if (!para_virtualized()) {
+        page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
+        page_directory_phys = ctx->get_phys_address(page_directory_virt);
+        page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
+        mmio::write64(shadow_ramin(), 0x0200, page_directory_phys);
+        mmio::write64(shadow_ramin(), 0x0208, page_directory_size);
+
+        A3_LOG("id %d virt 0x%" PRIX64 " phys 0x%" PRIX64 " size %" PRIu64 "\n", id(), page_directory_virt, page_directory_phys, page_directory_size);
+    }
 
     // fctx
     const uint64_t fctx_virt = mmio::read64(&pmem, ramin_address() + 0x08);
@@ -109,19 +112,27 @@ void channel::shadow(context* ctx) {
 
     // TODO(Yusuke Suzuki):
     // optimize it. only mark it is OK or NG
-    table()->refresh(ctx, page_directory_phys, page_directory_size);
-    write_shadow_page_table(ctx, table()->shadow_address());
+    if (!para_virtualized()) {
+        table()->refresh(ctx, page_directory_phys, page_directory_size);
+        write_shadow_page_table(ctx, table()->shadow_address());
+    } else {
+        page* page = pgds_[id()];
+        if (page) {
+            write_shadow_page_table(ctx, page->address());
+        }
+    }
 
-    // FIXME(Yusuke Suzuki):
-    // Fix this
+    if (!para_virtualized()) {
+        // FIXME(Yusuke Suzuki):
+        // Fix this
 //     clear_tlb_flush_needed();
 //     remove_overridden_shadow(ctx);
-
-    registers::accessor regs;
-    regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
-    regs.write32(0x100cb8, table()->shadow_address() >> 8);
-    regs.write32(0x100cbc, 0x80000000 | 0x1);
-    regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
+        registers::accessor regs;
+        regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
+        regs.write32(0x100cb8, table()->shadow_address() >> 8);
+        regs.write32(0x100cbc, 0x80000000 | 0x1);
+        regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
+    }
 }
 
 void channel::write_shadow_page_table(context* ctx, uint64_t shadow) {

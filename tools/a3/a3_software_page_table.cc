@@ -107,7 +107,7 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
             if (page_entry::create(pmem, address + item, &entry)) {
-                (*large_entries_)[i].refresh(ctx, pmem, entry);
+                (*large_entries_)[i].refresh(ctx, entry);
             } else {
                 (*large_entries_)[i].clear();
             }
@@ -127,7 +127,7 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
             if (page_entry::create(pmem, address + item, &entry)) {
-                (*small_entries_)[i].refresh(ctx, pmem, entry);
+                (*small_entries_)[i].refresh(ctx, entry);
             } else {
                 (*small_entries_)[i].clear();
             }

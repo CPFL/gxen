@@ -5,6 +5,7 @@
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/ptr_container/ptr_unordered_map.hpp>
 #include "a3.h"
 #include "a3_channel.h"
 #include "a3_fake_channel.h"
@@ -88,6 +89,13 @@ class context : private boost::noncopyable {
     uint32_t& pv32(uint64_t offset) {
         return pv32_[offset / sizeof(uint32_t)];
     }
+    page* lookup_by_pv_id(uint32_t id) const {
+        auto it = allocated_.find(id);
+        if (it == allocated_.end()) {
+            return NULL;
+        }
+        return it->second;
+    }
 
     session* session_;
     bool through_;
@@ -107,7 +115,8 @@ class context : private boost::noncopyable {
     bool para_virtualized_;
     boost::scoped_array<uint32_t> pv32_;
     uint8_t* guest_;
-    boost::unordered_map<uint32_t, page*> allocated_;
+    boost::ptr_unordered_map<uint32_t, page*> allocated_;
+    boost::array<page*, A3_DOMAIN_CHANNELS> pgds_;
 };
 
 }  // namespace a3

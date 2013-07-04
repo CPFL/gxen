@@ -27,25 +27,106 @@
 #include "a3_pmem.h"
 #include "a3_software_page_table.h"
 #include "a3_channel.h"
+#include "a3_bit_mask.h"
 #include "a3_barrier.h"
 #include "a3_pv_slot.h"
 namespace a3 {
 
+
+static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
+    struct page_entry result;
+    result.raw = guest;
+    if (result.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = ctx->get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
+    }
+    return result.raw;
+}
+
 int context::a3_call(const command& cmd, slot_t* slot) {
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
+            page* pgd = lookup_by_pv_id(slot->u32[1]);
+            if (!pgd) {
+                return -EINVAL;
+            }
+            const int cid = slot->u32[2];
+            if (cid < 0) {
+                // BAR1 OR BAR3
+            } else {
+                pgds_[cid] = pgd;
+            }
         }
         return 0;
 
     case NOUVEAU_PV_OP_MAP_PGT: {
+            page* pgd = lookup_by_pv_id(slot->u32[1]);
+            if (!pgd) {
+                return -EINVAL;
+            }
+
+            page* pgt0 = NULL;
+            if (slot->u32[2]) {
+                pgt0 = lookup_by_pv_id(slot->u32[2]);
+                if (!pgt0) {
+                    return -EINVAL;
+                }
+            }
+
+            page* pgt1 = NULL;
+            if (slot->u32[3]) {
+                pgt1 = lookup_by_pv_id(slot->u32[3]);
+                if (!pgt1) {
+                    return -EINVAL;
+                }
+            }
+
+            const uint64_t index = slot->u32[4];
+            if ((0x8 * (index + 1)) >= pgd->size()) {
+                return -ERANGE;
+            }
+            // CAUTION: inverted (pgt1 & pgt0)
+            pgd->write32(0x8 * index + 0x0, pgt1 ? (0x00000001 | (pgt1->address() >> 8)) : 0);
+            pgd->write32(0x8 * index + 0x4, pgt0 ? (0x00000001 | (pgt0->address() >> 8)) : 0);
         }
         return 0;
 
     case NOUVEAU_PV_OP_MAP: {
+            page* pgt = lookup_by_pv_id(slot->u32[1]);
+            if (!pgt) {
+                return -EINVAL;
+            }
+            const uint64_t index = slot->u32[2];
+            if ((0x8 * (index + 1)) >= pgt->size()) {
+                return -ERANGE;
+            }
+            // TODO(Yusuke Suzuki): validation
+            const uint64_t host = guest_to_host_pte(slot->u64[2]);
+            pgt->write32(0x8 * index + 0x0, lower32(host));
+            pgt->write32(0x8 * index + 0x4, upper32(host));
         }
         return 0;
 
     case NOUVEAU_PV_OP_VM_FLUSH: {
+            page* pgd = lookup_by_pv_id(slot->u32[1]);
+            const uint32_t engine = slot->u32[2];
+            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                registers::accessor regs;
+                if (!regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000)) {
+                    A3_LOG("INVALID...\n");
+                    return -EINVAL;
+                }
+                regs.write32(0x100cb8, pgd->address() >> 8);
+                regs.write32(0x100cbc, 0x80000000 | engine);
+                if (!regs.wait_eq(0x100c80, 0x00008000, 0x00008000)) {
+                    A3_LOG("INVALID...\n");
+                    return -EINVAL;
+                }
+            }
         }
         return 0;
 
@@ -64,13 +145,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
         return 0;
 
     case NOUVEAU_PV_OP_MEM_FREE: {
-            const uint32_t id = slot->u32[1];
-            auto it = allocated_.find(id);
-            if (it == allocated_.end()) {
-                return -EINVAL;
-            }
-            delete it->second;
-            allocated_.erase(it);
+            allocated_.erase(slot->u32[1]);
         }
         return 0;
 
