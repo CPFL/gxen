@@ -82,7 +82,8 @@ struct page_entry {
         };
     };
 
-    static inline bool create(pmem::accessor* pmem, uint64_t address, struct page_entry* entry) {
+    template<typename T>
+    static inline bool create(T* pmem, uint64_t address, struct page_entry* entry) {
         entry->word0 = pmem->read32(address);
         if (!entry->present) {
             return false;
@@ -127,7 +128,8 @@ struct page_directory {
         };
     };
 
-    static inline struct page_directory create(pmem::accessor* pmem, uint64_t address) {
+    template<typename T>
+    static inline struct page_directory create(T* pmem, uint64_t address) {
         struct page_directory dir = { { } };
         dir.word0 = pmem->read32(address);
         dir.word1 = pmem->read32(address + 0x4);
