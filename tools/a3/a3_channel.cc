@@ -114,9 +114,7 @@ void channel::shadow(context* ctx) {
     // TODO(Yusuke Suzuki):
     // optimize it. only mark it is OK or NG
     if (!ctx->para_virtualized()) {
-        if (ctx->in_memory_range(page_directory_phys) && ctx->in_memory_size(page_directory_size)) {
-            table()->refresh(ctx, page_directory_phys, page_directory_size);
-        }
+        table()->refresh(ctx, page_directory_phys, page_directory_size);
         write_shadow_page_table(ctx, table()->shadow_address());
     } else {
         page* page = ctx->pgds(id());
