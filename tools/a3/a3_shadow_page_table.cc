@@ -96,6 +96,11 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
         return;
     }
 
+    if (!ctx->in_memory_range(address) || !ctx->in_memory_size(size())) {
+        A3_LOG("page data out of range 0x%" PRIx64 " with 0x%" PRIx64 "\n", address, size());
+        return;
+    }
+
     for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
         const struct page_directory res = page_directory::create(&pmem, page_directory_address() + offset);
         struct page_directory result = refresh_directory(ctx, &pmem, res);
