@@ -74,6 +74,12 @@ class context : private boost::noncopyable {
     bool flush(uint64_t pd, bool bar = false);
     command* buffer() { return session_->buffer(); }
     uint64_t bar3_address() const { return bar3_address_; }
+    bool in_memory_range(uint64_t phys) const {
+        return get_virt_address(phys) < vram_size();
+    }
+    bool in_memory_size(uint64_t size) const {
+        return size <= vram_size();
+    }
 
     bool para_virtualized() const { return para_virtualized_; }
     pv_page* pgds(uint32_t id) {
