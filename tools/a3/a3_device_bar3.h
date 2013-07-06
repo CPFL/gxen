@@ -23,7 +23,7 @@ class device_bar3 : private boost::noncopyable {
 
     device_bar3(device::bar_t bar);
     void refresh();
-    void shadow(context* ctx, uint64_t phys);
+    void shadow(context* ctx, uint64_t phys, bool check_only);
     page* directory() { return &directory_; }
 
     uint64_t size() const { return size_; }
