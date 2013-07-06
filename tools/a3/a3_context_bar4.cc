@@ -35,7 +35,7 @@
 #include "a3_device_bar1.h"
 #include "a3_device_bar3.h"
 namespace a3 {
-
+namespace {
 
 static uint64_t round_up(uint64_t x, uint64_t y) {
     return (((x) + (y - 1)) & ~(y - 1));
@@ -53,6 +53,39 @@ static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
         result.address = h_field;
     }
     return result.raw;
+}
+
+}
+
+int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host) {
+    if (pgt == pv_bar3_pgt_) {
+        bar3_channel()->table()->pv_reflect_entry(this, 0, false, index, guest);
+        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            device::instance()->bar3()->pv_reflect(this, index, host);
+        }
+        return 0;
+    } else if (pgt == pv_bar1_large_pgt_) {
+        bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, guest);
+        // TODO(Yusuke Suzuki) sync
+//                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+//                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);
+//                 }
+        return 0;
+    } else if (pgt == pv_bar1_small_pgt_) {
+        bar1_channel()->table()->pv_reflect_entry(this, 0, false, index, guest);
+        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            device::instance()->bar1()->pv_reflect_entry(this, false, index, host);
+        }
+        return 0;
+    }
+
+    if ((0x8 * (index + 1)) > pgt->size()) {
+        A3_LOG("INVALID...\n");
+        return -ERANGE;
+    }
+    pgt->write32(0x8 * index + 0x0, lower32(host));
+    pgt->write32(0x8 * index + 0x4, upper32(host));
+    return 0;
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
@@ -144,37 +177,34 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 A3_LOG("INVALID...\n");
                 return -EINVAL;
             }
-
             // TODO(Yusuke Suzuki): validation
-            const uint64_t index = slot->u32[2];
-            const uint64_t host = guest_to_host_pte(this, slot->u64[2]);
-            if (pgt == pv_bar3_pgt_) {
-                bar3_channel()->table()->pv_reflect_entry(this, 0, false, index, slot->u64[2]);
-                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                    device::instance()->bar3()->pv_reflect(this, index, host);
-                }
-                return 0;
-            } else if (pgt == pv_bar1_large_pgt_) {
-                bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, slot->u64[2]);
-                // TODO(Yusuke Suzuki) sync
-//                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-//                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);
-//                 }
-                return 0;
-            } else if (pgt == pv_bar1_small_pgt_) {
-                bar1_channel()->table()->pv_reflect_entry(this, 0, false, index, slot->u64[2]);
-                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                    device::instance()->bar1()->pv_reflect_entry(this, false, index, host);
-                }
-                return 0;
-            }
+            const uint32_t index = slot->u32[2];
+            const uint64_t guest = slot->u64[2];
+            const uint64_t host = guest_to_host_pte(this, guest);
+            return pv_map(pgt, index, guest, host);
+        }
+        return 0;
 
-            if ((0x8 * (index + 1)) > pgt->size()) {
+    case NOUVEAU_PV_OP_MAP_BATCH: {
+            pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
+            if (!pgt) {
                 A3_LOG("INVALID...\n");
-                return -ERANGE;
+                return -EINVAL;
             }
-            pgt->write32(0x8 * index + 0x0, lower32(host));
-            pgt->write32(0x8 * index + 0x4, upper32(host));
+            // TODO(Yusuke Suzuki): validation
+            const uint32_t index = slot->u32[2];
+            const uint32_t next = slot->u32[3];
+            const uint32_t count = slot->u32[4];
+            const uint64_t guest_start = slot->u64[3];
+            const uint64_t host_start = guest_to_host_pte(this, guest_start);
+            for (uint32_t i = 0; i < count; ++i) {
+                const uint32_t guest = guest_start + i * next;
+                const uint32_t host = host_start + i * next;
+                const int ret = pv_map(pgt, index + i, guest, host);
+                if (!ret) {
+                    return ret;
+                }
+            }
         }
         return 0;
 
