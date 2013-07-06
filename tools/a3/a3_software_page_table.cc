@@ -29,6 +29,7 @@
 #include "a3_pmem.h"
 #include "a3_pv_page.h"
 #include "a3_context.h"
+#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
 software_page_table::software_page_table(uint32_t channel_id, bool para, uint64_t predefined_max)
@@ -194,6 +195,7 @@ void software_page_table::dump() const {
                  jz = dir.large_entries()->end(); jt != jz; ++jt, ++j) {
                 if (jt->present()) {
                     const uint64_t address = jt->phys().address;
+                    ignore_unused_variable_warning(address);
                     A3_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
                               kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * j,
                               kPAGE_DIRECTORY_COVERED_SIZE * i + kLARGE_PAGE_SIZE * (j + 1) - 1,
@@ -211,6 +213,7 @@ void software_page_table::dump() const {
                  jz = dir.small_entries()->end(); jt != jz; ++jt, ++j) {
                 if (jt->present()) {
                     const uint64_t address = jt->phys().address;
+                    ignore_unused_variable_warning(address);
                     A3_LOG("  PTE 0x%" PRIX64 " - 0x%" PRIX64 " => 0x%" PRIX64 " - 0x%" PRIX64 " [%s] type [%d]\n",
                               kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * j,
                               kPAGE_DIRECTORY_COVERED_SIZE * i + kSMALL_PAGE_SIZE * (j + 1) - 1,

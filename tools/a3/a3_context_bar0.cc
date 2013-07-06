@@ -34,6 +34,7 @@
 #include "a3_device_bar1.h"
 #include "a3_device_bar3.h"
 #include "a3_shadow_page_table.h"
+#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
 void context::write_bar0(const command& cmd) {
@@ -49,6 +50,7 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
+            ignore_unused_variable_warning(value);
             A3_LOG("0x1704 => 0x%" PRIX32 "\n", value);
             bar1_channel()->refresh(this, phys);
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
@@ -62,6 +64,7 @@ void context::write_bar0(const command& cmd) {
             const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
             const uint64_t phys = get_phys_address(virt);
             const uint32_t value = bit_clear<28>(cmd.value) | (phys >> 12);
+            ignore_unused_variable_warning(value);
             A3_LOG("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_channel()->refresh(this, phys);
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {

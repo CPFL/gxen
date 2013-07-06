@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <cstdio>
 #include "a3.h"
 #include "a3_context.h"
 #include "a3_barrier.h"
@@ -29,7 +30,7 @@
 #include "a3_device.h"
 #include "a3_pmem.h"
 #include "a3_page.h"
-#include <cstdio>
+#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
 void context::write_barrier(uint64_t addr, const command& cmd) {
@@ -77,6 +78,7 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
 
 void context::read_barrier(uint64_t addr, const command& cmd) {
     const uint64_t page = bit_clear<barrier::kPAGE_BITS>(addr);
+    ignore_unused_variable_warning(page);
     // const uint64_t offset = bit_mask<barrier::kPAGE_BITS>(addr);
     A3_LOG("read barrier 0x%" PRIX64 " : page 0x%" PRIX64 "\n", addr, page);
 //    switch (offset) {

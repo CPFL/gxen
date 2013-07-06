@@ -41,6 +41,7 @@
 #include "a3_device_bar1.h"
 #include "a3_device_bar3.h"
 #include "a3_bit_mask.h"
+#include "a3_ignore_unused_variable_warning.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -116,6 +117,7 @@ void device::initialize(const bdf& bdf) {
 
     ret = pci_system_init();
     assert(!ret);
+    ignore_unused_variable_warning(ret);
 
     struct pci_device_iterator* it = pci_id_match_iterator_create(&nvc0_match);
     assert(it);
