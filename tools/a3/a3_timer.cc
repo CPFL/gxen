@@ -91,10 +91,12 @@ void timer_t::run() {
                             A3_LOG("BAR1 flush failed\n");
                         }
 #endif
-//                         boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+#ifndef A3_BUSY_LOOP
+                        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
                         if (device::instance()->is_active()) {
                             goto out;
                         }
+#endif
                         current = handle.first;
                         const bool res = device::instance()->try_acquire_gpu(current);
                         ignore_unused_variable_warning(res);
@@ -108,13 +110,17 @@ void timer_t::run() {
             }
         }
 
+#ifndef A3_BUSY_LOOP
 out:
+#endif
         if (will_be_sleep) {
             if (wait) {
                 // A3_LOG("timer thread sleeps\n");
             }
+#ifndef A3_BUSY_LOOP
             boost::this_thread::yield();
             boost::this_thread::sleep(wait_);
+#endif
         }
     }
 }
