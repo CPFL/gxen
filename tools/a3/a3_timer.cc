@@ -28,6 +28,7 @@
 #include "a3_registers.h"
 #include "a3_device.h"
 #include "a3_device_bar1.h"
+#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
 timer_t::timer_t(const boost::posix_time::time_duration& wait)
@@ -96,6 +97,7 @@ void timer_t::run() {
                         }
                         current = handle.first;
                         const bool res = device::instance()->try_acquire_gpu(current);
+                        ignore_unused_variable_warning(res);
                         A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
                     }
                     wait = false;
