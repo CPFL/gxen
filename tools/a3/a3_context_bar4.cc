@@ -236,7 +236,8 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t index = slot->u32[2];
             const uint32_t count = slot->u32[3];
             for (uint32_t i = 0; i < count; ++i) {
-                const int ret = pv_map(pgt, index + i, 0x0, 0x0);
+                // TODO(Yusuke Suzuki): specialize 0x0
+                const int ret = pv_map(pgt, index + i, 0x0, guest_to_host_pte(this, 0x0));
                 if (ret) {
                     return ret;
                 }
