@@ -216,8 +216,8 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t index = slot->u32[2];
             const uint32_t count = slot->u32[3];
             for (uint32_t i = 0; i < count; ++i) {
-                const uint32_t guest = slot->u64[2 + i];
-                const uint32_t host = guest_to_host_pte(this, guest);
+                const uint64_t guest = slot->u64[2 + i];
+                const uint64_t host = guest_to_host_pte(this, guest);
                 const int ret = pv_map(pgt, index + i, guest, host);
                 if (ret) {
                     return ret;
