@@ -44,7 +44,7 @@ static uint64_t round_up(uint64_t x, uint64_t y) {
 static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
     struct page_entry result;
     result.raw = guest;
-    if (result.target == page_entry::TARGET_TYPE_VRAM) {
+    if (result.present && result.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address
         const uint64_t g_field = result.address;
         const uint64_t g_address = g_field << 12;
@@ -201,6 +201,44 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 const uint32_t guest = guest_start + i * next;
                 const uint32_t host = host_start + i * next;
                 const int ret = pv_map(pgt, index + i, guest, host);
+                if (!ret) {
+                    return ret;
+                }
+            }
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_MAP_SG_BATCH: {
+            pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
+            if (!pgt) {
+                A3_LOG("INVALID...\n");
+                return -EINVAL;
+            }
+            // TODO(Yusuke Suzuki): validation
+            const uint32_t index = slot->u32[2];
+            const uint32_t count = slot->u32[3];
+            for (uint32_t i = 0; i < count; ++i) {
+                const uint32_t guest = slot->u64[2 + i];
+                const uint32_t host = guest_to_host_pte(this, guest);
+                const int ret = pv_map(pgt, index + i, guest, host);
+                if (!ret) {
+                    return ret;
+                }
+            }
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_UNMAP_BATCH: {
+            pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
+            if (!pgt) {
+                A3_LOG("INVALID...\n");
+                return -EINVAL;
+            }
+            // TODO(Yusuke Suzuki): validation
+            const uint32_t index = slot->u32[2];
+            const uint32_t count = slot->u32[3];
+            for (uint32_t i = 0; i < count; ++i) {
+                const int ret = pv_map(pgt, index + i, 0x0, 0x0);
                 if (!ret) {
                     return ret;
                 }

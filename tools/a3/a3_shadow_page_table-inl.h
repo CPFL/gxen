@@ -5,7 +5,7 @@ namespace a3 {
 
 inline struct page_entry shadow_page_table::refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
     struct page_entry result(entry);
-    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
+    if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
         // rewrite address
         const uint64_t g_field = result.address;
         const uint64_t g_address = g_field << 12;
