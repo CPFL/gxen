@@ -107,6 +107,7 @@ class context : private boost::noncopyable {
         }
         return it->second;
     }
+    int pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host);
 
     session* session_;
     bool through_;
