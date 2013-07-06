@@ -89,7 +89,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
-    A3_LOG("A3 call %d\n", static_cast<int>(slot->u8[0]));
+    A3_LOG("A3 call %d : %s\n", static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
