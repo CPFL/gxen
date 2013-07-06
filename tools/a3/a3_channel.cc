@@ -161,7 +161,7 @@ uint64_t channel::refresh(context* ctx, uint64_t addr) {
     attach(ctx, addr);
     // FIXME(Yusuke Suzuki): optimize it
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-        device::instance()->bar3()->shadow(ctx, 0);
+        device::instance()->bar3()->shadow(ctx, 0, true);
     }
     return shadow_ramin()->address();
 }

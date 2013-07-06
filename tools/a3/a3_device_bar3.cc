@@ -81,7 +81,7 @@ void device_bar3::map(uint64_t index, const struct page_entry& entry) {
     entries_.write32(0x8 * index + 0x4, entry.word1);
 }
 
-void device_bar3::shadow(context* ctx, uint64_t phys) {
+void device_bar3::shadow(context* ctx, uint64_t phys, bool check_only) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
     // At first map all
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
@@ -95,14 +95,18 @@ void device_bar3::shadow(context* ctx, uint64_t phys) {
         if (gphys != UINT64_MAX) {
             // check this is not ramin
             barrier::page_entry* barrier_entry = NULL;
-            if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
+            if (!check_only) {
                 map(index, entry.phys());
-            } else {
+            }
+            if (ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
                 unmap_xen_page(ctx, address);
             }
         } else {
             const struct page_entry entry = { };
-            map(index, entry);
+            if (!check_only) {
+                map(index, entry);
+            }
+            unmap_xen_page(ctx, address);
         }
     }
 }
