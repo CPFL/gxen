@@ -80,7 +80,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
     }
 
     if ((0x8 * (index + 1)) > pgt->size()) {
-        A3_LOG("INVALID...\n");
+        A3_LOG("INVALID range %" PRIu32 "...\n", index);
         return -ERANGE;
     }
     pgt->write32(0x8 * index + 0x0, lower32(host));
@@ -195,13 +195,11 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t index = slot->u32[2];
             const uint32_t next = slot->u32[3];
             const uint32_t count = slot->u32[4];
-            const uint64_t guest_start = slot->u64[3];
-            const uint64_t host_start = guest_to_host_pte(this, guest_start);
-            for (uint32_t i = 0; i < count; ++i) {
-                const uint32_t guest = guest_start + i * next;
-                const uint32_t host = host_start + i * next;
-                const int ret = pv_map(pgt, index + i, guest, host);
-                if (!ret) {
+            uint64_t guest = slot->u64[3];
+            for (uint32_t i = 0; i < count; ++i, guest += next) {
+                const int ret = pv_map(pgt, index + i, guest, guest_to_host_pte(this, guest));
+                if (ret) {
+                    A3_LOG("INVALID...\n");
                     return ret;
                 }
             }
@@ -221,7 +219,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 const uint32_t guest = slot->u64[2 + i];
                 const uint32_t host = guest_to_host_pte(this, guest);
                 const int ret = pv_map(pgt, index + i, guest, host);
-                if (!ret) {
+                if (ret) {
                     return ret;
                 }
             }
@@ -239,7 +237,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t count = slot->u32[3];
             for (uint32_t i = 0; i < count; ++i) {
                 const int ret = pv_map(pgt, index + i, 0x0, 0x0);
-                if (!ret) {
+                if (ret) {
                     return ret;
                 }
             }
@@ -362,11 +360,11 @@ void context::read_bar4(const command& cmd) {
             const uint64_t gp = lower | (upper << 32);
             A3_LOG("Guest physical call data address %" PRIx64 "\n", gp);
             if (guest_) {
-                munmap(guest_, A3_GUEST_DATA_SIZE);
+                munmap(guest_, NOUVEAU_PV_SLOT_TOTAL);
                 guest_ = NULL;
             }
             A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                guest_ = reinterpret_cast<uint8_t*>(a3_xen_map_foreign_range(device::instance()->xl_ctx(), domid(), A3_GUEST_DATA_SIZE, PROT_READ | PROT_WRITE, gp >> 12));
+                guest_ = reinterpret_cast<uint8_t*>(a3_xen_map_foreign_range(device::instance()->xl_ctx(), domid(), NOUVEAU_PV_SLOT_TOTAL, PROT_READ | PROT_WRITE, gp >> 12));
             }
 
             if (!guest_) {
