@@ -28,7 +28,8 @@ class fifo_scheduler : private boost::noncopyable {
 
     boost::posix_time::time_duration wait_;
     boost::scoped_ptr<boost::thread> thread_;
-    mutex mutex_;
+    boost::mutex mutex_;
+    boost::condition_variable cond_;
     std::queue<fire_t> queue_;
 };
 
