@@ -35,6 +35,7 @@ fifo_scheduler::fifo_scheduler(const boost::posix_time::time_duration& wait)
     : wait_(wait)
     , thread_()
     , mutex_()
+    , cond_()
     , queue_()
 {
 }
@@ -58,70 +59,53 @@ void fifo_scheduler::stop() {
 }
 
 void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(mutex_) {
+    {
+        boost::unique_lock<boost::mutex> lock(mutex_);
         queue_.push(fire_t(ctx, cmd));
     }
+    cond_.notify_one();
 }
 
 void fifo_scheduler::run() {
     context* current = NULL;
-    bool wait = false;
     fire_t handle;
+    boost::condition_variable_any cond2;
     while (true) {
-        A3_SYNCHRONIZED(mutex_) {
-            if (!wait && !queue_.empty()) {
-                wait = true;
-                handle = queue_.front();
-                queue_.pop();
+        {
+            boost::unique_lock<boost::mutex> lock(mutex_);
+            while (queue_.empty()) {
+                cond_.wait(lock);
             }
+            handle = queue_.front();
+            queue_.pop();
         }
 
-        bool will_be_sleep = true;
-        if (wait) {
-            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-                if (current == handle.first || !device::instance()->is_active()) {
-                    if (current != handle.first) {
-                        // acquire GPU
-                        // context change.
-                        // To ensure all previous fires should be submitted, we flush BAR1.
-#if 0
-                        registers::accessor regs;
-                        regs.write32(0x070000, 0x00000001);
-                        if (!regs.wait_eq(0x070000, 0x00000002, 0x00000000)) {
-                            A3_LOG("BAR1 flush failed\n");
-                        }
-#endif
-#ifndef A3_BUSY_LOOP
-                        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-                        if (device::instance()->is_active()) {
-                            goto out;
-                        }
-#endif
-                        current = handle.first;
-                        const bool res = device::instance()->try_acquire_gpu(current);
-                        ignore_unused_variable_warning(res);
-                        A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
-                    }
-                    wait = false;
+        bool next = true;
+        do {
+            next = false;
+            boost::unique_lock<mutex> lock(device::instance()->mutex_handle());
+            while (current != handle.first && device::instance()->is_active()) {
+                cond2.timed_wait(lock, wait_);
+            }
+
+            if (current != handle.first) {
+                // acquire GPU
+                // context change.
+                // To ensure all previous fires should be submitted, we flush BAR1.
+                if (device::instance()->is_active()) {
+                    next = true;
+                } else {
+                    current = handle.first;
+                    const bool res = device::instance()->try_acquire_gpu(current);
+                    ignore_unused_variable_warning(res);
+                    A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
                     device::instance()->bar1()->write(current, handle.second);
-                    A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active() ? "ACTIVE" : "STOP");
-                    will_be_sleep = false;
                 }
+            } else {
+                device::instance()->bar1()->write(current, handle.second);
             }
-        }
-
-#ifndef A3_BUSY_LOOP
-out:
-#endif
-        if (will_be_sleep) {
-            if (wait) {
-                // A3_LOG("timer thread sleeps\n");
-            }
-#ifndef A3_BUSY_LOOP
-            boost::this_thread::yield();
-            boost::this_thread::sleep(wait_);
-#endif
-        }
+            A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active() ? "ACTIVE" : "STOP");
+        } while (next);
     }
 }
 

@@ -272,7 +272,7 @@ bool device::try_acquire_gpu(context* ctx) {
 bool device::is_active() {
     A3_SYNCHRONIZED(mutex_handle()) {
         // this is status register of pgraph
-        return registers::read32(0x400700) & 0x1;
+        return registers::read32(0x400700);
     }
     return true;
 }
