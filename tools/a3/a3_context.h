@@ -134,6 +134,11 @@ class context : private boost::noncopyable {
     pv_page* pv_bar1_small_pgt_;
     pv_page* pv_bar3_pgd_;
     pv_page* pv_bar3_pgt_;
+
+    // only touched by scheduler
+    uint64_t budget_;
+    uint64_t bandwidth_;
+    uint64_t utilization_;
 };
 
 }  // namespace a3

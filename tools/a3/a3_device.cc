@@ -72,7 +72,7 @@ device::device()
     , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
-    , timer_(boost::posix_time::milliseconds(1))
+    , scheduler_(boost::posix_time::milliseconds(1))
     , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
@@ -86,7 +86,7 @@ device::device()
         fprintf(stderr, "cannot init xl context\n");
         std::exit(1);
     }
-    timer_.start();
+    scheduler_.start();
     A3_LOG("device environment setup\n");
 }
 
@@ -279,7 +279,7 @@ bool device::is_active() {
 
 void device::fire(context* ctx, const command& cmd) {
     A3_SYNCHRONIZED(mutex_handle()) {
-        timer_.enqueue(ctx, cmd);
+        scheduler_.enqueue(ctx, cmd);
     }
 }
 
