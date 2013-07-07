@@ -53,13 +53,9 @@ channel::channel(int id)
 channel::~channel() {
 }
 
-void channel::detach(context* ctx, uint64_t addr) {
+bool channel::detach(context* ctx, uint64_t addr) {
     A3_LOG("detach from 0x%" PRIX64 " to 0x%" PRIX64 "\n", ramin_address(), addr);
-    if (!ctx->barrier()->unmap(ramin_address())) {
-        // TODO(Yusuke Suzuki):unmap device bar3 barrier
-        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-        }
-    }
+    const bool old_exists = ctx->barrier()->unmap(ramin_address());
 
     typedef context::channel_map::iterator iter_t;
     const std::pair<iter_t, iter_t> range = ctx->ramin_channel_map()->equal_range(addr);
@@ -69,6 +65,8 @@ void channel::detach(context* ctx, uint64_t addr) {
             break;
         }
     }
+
+    return old_exists;
 }
 
 void channel::shadow(context* ctx) {
@@ -149,19 +147,22 @@ void channel::attach(context* ctx, uint64_t addr) {
 
 uint64_t channel::refresh(context* ctx, uint64_t addr) {
     A3_LOG("mapping 0x%" PRIX64 " with shadow 0x%" PRIX64 "\n", addr, shadow_ramin()->address());
+    bool old_remap = false;
     if (enabled()) {
         if (addr == ramin_address()) {
             // same channel ramin
             return shadow_ramin()->address();
         }
-        detach(ctx, addr);
+        old_remap = !detach(ctx, addr);
     }
     enabled_ = true;
+    const uint64_t old = ramin_address_;
     ramin_address_ = addr;
     attach(ctx, addr);
     // FIXME(Yusuke Suzuki): optimize it
     A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-        device::instance()->bar3()->shadow(ctx, 0, true);
+        // device::instance()->bar3()->shadow(ctx, 0, true);
+        device::instance()->bar3()->reset_barrier(ctx, old, addr, old_remap);
     }
     return shadow_ramin()->address();
 }

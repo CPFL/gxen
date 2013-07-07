@@ -151,11 +151,11 @@ uint64_t software_page_table::resolve(uint64_t virtual_address, struct software_
 }
 
 uint64_t software_page_table::software_page_directory::resolve(uint64_t offset, struct software_page_entry* result) {
-    if (large_entries()) {
-        const uint64_t index = offset / kLARGE_PAGE_SIZE;
-        const uint64_t rest = offset % kLARGE_PAGE_SIZE;
-        if (large_entries_->size() > index) {
-            const struct software_page_entry& entry = (*large_entries_)[index];
+    if (small_entries()) {
+        const uint64_t index = offset / kSMALL_PAGE_SIZE;
+        const uint64_t rest = offset % kSMALL_PAGE_SIZE;
+        if (small_entries_->size() > index) {
+            const struct software_page_entry& entry = (*small_entries_)[index];
             if (entry.present()) {
                 if (result) {
                     *result = entry;
@@ -166,11 +166,11 @@ uint64_t software_page_table::software_page_directory::resolve(uint64_t offset, 
         }
     }
 
-    if (small_entries()) {
-        const uint64_t index = offset / kSMALL_PAGE_SIZE;
-        const uint64_t rest = offset % kSMALL_PAGE_SIZE;
-        if (small_entries_->size() > index) {
-            const struct software_page_entry& entry = (*small_entries_)[index];
+    if (large_entries()) {
+        const uint64_t index = offset / kLARGE_PAGE_SIZE;
+        const uint64_t rest = offset % kLARGE_PAGE_SIZE;
+        if (large_entries_->size() > index) {
+            const struct software_page_entry& entry = (*large_entries_)[index];
             if (entry.present()) {
                 if (result) {
                     *result = entry;

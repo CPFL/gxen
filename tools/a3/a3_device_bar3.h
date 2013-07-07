@@ -1,6 +1,7 @@
 #ifndef A3_DEVICE_BAR3_H_
 #define A3_DEVICE_BAR3_H_
 #include <boost/noncopyable.hpp>
+#include <vector>
 #include "a3.h"
 #include "a3_page.h"
 #include "a3_device.h"
@@ -23,7 +24,8 @@ class device_bar3 : private boost::noncopyable {
 
     device_bar3(device::bar_t bar);
     void refresh();
-    void shadow(context* ctx, uint64_t phys, bool check_only);
+    void shadow(context* ctx, uint64_t phys);
+    void reset_barrier(context* ctx, uint64_t old, uint64_t addr, bool old_remap);
     page* directory() { return &directory_; }
 
     uint64_t size() const { return size_; }
@@ -42,6 +44,7 @@ class device_bar3 : private boost::noncopyable {
     page ramin_;
     page directory_;
     page entries_;
+    std::vector<uint64_t> software_;
 };
 
 }  // namespace a3

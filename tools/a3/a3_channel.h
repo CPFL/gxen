@@ -43,7 +43,7 @@ class channel : private boost::noncopyable {
     void clear_tlb_flush_needed() {
         tlb_flush_needed_ = false;
     }
-    void detach(context* ctx, uint64_t addr);
+    bool detach(context* ctx, uint64_t addr);
     void attach(context* ctx, uint64_t addr);
     int id_;
     bool enabled_;
