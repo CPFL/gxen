@@ -1,5 +1,5 @@
 /*
- * A3 timer
+ * A3 FIFO scheduler
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -23,7 +23,7 @@
  */
 #include <stdint.h>
 #include "a3.h"
-#include "a3_timer.h"
+#include "a3_fifo_scheduler.h"
 #include "a3_context.h"
 #include "a3_registers.h"
 #include "a3_device.h"
@@ -31,7 +31,7 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-timer_t::timer_t(const boost::posix_time::time_duration& wait)
+fifo_scheduler::fifo_scheduler(const boost::posix_time::time_duration& wait)
     : wait_(wait)
     , thread_()
     , mutex_()
@@ -39,31 +39,31 @@ timer_t::timer_t(const boost::posix_time::time_duration& wait)
 {
 }
 
-timer_t::~timer_t() {
+fifo_scheduler::~fifo_scheduler() {
     stop();
 }
 
-void timer_t::start() {
+void fifo_scheduler::start() {
     if (thread_) {
         stop();
     }
-    thread_.reset(new boost::thread(&timer_t::run, this));
+    thread_.reset(new boost::thread(&fifo_scheduler::run, this));
 }
 
-void timer_t::stop() {
+void fifo_scheduler::stop() {
     if (thread_) {
         thread_->interrupt();
         thread_.reset();
     }
 }
 
-void timer_t::enqueue(context* ctx, const command& cmd) {
+void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
     A3_SYNCHRONIZED(mutex_) {
         queue_.push(fire_t(ctx, cmd));
     }
 }
 
-void timer_t::run() {
+void fifo_scheduler::run() {
     context* current = NULL;
     bool wait = false;
     fire_t handle;

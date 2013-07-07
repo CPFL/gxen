@@ -1,5 +1,5 @@
-#ifndef A3_TIMER_H_
-#define A3_TIMER_H_
+#ifndef A3_FIFO_SCHEDULER_H_
+#define A3_FIFO_SCHEDULER_H_
 #include <queue>
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
@@ -12,12 +12,12 @@ namespace a3 {
 class context;
 class device;
 
-class timer_t : private boost::noncopyable {
+class fifo_scheduler : private boost::noncopyable {
  public:
     friend class device;
 
-    timer_t(const boost::posix_time::time_duration& wait);
-    ~timer_t();
+    fifo_scheduler(const boost::posix_time::time_duration& wait);
+    ~fifo_scheduler();
     void start();
     void stop();
 
@@ -33,5 +33,5 @@ class timer_t : private boost::noncopyable {
 };
 
 }  // namespace a3
-#endif  // A3_TIMER_H_
+#endif  // A3_FIFO_SCHEDULER_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

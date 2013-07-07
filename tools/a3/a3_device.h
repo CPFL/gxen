@@ -9,7 +9,7 @@
 #include "a3_xen.h"
 #include "a3_lock.h"
 #include "a3_session.h"
-#include "a3_timer.h"
+#include "a3_fifo_scheduler.h"
 namespace a3 {
 
 class device_bar1;
@@ -70,7 +70,7 @@ class device : private boost::noncopyable {
     boost::scoped_ptr<device_bar3> bar3_;
     boost::scoped_ptr<vram> vram_;
     boost::scoped_ptr<playlist_t> playlist_;
-    timer_t timer_;
+    fifo_scheduler scheduler_;
     int domid_;
 
     // libxl
