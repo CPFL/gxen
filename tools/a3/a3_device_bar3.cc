@@ -39,6 +39,7 @@ device_bar3::device_bar3(device::bar_t bar)
     , ramin_(1)
     , directory_(8)
     , entries_(kBAR3_TOTAL_SIZE / 0x1000 / 0x1000 * 8)
+    , software_(kBAR3_TOTAL_SIZE / 0x8)
 {
     ramin_.clear();
     directory_.clear();
@@ -79,12 +80,15 @@ void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
 void device_bar3::map(uint64_t index, const struct page_entry& entry) {
     entries_.write32(0x8 * index, entry.word0);
     entries_.write32(0x8 * index + 0x4, entry.word1);
+    const uint64_t addr = static_cast<uint64_t>(entry.address) << 12;
+    software_[index] = (entry.present) ? addr : 0ULL;
 }
 
-void device_bar3::shadow(context* ctx, uint64_t phys, bool check_only) {
+void device_bar3::shadow(context* ctx, uint64_t phys) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
-    // At first map all
-    a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
+    // At first remove all
+    // a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
+    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
 
     // FIXME(Yusuke Suzuki): optimize it
     for (uint64_t address = 0; address < kBAR3_ARENA_SIZE; address += kPAGE_SIZE) {
@@ -95,18 +99,29 @@ void device_bar3::shadow(context* ctx, uint64_t phys, bool check_only) {
         if (gphys != UINT64_MAX) {
             // check this is not ramin
             barrier::page_entry* barrier_entry = NULL;
-            if (!check_only) {
-                map(index, entry.phys());
-            }
+            map(index, entry.phys());
             if (ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
-                unmap_xen_page(ctx, address);
+                // unmap_xen_page(ctx, address);
+            } else {
+                map_xen_page(ctx, address);
             }
         } else {
             const struct page_entry entry = { };
-            if (!check_only) {
-                map(index, entry);
-            }
-            unmap_xen_page(ctx, address);
+            map(index, entry);
+            // unmap_xen_page(ctx, address);
+        }
+    }
+}
+
+void device_bar3::reset_barrier(context* ctx, uint64_t old, uint64_t addr, bool old_remap) {
+    const uint64_t shift = ctx->id() * kBAR3_ARENA_SIZE / kPAGE_SIZE;
+    for (uint64_t index = 0, iz = kBAR3_ARENA_SIZE / kPAGE_SIZE; index < iz; ++index) {
+        const uint64_t hindex = shift + index;
+        const uint64_t target = software_[hindex];
+        if (target == old && old_remap) {
+            map_xen_page(ctx, index * kPAGE_SIZE);
+        } else if (target == addr) {
+            unmap_xen_page(ctx, index * kPAGE_SIZE);
         }
     }
 }
