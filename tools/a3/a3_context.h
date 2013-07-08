@@ -8,7 +8,7 @@
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 #include "a3.h"
 #include "a3_channel.h"
-#include "a3_fake_channel.h"
+#include "a3_bar1_channel.h"
 #include "a3_bar3_channel.h"
 #include "a3_session.h"
 namespace a3 {
@@ -43,8 +43,8 @@ class context : private boost::noncopyable {
     void read_barrier(uint64_t addr, const command& command);
     void write_barrier(uint64_t addr, const command& command);
     bool through() const { return through_; }
-    fake_channel* bar1_channel() { return bar1_channel_.get(); }
-    const fake_channel* bar1_channel() const { return bar1_channel_.get(); }
+    bar1_channel_t* bar1_channel() { return bar1_channel_.get(); }
+    const bar1_channel_t* bar1_channel() const { return bar1_channel_.get(); }
     bar3_channel_t* bar3_channel() { return bar3_channel_.get(); }
     const bar3_channel_t* bar3_channel() const { return bar3_channel_.get(); }
     channel* channels(int id) { return channels_[id].get(); }
@@ -115,7 +115,7 @@ class context : private boost::noncopyable {
     bool initialized_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    unique_ptr<fake_channel>::type bar1_channel_;
+    unique_ptr<bar1_channel_t>::type bar1_channel_;
     unique_ptr<bar3_channel_t>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;

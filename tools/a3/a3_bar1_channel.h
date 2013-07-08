@@ -1,5 +1,5 @@
-#ifndef A3_FAKE_CHANNEL_H_
-#define A3_FAKE_CHANNEL_H_
+#ifndef A3_BAR1_CHANNEL_H_
+#define A3_BAR1_CHANNEL_H_
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include "a3.h"
@@ -8,9 +8,9 @@ class software_page_table;
 class context;
 class page;
 
-class fake_channel : private boost::noncopyable {
+class bar1_channel_t : private boost::noncopyable {
  public:
-    fake_channel(context* ctx, int id, uint64_t predefined_max = 0);
+    bar1_channel_t(context* ctx);
     void refresh(context* ctx, uint64_t addr);
     int id() const { return id_; }
     bool enabled() const { return enabled_; }
@@ -28,5 +28,5 @@ class fake_channel : private boost::noncopyable {
 };
 
 }  // namespace a3
-#endif  // A3_FAKE_CHANNEL_H_
+#endif  // A3_BAR1_CHANNEL_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

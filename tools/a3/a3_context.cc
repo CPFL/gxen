@@ -81,7 +81,7 @@ void context::initialize(int dom, bool para) {
     if (para_virtualized()) {
         pv32_.reset(new uint32_t[A3_BAR4_SIZE / sizeof(uint32_t)]);
     }
-    bar1_channel_.reset(new fake_channel(this, -1, kBAR1_ARENA_SIZE));
+    bar1_channel_.reset(new bar1_channel_t(this));
     bar3_channel_.reset(new bar3_channel_t(this));
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
     reg32_.reset(new uint32_t[A3_BAR0_SIZE / sizeof(uint32_t)]);
