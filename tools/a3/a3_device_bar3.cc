@@ -31,6 +31,7 @@
 #include "a3_software_page_table.h"
 #include "a3_barrier.h"
 #include "a3_mmio.h"
+#include "a3_page_table.h"
 namespace a3 {
 
 device_bar3::device_bar3(device::bar_t bar)
@@ -40,6 +41,8 @@ device_bar3::device_bar3(device::bar_t bar)
     , directory_(8)
     , entries_(kBAR3_TOTAL_SIZE / 0x1000 / 0x1000 * 8)
     , software_(kBAR3_TOTAL_SIZE / 0x8)
+    , large_()
+    , small_()
 {
     ramin_.clear();
     directory_.clear();
@@ -94,7 +97,7 @@ void device_bar3::shadow(context* ctx, uint64_t phys) {
     for (uint64_t address = 0; address < kBAR3_ARENA_SIZE; address += kPAGE_SIZE) {
         const uint64_t virt = ctx->id() * kBAR3_ARENA_SIZE + address;
         struct software_page_entry entry;
-        const uint64_t gphys = ctx->bar3_channel()->table()->resolve(address, &entry);
+        const uint64_t gphys = resolve(ctx, address, &entry);
         const uint64_t index = virt / kPAGE_SIZE;
         if (gphys != UINT64_MAX) {
             // check this is not ramin
@@ -135,24 +138,120 @@ void device_bar3::flush() {
     }
 }
 
-void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t pte) {
+uint64_t device_bar3::resolve(context* ctx, uint64_t gvaddr, struct software_page_entry* result) {
+    const uint32_t dir = gvaddr / kPAGE_DIRECTORY_COVERED_SIZE;
+    if (dir != 0) {
+        return UINT64_MAX;
+    }
+
+    const uint64_t hvaddr = gvaddr + ctx->id() * kBAR3_ARENA_SIZE;
+    {
+        const uint64_t index = hvaddr / kSMALL_PAGE_SIZE;
+        const uint64_t rest = hvaddr % kSMALL_PAGE_SIZE;
+        if (small_.size() > index) {
+            const struct software_page_entry& entry = small_[index];
+            if (entry.present()) {
+                if (result) {
+                    *result = entry;
+                }
+                const uint64_t address = entry.phys().address;
+                return (address << 12) + rest;
+            }
+        }
+    }
+
+    {
+        const uint64_t index = hvaddr / kLARGE_PAGE_SIZE;
+        const uint64_t rest = hvaddr % kLARGE_PAGE_SIZE;
+        if (large_.size() > index) {
+            const struct software_page_entry& entry = large_[index];
+            if (entry.present()) {
+                if (result) {
+                    *result = entry;
+                }
+                const uint64_t address = entry.phys().address;
+                return (address << 12) + rest;
+            }
+        }
+    }
+
+    return UINT64_MAX;
+}
+
+void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint64_t host) {
+    // software page table
     const uint64_t hindex = index + ((ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE);
-    const uint64_t guest = (index * kPAGE_SIZE);
+    const uint64_t goffset = (index * kPAGE_SIZE);
     struct page_entry entry;
-    entry.raw = pte;
-    if (pte) {
+
+    entry.raw = guest;
+    small_[hindex].refresh(ctx, entry);
+
+    entry.raw = host;
+
+    if (host) {
         // check this is not ramin
         barrier::page_entry* barrier_entry = NULL;
         const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
         map(hindex, entry);
         if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
-            map_xen_page(ctx, guest);
+            map_xen_page(ctx, goffset);
         } else {
-            unmap_xen_page(ctx, guest);
+            unmap_xen_page(ctx, goffset);
         }
     } else {
         map(hindex, entry);
-        unmap_xen_page(ctx, guest);
+        unmap_xen_page(ctx, goffset);
+    }
+}
+
+
+void device_bar3::refresh_table(context* ctx, uint64_t phys) {
+    pmem::accessor pmem;
+    if (!phys) {
+        return;
+    }
+
+    // TODO(Yusuke Suzuki): validation needed
+    struct page_directory dir = page_directory::create(&pmem, phys);
+    if (dir.large_page_table_present) {
+        const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
+        const std::size_t count = std::min(kBAR3_ARENA_SIZE/ kLARGE_PAGE_SIZE, page_directory::large_size_count(dir));
+        assert(count <= kLARGE_PAGE_COUNT);
+        for (std::size_t i = 0; i < count; ++i) {
+            const uint64_t hindex = i + ((ctx->id() * kBAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE);
+            const uint64_t item = 0x8 * i;
+            struct page_entry entry;
+            if (page_entry::create(&pmem, address + item, &entry)) {
+                large_[hindex].refresh(ctx, entry);
+            } else {
+                large_[hindex].clear();
+            }
+        }
+    } else {
+        struct software_page_entry entry = { };
+        std::fill(large_.begin() + ((ctx->id() * kBAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE),
+                  large_.begin() + (((ctx->id() + 1)* kBAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE), entry);
+    }
+
+    if (dir.small_page_table_present) {
+        const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
+        const std::size_t count = kBAR3_ARENA_SIZE / kSMALL_PAGE_SIZE;
+        assert(count <= kSMALL_PAGE_COUNT);
+        for (std::size_t i = 0; i < count; ++i) {
+            const uint64_t hindex = i + ((ctx->id() * kBAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE);
+            const uint64_t item = 0x8 * i;
+            struct page_entry entry;
+            if (page_entry::create(&pmem, address + item, &entry)) {
+                small_[hindex].refresh(ctx, entry);
+            } else {
+                small_[hindex].clear();
+            }
+        }
+    } else {
+        struct software_page_entry entry = { };
+        std::fill(small_.begin() + ((ctx->id() * kBAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE),
+                  small_.begin() + (((ctx->id() + 1)* kBAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE), entry);
     }
 }
 

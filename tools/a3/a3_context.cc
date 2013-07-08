@@ -82,7 +82,7 @@ void context::initialize(int dom, bool para) {
         pv32_.reset(new uint32_t[A3_BAR4_SIZE / sizeof(uint32_t)]);
     }
     bar1_channel_.reset(new fake_channel(this, -1, kBAR1_ARENA_SIZE));
-    bar3_channel_.reset(new fake_channel(this, -3, kBAR3_ARENA_SIZE));
+    bar3_channel_.reset(new bar3_channel_t(this));
     barrier_.reset(new barrier::table(get_address_shift(), vram_size()));
     reg32_.reset(new uint32_t[A3_BAR0_SIZE / sizeof(uint32_t)]);
     for (std::size_t i = 0, iz = channels_.size(); i < iz; ++i) {
@@ -244,9 +244,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         }
     }
 
-    if (bar3_channel()->table()->page_directory_address() == page_directory) {
+    if (bar3_channel()->page_directory_address() == page_directory) {
         // BAR3
-        bar3_channel()->table()->refresh_page_directories(this, page_directory);
+        bar3_channel()->refresh_table(this, page_directory);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
             device::instance()->bar3()->shadow(this, page_directory);
             device::instance()->bar3()->flush();

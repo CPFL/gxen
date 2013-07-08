@@ -59,9 +59,8 @@ static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
 
 int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host) {
     if (pgt == pv_bar3_pgt_) {
-        bar3_channel()->table()->pv_reflect_entry(this, 0, false, index, guest);
         A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
-            device::instance()->bar3()->pv_reflect(this, index, host);
+            device::instance()->bar3()->pv_reflect(this, index, guest, host);
         }
         return 0;
     } else if (pgt == pv_bar1_large_pgt_) {

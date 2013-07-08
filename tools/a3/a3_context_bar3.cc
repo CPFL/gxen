@@ -28,10 +28,11 @@
 #include "a3_software_page_table.h"
 #include "a3_channel.h"
 #include "a3_barrier.h"
+#include "a3_device_bar3.h"
 namespace a3 {
 
 void context::write_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
+    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         pmem.write(gphys, cmd.value, cmd.size());
@@ -46,7 +47,7 @@ void context::write_bar3(const command& cmd) {
 }
 
 void context::read_bar3(const command& cmd) {
-    const uint64_t gphys = bar3_channel()->table()->resolve(cmd.offset, NULL);
+    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, NULL);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         const uint32_t ret = pmem.read(gphys, cmd.size());

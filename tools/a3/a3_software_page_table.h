@@ -16,7 +16,6 @@ class software_page_entry {
     friend class software_page_table;
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return phys_.present; }
- private:
     inline void refresh(context* ctx, const struct page_entry& entry);
     inline void assign(const struct page_entry& entry);
     inline void clear() {
@@ -24,6 +23,7 @@ class software_page_entry {
         phys_ = result;
     }
 
+ private:
     struct page_entry phys_;
 };
 
