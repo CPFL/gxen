@@ -4,7 +4,7 @@ VPATH+=:$(SRCDIR)
 
 CPPFLAGS+= -g3 -W -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 # release option
-# CPPFLAGS+= -O3 -DNDEBUG -flto
+# CPPFLAGS+= -O3 -DNDEBUG -flto -march=native
 # busy loop option
 CPPFLAGS+= -DA3_BUSY_LOOP
 CXXFLAGS+= -std=c++0x
