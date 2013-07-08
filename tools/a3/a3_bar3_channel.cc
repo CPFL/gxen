@@ -27,7 +27,6 @@
 #include "a3_context.h"
 #include "a3_device.h"
 #include "a3_device_bar3.h"
-#include "a3_fake_channel.h"
 #include "a3_software_page_table.h"
 #include "a3_barrier.h"
 #include "a3_pmem.h"
