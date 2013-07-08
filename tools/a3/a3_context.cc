@@ -223,7 +223,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     uint64_t already = 0;
     channel::page_table_reuse_t* reuse;
 
-    A3_LOG("TLB flush 0x%" PRIX64 " pd [%s]\n", page_directory, device::instance()->is_active() ? "OK" : "NG");
+    A3_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables
     if (bar1_channel()->table()->page_directory_address() == page_directory) {

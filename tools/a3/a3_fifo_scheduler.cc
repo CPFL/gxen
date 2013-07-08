@@ -84,7 +84,7 @@ void fifo_scheduler::run() {
         do {
             next = false;
             boost::unique_lock<mutex> lock(device::instance()->mutex_handle());
-            while (current != handle.first && device::instance()->is_active()) {
+            while (current != handle.first && device::instance()->is_active(current)) {
                 cond2.timed_wait(lock, wait_);
             }
 
@@ -92,7 +92,7 @@ void fifo_scheduler::run() {
                 // acquire GPU
                 // context change.
                 // To ensure all previous fires should be submitted, we flush BAR1.
-                if (device::instance()->is_active()) {
+                if (device::instance()->is_active(current)) {
                     next = true;
                 } else {
                     current = handle.first;
@@ -104,7 +104,7 @@ void fifo_scheduler::run() {
             } else {
                 device::instance()->bar1()->write(current, handle.second);
             }
-            A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active() ? "ACTIVE" : "STOP");
+            A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active(current) ? "ACTIVE" : "STOP");
         } while (next);
     }
 }

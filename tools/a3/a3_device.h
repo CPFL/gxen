@@ -53,7 +53,7 @@ class device : private boost::noncopyable {
     bool try_acquire_gpu(context* ctx);
     void acquire_gpu(context* ctx);
     int domid() const { return domid_; }
-    bool is_active();
+    bool is_active(context* ctx);
     void fire(context* ctx, const command& cmd);
 
     void playlist_update(context* ctx, uint32_t address, uint32_t cmd);
