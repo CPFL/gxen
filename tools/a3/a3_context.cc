@@ -39,6 +39,7 @@
 #include "a3_software_page_table.h"
 #include "a3_page_table.h"
 #include "a3_pv_page.h"
+#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
 context::context(session* s, bool through)
@@ -124,6 +125,7 @@ bool context::handle(const command& cmd) {
                 for (uint32_t pid = 0; pid < 128; ++pid) {
                     const uint32_t offset = 0x3000 + 0x8 * pid + 0x4;
                     const uint32_t status = regs.read32(offset);
+                    ignore_unused_variable_warning(status);
                     A3_LOG("chan%0u => %" PRIx32 "\n", pid, status);
                 }
             }
