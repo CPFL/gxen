@@ -277,7 +277,6 @@ bool device::is_active(context* ctx) {
             return true;
         }
 
-#if 0
         // PGRAPH register shows idle, but probably there's working channels
         if (!ctx) {
             return false;
@@ -291,12 +290,13 @@ bool device::is_active(context* ctx) {
                 if (status & 270467344UL) {
                     A3_LOG("active by chan %" PRIu32 "\n", pid);
                     return true;
+                } else {
+                    A3_LOG("chan %" PRIu32 " is runnable but not active\n", pid);
                 }
             }
         }
-#endif
     }
-    return true;
+    return false;
 }
 
 void device::fire(context* ctx, const command& cmd) {
