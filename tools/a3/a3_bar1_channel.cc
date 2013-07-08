@@ -1,5 +1,5 @@
 /*
- * A3 Fake Channel
+ * A3 BAR1 Channel
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -25,7 +25,8 @@
 #include <utility>
 #include "a3.h"
 #include "a3_context.h"
-#include "a3_fake_channel.h"
+#include "a3_bar1_channel.h"
+#include "a3_device_bar1.h"
 #include "a3_software_page_table.h"
 #include "a3_barrier.h"
 #include "a3_pmem.h"
@@ -35,19 +36,19 @@
 #include "a3_mmio.h"
 namespace a3 {
 
-fake_channel::fake_channel(context* ctx, int id, uint64_t predefined_max)
-    : id_(id)
+bar1_channel_t::bar1_channel_t(context* ctx)
+    : id_(-1)
     , enabled_(false)
     , ramin_address_()
-    , table_(new software_page_table(id, ctx->para_virtualized(), predefined_max)) {
+    , table_(new software_page_table(-1, ctx->para_virtualized(), kBAR1_ARENA_SIZE)) {
 }
 
-void fake_channel::detach(context* ctx, uint64_t addr) {
+void bar1_channel_t::detach(context* ctx, uint64_t addr) {
     A3_LOG("detach from 0x%" PRIX64 " to 0x%" PRIX64 "\n", ramin_address(), addr);
     ctx->barrier()->unmap(ramin_address());
 }
 
-void fake_channel::shadow(context* ctx) {
+void bar1_channel_t::shadow(context* ctx) {
     if (ctx->para_virtualized()) {
         return;
     }
@@ -61,13 +62,13 @@ void fake_channel::shadow(context* ctx) {
     table()->refresh(ctx, page_directory_phys, page_directory_size);
 }
 
-void fake_channel::attach(context* ctx, uint64_t addr) {
+void bar1_channel_t::attach(context* ctx, uint64_t addr) {
     A3_LOG("attach to 0x%" PRIX64 "\n", ramin_address());
     shadow(ctx);
     ctx->barrier()->map(ramin_address());
 }
 
-void fake_channel::refresh(context* ctx, uint64_t addr) {
+void bar1_channel_t::refresh(context* ctx, uint64_t addr) {
     if (enabled()) {
         if (addr == ramin_address()) {
             // same channel ramin
