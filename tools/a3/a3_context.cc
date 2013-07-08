@@ -117,8 +117,15 @@ bool context::handle(const command& cmd) {
             break;
 
         case command::UTILITY_PGRAPH_STATUS: {
-                const uint32_t status = registers::read32(0x400700);
+                registers::accessor regs;
+                const uint32_t status = regs.read32(0x400700);
                 buffer()->value = status;
+                A3_LOG("status %" PRIx32 "\n", status);
+                for (uint32_t pid = 0; pid < 128; ++pid) {
+                    const uint32_t offset = 0x3000 + 0x8 * pid + 0x4;
+                    const uint32_t status = regs.read32(offset);
+                    A3_LOG("chan%0u => %" PRIx32 "\n", pid, status);
+                }
             }
             break;
         }

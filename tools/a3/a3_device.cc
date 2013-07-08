@@ -277,6 +277,7 @@ bool device::is_active(context* ctx) {
             return true;
         }
 
+#if 0
         // PGRAPH register shows idle, but probably there's working channels
         if (!ctx) {
             return false;
@@ -285,10 +286,15 @@ bool device::is_active(context* ctx) {
         for (uint32_t pid = ctx->id() * A3_DOMAIN_CHANNELS, pidz = (ctx->id() + 1) * A3_DOMAIN_CHANNELS; pid < pidz; ++pid) {
             const uint32_t offset = 0x3000 + 0x8 * pid + 0x4;
             const uint32_t status = regs.read32(offset);
-            if (status & 270471184UL) {
-                return true;
+            if (status & 0x1UL) {
+                // 0b10000000111110000000100010000
+                if (status & 270467344UL) {
+                    A3_LOG("active by chan %" PRIu32 "\n", pid);
+                    return true;
+                }
             }
         }
+#endif
     }
     return true;
 }
