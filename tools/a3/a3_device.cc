@@ -269,10 +269,26 @@ bool device::try_acquire_gpu(context* ctx) {
     return true;
 }
 
-bool device::is_active() {
+bool device::is_active(context* ctx) {
     A3_SYNCHRONIZED(mutex_handle()) {
+        registers::accessor regs;
         // this is status register of pgraph
-        return registers::read32(0x400700);
+        if (regs.read32(0x400700)) {
+            return true;
+        }
+
+        // PGRAPH register shows idle, but probably there's working channels
+        if (!ctx) {
+            return false;
+        }
+
+        for (uint32_t pid = ctx->id() * A3_DOMAIN_CHANNELS, pidz = (ctx->id() + 1) * A3_DOMAIN_CHANNELS; pid < pidz; ++pid) {
+            const uint32_t offset = 0x3000 + 0x8 * pid + 0x4;
+            const uint32_t status = regs.read32(offset);
+            if (status & 270471184UL) {
+                return true;
+            }
+        }
     }
     return true;
 }
