@@ -9,6 +9,7 @@
 #include "a3.h"
 #include "a3_channel.h"
 #include "a3_fake_channel.h"
+#include "a3_bar3_channel.h"
 #include "a3_session.h"
 namespace a3 {
 namespace barrier {
@@ -44,8 +45,8 @@ class context : private boost::noncopyable {
     bool through() const { return through_; }
     fake_channel* bar1_channel() { return bar1_channel_.get(); }
     const fake_channel* bar1_channel() const { return bar1_channel_.get(); }
-    fake_channel* bar3_channel() { return bar3_channel_.get(); }
-    const fake_channel* bar3_channel() const { return bar3_channel_.get(); }
+    bar3_channel_t* bar3_channel() { return bar3_channel_.get(); }
+    const bar3_channel_t* bar3_channel() const { return bar3_channel_.get(); }
     channel* channels(int id) { return channels_[id].get(); }
     const channel* channels(int id) const { return channels_[id].get(); }
     barrier::table* barrier() { return barrier_.get(); }
@@ -115,7 +116,7 @@ class context : private boost::noncopyable {
     int domid_;
     uint32_t id_;  // virtualized GPU id
     unique_ptr<fake_channel>::type bar1_channel_;
-    unique_ptr<fake_channel>::type bar3_channel_;
+    unique_ptr<bar3_channel_t>::type bar3_channel_;
     boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
     uint64_t poll_area_;

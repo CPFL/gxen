@@ -1,5 +1,5 @@
 /*
- * A3 Fake Channel
+ * A3 BAR3 fake Channel
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -25,6 +25,8 @@
 #include <utility>
 #include "a3.h"
 #include "a3_context.h"
+#include "a3_device.h"
+#include "a3_device_bar3.h"
 #include "a3_fake_channel.h"
 #include "a3_software_page_table.h"
 #include "a3_barrier.h"
@@ -33,21 +35,23 @@
 #include "a3_page.h"
 #include "a3_bit_mask.h"
 #include "a3_mmio.h"
+#include "a3_bar3_channel.h"
 namespace a3 {
 
-fake_channel::fake_channel(context* ctx, int id, uint64_t predefined_max)
-    : id_(id)
+bar3_channel_t::bar3_channel_t(context* ctx)
+    : id_(-3)
     , enabled_(false)
     , ramin_address_()
-    , table_(new software_page_table(id, ctx->para_virtualized(), predefined_max)) {
+    , page_directory_address_()
+{
 }
 
-void fake_channel::detach(context* ctx, uint64_t addr) {
+void bar3_channel_t::detach(context* ctx, uint64_t addr) {
     A3_LOG("detach from 0x%" PRIX64 " to 0x%" PRIX64 "\n", ramin_address(), addr);
     ctx->barrier()->unmap(ramin_address());
 }
 
-void fake_channel::shadow(context* ctx) {
+void bar3_channel_t::shadow(context* ctx) {
     if (ctx->para_virtualized()) {
         return;
     }
@@ -57,17 +61,23 @@ void fake_channel::shadow(context* ctx) {
     // page directory
     uint64_t page_directory_virt = mmio::read64(&pmem, ramin_address() + 0x0200);
     uint64_t page_directory_phys = ctx->get_phys_address(page_directory_virt);
-    uint64_t page_directory_size = mmio::read64(&pmem, ramin_address() + 0x0208);
-    table()->refresh(ctx, page_directory_phys, page_directory_size);
+    refresh_table(ctx, page_directory_phys);
 }
 
-void fake_channel::attach(context* ctx, uint64_t addr) {
+void bar3_channel_t::refresh_table(context* ctx, uint64_t addr) {
+    page_directory_address_ = addr;
+    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        device::instance()->bar3()->refresh_table(ctx, addr);
+    }
+}
+
+void bar3_channel_t::attach(context* ctx, uint64_t addr) {
     A3_LOG("attach to 0x%" PRIX64 "\n", ramin_address());
     shadow(ctx);
     ctx->barrier()->map(ramin_address());
 }
 
-void fake_channel::refresh(context* ctx, uint64_t addr) {
+void bar3_channel_t::refresh(context* ctx, uint64_t addr) {
     if (enabled()) {
         if (addr == ramin_address()) {
             // same channel ramin

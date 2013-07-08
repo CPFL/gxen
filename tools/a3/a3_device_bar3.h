@@ -1,6 +1,7 @@
 #ifndef A3_DEVICE_BAR3_H_
 #define A3_DEVICE_BAR3_H_
 #include <boost/noncopyable.hpp>
+#include <boost/array.hpp>
 #include <vector>
 #include "a3.h"
 #include "a3_page.h"
@@ -8,6 +9,7 @@
 #include "a3_inttypes.h"
 #include "a3_page_table.h"
 #include "a3_size.h"
+#include "a3_software_page_table.h"
 namespace a3 {
 
 class context;
@@ -24,6 +26,7 @@ class device_bar3 : private boost::noncopyable {
 
     device_bar3(device::bar_t bar);
     void refresh();
+    void refresh_table(context* ctx, uint64_t phys);
     void shadow(context* ctx, uint64_t phys);
     void reset_barrier(context* ctx, uint64_t old, uint64_t addr, bool old_remap);
     page* directory() { return &directory_; }
@@ -31,9 +34,11 @@ class device_bar3 : private boost::noncopyable {
     uint64_t size() const { return size_; }
     uintptr_t address() const { return address_; }
     void flush();
-    void pv_reflect(context* ctx, uint32_t index, uint64_t pte);
+    void pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint64_t host);
     void map_xen_page(context* ctx, uint64_t offset);
     void unmap_xen_page(context* ctx, uint64_t offset);
+
+    uint64_t resolve(context* ctx, uint64_t virtual_address, struct software_page_entry* result);
 
  private:
     void reflect_internal(bool map);
@@ -45,6 +50,8 @@ class device_bar3 : private boost::noncopyable {
     page directory_;
     page entries_;
     std::vector<uint64_t> software_;
+    boost::array<software_page_entry, kBAR3_TOTAL_SIZE / kLARGE_PAGE_SIZE> large_;
+    boost::array<software_page_entry, kBAR3_TOTAL_SIZE / kSMALL_PAGE_SIZE> small_;
 };
 
 }  // namespace a3
