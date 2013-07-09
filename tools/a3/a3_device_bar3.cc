@@ -253,10 +253,10 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
         small_[hindex].refresh(ctx, entry);
         const uint64_t host = guest_to_host_pte(ctx, guest);
         entry.raw = host;
+        map(hindex, entry);
         if (host) {
             barrier::page_entry* barrier_entry = NULL;
             const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
-            map(hindex, entry);
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
                 // map
                 if (mode) {
@@ -272,36 +272,22 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
                 mode = true;
                 init_page = goffset;
                 range = 1;
-            } else {
-                // unmap
-                if (!mode) {
-                    ++range;
-                    continue;
-                }
-
-                if (mode) {
-                    map_xen_page_batch(ctx, init_page, range);
-                }
-                mode = false;
-                init_page = goffset;
-                range = 1;
-            }
-        } else {
-            map(hindex, entry);
-
-            // unmap
-            if (!mode) {
-                ++range;
                 continue;
             }
-
-            if (mode) {
-                map_xen_page_batch(ctx, init_page, range);
-            }
-            mode = false;
-            init_page = goffset;
-            range = 1;
         }
+
+        // unmap
+        if (!mode) {
+            ++range;
+            continue;
+        }
+
+        if (mode) {
+            map_xen_page_batch(ctx, init_page, range);
+        }
+        mode = false;
+        init_page = goffset;
+        range = 1;
     }
 
     // flush
