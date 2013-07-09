@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 #include <stdint.h>
+#include <boost/logic/tribool.hpp>
 #include "a3_device.h"
 #include "a3_device_bar3.h"
 #include "a3_context.h"
@@ -78,6 +79,20 @@ void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
     A3_LOG("unmapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
+}
+
+void device_bar3::map_xen_page_batch(context* ctx, uint64_t offset, uint32_t count) {
+    const uint64_t guest = ctx->bar3_address() + offset;
+    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
+    A3_LOG("batch mapping %" PRIx64 " to %" PRIx64 " %" PRIu32 "\n", guest, host, count);
+    a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
+}
+
+void device_bar3::unmap_xen_page_batch(context* ctx, uint64_t offset, uint32_t count) {
+    const uint64_t guest = ctx->bar3_address() + offset;
+    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
+    A3_LOG("batch unmapping %" PRIx64 " to %" PRIx64 " %" PRIu32 "\n", guest, host, count);
+    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
 }
 
 void device_bar3::map(uint64_t index, const struct page_entry& entry) {
@@ -205,6 +220,97 @@ void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint6
     }
 }
 
+namespace {
+
+static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
+    struct page_entry result;
+    result.raw = guest;
+    if (result.present && result.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = ctx->get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
+    }
+    return result.raw;
+}
+
+}  // namespace anonymous
+
+void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest, uint64_t next, uint32_t count) {
+    // mode true          => map
+    //      false         => unmap
+    //      indeterminate => init
+    boost::logic::tribool mode = boost::logic::indeterminate;
+    int32_t range = -1;
+    uint64_t init_page = -1;
+    for (uint32_t i = 0; i < count; ++i) {
+        const uint64_t hindex = index + i + ((ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE);
+        const uint64_t goffset = ((index + i) * kPAGE_SIZE);
+        struct page_entry entry;
+        entry.raw = guest;
+        small_[hindex].refresh(ctx, entry);
+        const uint64_t host = guest_to_host_pte(ctx, guest);
+        entry.raw = host;
+        if (guest) {
+            barrier::page_entry* barrier_entry = NULL;
+            const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
+            map(hindex, entry);
+            if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
+                // map
+                if (mode) {
+                    // map continues, increment range
+                    ++range;
+                    continue;
+                }
+
+                if (!mode) {
+                    // flush unmapping
+                    unmap_xen_page(ctx, init_page, range);
+                }
+                mode = true;
+                init_page = goffset;
+                range = 1;
+            } else {
+                // unmap
+                if (!mode) {
+                    ++range;
+                    continue;
+                }
+
+                if (mode) {
+                    map_xen_page(ctx, init_page, range);
+                }
+                mode = false;
+                init_page = goffset;
+                range = 1;
+            }
+        } else {
+            map(hindex, entry);
+
+            // unmap
+            if (!mode) {
+                ++range;
+                continue;
+            }
+
+            if (mode) {
+                map_xen_page(ctx, init_page, range);
+            }
+            mode = false;
+            init_page = goffset;
+            range = 1;
+        }
+    }
+
+    // flush
+    if (mode) {
+        map_xen_page(ctx, init_page, range);
+    } else if (!mode) {
+        unmap_xen_page(ctx, init_page, range);
+    }
+}
 
 void device_bar3::refresh_table(context* ctx, uint64_t phys) {
     pmem::accessor pmem;

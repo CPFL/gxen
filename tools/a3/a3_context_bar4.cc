@@ -55,7 +55,7 @@ static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
     return result.raw;
 }
 
-}
+}  // namespace anonymous
 
 int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host) {
     if (pgt == pv_bar3_pgt_) {
@@ -195,11 +195,18 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t next = slot->u32[3];
             const uint32_t count = slot->u32[4];
             uint64_t guest = slot->u64[3];
-            for (uint32_t i = 0; i < count; ++i, guest += next) {
-                const int ret = pv_map(pgt, index + i, guest, guest_to_host_pte(this, guest));
-                if (ret) {
-                    A3_LOG("INVALID...\n");
-                    return ret;
+            if (pgt == pv_bar3_pgt_) {
+                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    device::instance()->bar3()->pv_reflect_batch(this, index, guest, next, count);
+                }
+                return 0;
+            } else {
+                for (uint32_t i = 0; i < count; ++i, guest += next) {
+                    const int ret = pv_map(pgt, index + i, guest, guest_to_host_pte(this, guest));
+                    if (ret) {
+                        A3_LOG("INVALID...\n");
+                        return ret;
+                    }
                 }
             }
         }
