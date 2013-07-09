@@ -37,7 +37,7 @@ class device : private boost::noncopyable {
     bool initialized() const { return device_; }
     uint32_t acquire_virt();
     void release_virt(uint32_t virt);
-    mutex& mutex_handle() { return mutex_handle_; }
+    mutex_t& mutex() { return mutex_; }
     uint32_t read(int bar, uint32_t offset, std::size_t size);
     void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
     uint32_t pmem() const { return pmem_; }
@@ -63,7 +63,7 @@ class device : private boost::noncopyable {
  private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
-    mutex mutex_handle_;
+    mutex_t mutex_;
     uint32_t pmem_;
     boost::array<bar_t, 5> bars_;
     boost::scoped_ptr<device_bar1> bar1_;

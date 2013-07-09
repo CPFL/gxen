@@ -1,5 +1,6 @@
 #ifndef A3_CONTEXT_H_
 #define A3_CONTEXT_H_
+#include <queue>
 #include <boost/scoped_array.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
@@ -110,6 +111,11 @@ class context : private boost::noncopyable {
     }
     int pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host);
 
+    // BAND
+    void suspend(const command& cmd) {
+        suspended_.push(cmd);
+    }
+
     session* session_;
     bool through_;
     bool initialized_;
@@ -136,10 +142,11 @@ class context : private boost::noncopyable {
     pv_page* pv_bar3_pgd_;
     pv_page* pv_bar3_pgt_;
 
-    // only touched by scheduler
+    // only touched by BAND scheduler
     uint64_t budget_;
     uint64_t bandwidth_;
     uint64_t utilization_;
+    std::queue<command> suspended_;
 };
 
 }  // namespace a3

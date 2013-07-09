@@ -145,7 +145,7 @@ void device_bar3::reset_barrier(context* ctx, uint64_t old, uint64_t addr, bool 
 }
 
 void device_bar3::flush() {
-    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;
         registers.write32(0x100cb8, directory_.address() >> 8);

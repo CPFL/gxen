@@ -81,7 +81,7 @@ void fifo_scheduler::run() {
         }
 
         {
-            boost::unique_lock<mutex> lock(device::instance()->mutex_handle());
+            boost::unique_lock<mutex_t> lock(device::instance()->mutex());
             while (current != handle.first && device::instance()->is_active(current)) {
                 cond2.timed_wait(lock, wait_);
             }

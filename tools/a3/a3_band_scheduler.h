@@ -25,12 +25,16 @@ class band_scheduler : private boost::noncopyable {
     typedef std::pair<context*, command> fire_t;
     void run();
     void enqueue(context* ctx, const command& cmd);
+    void suspend(context* ctx, const command& cmd);
+    void dispatch(context* ctx, const command& cmd);
+    void acquire(context* ctx);
 
     boost::posix_time::time_duration wait_;
     boost::scoped_ptr<boost::thread> thread_;
     boost::mutex mutex_;
     boost::condition_variable cond_;
     std::queue<fire_t> queue_;
+    context* current_;
 };
 
 }  // namespace a3

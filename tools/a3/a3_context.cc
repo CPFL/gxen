@@ -135,7 +135,7 @@ bool context::handle(const command& cmd) {
     }
 
     if (through()) {
-        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
             // through mode. direct access
             const uint32_t bar = cmd.bar();
             if (cmd.type == command::TYPE_WRITE) {
@@ -238,7 +238,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
-        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar1()->shadow(this);
             device::instance()->bar1()->flush();
         }
@@ -247,7 +247,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     if (bar3_channel()->page_directory_address() == page_directory) {
         // BAR3
         bar3_channel()->refresh_table(this, page_directory);
-        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar3()->shadow(this, page_directory);
             device::instance()->bar3()->flush();
         }
