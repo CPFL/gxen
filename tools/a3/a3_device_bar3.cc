@@ -267,7 +267,7 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
 
                 if (!mode) {
                     // flush unmapping
-                    unmap_xen_page(ctx, init_page, range);
+                    unmap_xen_page_batch(ctx, init_page, range);
                 }
                 mode = true;
                 init_page = goffset;
@@ -280,7 +280,7 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
                 }
 
                 if (mode) {
-                    map_xen_page(ctx, init_page, range);
+                    map_xen_page_batch(ctx, init_page, range);
                 }
                 mode = false;
                 init_page = goffset;
@@ -296,7 +296,7 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
             }
 
             if (mode) {
-                map_xen_page(ctx, init_page, range);
+                map_xen_page_batch(ctx, init_page, range);
             }
             mode = false;
             init_page = goffset;
@@ -306,9 +306,9 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
 
     // flush
     if (mode) {
-        map_xen_page(ctx, init_page, range);
+        map_xen_page_batch(ctx, init_page, range);
     } else if (!mode) {
-        unmap_xen_page(ctx, init_page, range);
+        unmap_xen_page_batch(ctx, init_page, range);
     }
 }
 
