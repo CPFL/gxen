@@ -82,11 +82,10 @@ void fifo_scheduler::run() {
 
         {
             boost::unique_lock<mutex_t> lock(device::instance()->mutex());
-            while (current != handle.first && device::instance()->is_active(current)) {
-                cond2.timed_wait(lock, wait_);
-            }
-
             if (current != handle.first) {
+                while (device::instance()->is_active(current)) {
+                    cond2.timed_wait(lock, wait_);
+                }
                 // acquire GPU
                 current = handle.first;
                 const bool res = device::instance()->try_acquire_gpu(current);
