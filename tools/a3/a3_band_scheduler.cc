@@ -1,5 +1,5 @@
 /*
- * A3 FIFO scheduler
+ * A3 BAND scheduler
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -23,7 +23,7 @@
  */
 #include <stdint.h>
 #include "a3.h"
-#include "a3_fifo_scheduler.h"
+#include "a3_band_scheduler.h"
 #include "a3_context.h"
 #include "a3_registers.h"
 #include "a3_device.h"
@@ -31,7 +31,7 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-fifo_scheduler::fifo_scheduler(const boost::posix_time::time_duration& wait)
+band_scheduler::band_scheduler(const boost::posix_time::time_duration& wait)
     : wait_(wait)
     , thread_()
     , mutex_()
@@ -40,25 +40,25 @@ fifo_scheduler::fifo_scheduler(const boost::posix_time::time_duration& wait)
 {
 }
 
-fifo_scheduler::~fifo_scheduler() {
+band_scheduler::~band_scheduler() {
     stop();
 }
 
-void fifo_scheduler::start() {
+void band_scheduler::start() {
     if (thread_) {
         stop();
     }
-    thread_.reset(new boost::thread(&fifo_scheduler::run, this));
+    thread_.reset(new boost::thread(&band_scheduler::run, this));
 }
 
-void fifo_scheduler::stop() {
+void band_scheduler::stop() {
     if (thread_) {
         thread_->interrupt();
         thread_.reset();
     }
 }
 
-void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
+void band_scheduler::enqueue(context* ctx, const command& cmd) {
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
         queue_.push(fire_t(ctx, cmd));
@@ -66,7 +66,7 @@ void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
     cond_.notify_one();
 }
 
-void fifo_scheduler::run() {
+void band_scheduler::run() {
     context* current = NULL;
     fire_t handle;
     boost::condition_variable_any cond2;
@@ -88,6 +88,8 @@ void fifo_scheduler::run() {
 
             if (current != handle.first) {
                 // acquire GPU
+                // context change.
+                // To ensure all previous fires should be submitted, we flush BAR1.
                 current = handle.first;
                 const bool res = device::instance()->try_acquire_gpu(current);
                 ignore_unused_variable_warning(res);
