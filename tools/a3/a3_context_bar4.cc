@@ -59,20 +59,20 @@ static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
 
 int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host) {
     if (pgt == pv_bar3_pgt_) {
-        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar3()->pv_reflect(this, index, guest, host);
         }
         return 0;
     } else if (pgt == pv_bar1_large_pgt_) {
         bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, guest);
         // TODO(Yusuke Suzuki) sync
-//                 A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+//                 A3_SYNCHRONIZED(device::instance()->mutex()) {
 //                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);
 //                 }
         return 0;
     } else if (pgt == pv_bar1_small_pgt_) {
         bar1_channel()->table()->pv_reflect_entry(this, 0, false, index, guest);
-        A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar1()->pv_reflect_entry(this, false, index, host);
         }
         return 0;
@@ -143,14 +143,14 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                     // TODO(Yusuke Suzuki)
                     // set xen shadow for PV
                     bar1_channel()->table()->pv_scan(this, 0, true, pgt1);
-                    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    A3_SYNCHRONIZED(device::instance()->mutex()) {
                         device::instance()->bar1()->pv_scan(this);
                     }
                 }
                 if (pv_bar1_small_pgt_ != pgt0) {
                     pv_bar1_small_pgt_ = pgt0;
                     bar1_channel()->table()->pv_scan(this, 0, false, pgt0);
-                    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                    A3_SYNCHRONIZED(device::instance()->mutex()) {
                         device::instance()->bar1()->pv_scan(this);
                     }
                 }
@@ -196,7 +196,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t count = slot->u32[4];
             uint64_t guest = slot->u64[3];
             if (pgt == pv_bar3_pgt_) {
-                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                A3_SYNCHRONIZED(device::instance()->mutex()) {
                     device::instance()->bar3()->pv_reflect_batch(this, index, guest, next, count);
                 }
                 return 0;
@@ -259,7 +259,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             }
 
             if (pgd == pv_bar1_pgd_) {
-                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                A3_SYNCHRONIZED(device::instance()->mutex()) {
                     device::instance()->bar1()->flush();
                 }
                 return 0;
@@ -267,7 +267,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
 
             if (pgd == pv_bar3_pgd_) {
                 A3_LOG("BAR3 flush\n");
-                A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+                A3_SYNCHRONIZED(device::instance()->mutex()) {
                     device::instance()->bar3()->flush();
                     // pgd = device::instance()->bar3()->directory();
                 }
@@ -275,7 +275,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             }
 
             const uint32_t engine = slot->u32[2];
-            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            A3_SYNCHRONIZED(device::instance()->mutex()) {
                 registers::accessor regs;
                 if (!regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000)) {
                     A3_LOG("INVALID...\n");
@@ -370,7 +370,7 @@ void context::read_bar4(const command& cmd) {
                 munmap(guest_, NOUVEAU_PV_SLOT_TOTAL);
                 guest_ = NULL;
             }
-            A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+            A3_SYNCHRONIZED(device::instance()->mutex()) {
                 guest_ = reinterpret_cast<uint8_t*>(a3_xen_map_foreign_range(device::instance()->xl_ctx(), domid(), NOUVEAU_PV_SLOT_TOTAL, PROT_READ | PROT_WRITE, gp >> 12));
             }
 

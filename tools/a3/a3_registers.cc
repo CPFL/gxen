@@ -28,7 +28,7 @@ namespace a3 {
 namespace registers {
 
 accessor::accessor()
-    : lock_(a3::device::instance()->mutex_handle()) {
+    : lock_(a3::device::instance()->mutex()) {
 }
 
 uint32_t accessor::read(uint32_t offset, std::size_t size) {

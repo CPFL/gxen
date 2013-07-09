@@ -59,46 +59,68 @@ void band_scheduler::stop() {
 }
 
 void band_scheduler::enqueue(context* ctx, const command& cmd) {
+    // on arrival
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
-        queue_.push(fire_t(ctx, cmd));
+        if (!current_) {
+            acquire(ctx);
+        }
+        if (current_ != ctx) {
+            suspend(ctx, cmd);
+        } else {
+            dispatch(ctx, cmd);
+        }
     }
-    cond_.notify_one();
+}
+
+void band_scheduler::acquire(context* ctx) {
+    current_ = ctx;
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
+        device::instance()->try_acquire_gpu(ctx);
+    }
+}
+
+void band_scheduler::suspend(context* ctx, const command& cmd) {
+    queue_.push(fire_t(ctx, cmd));
+}
+
+void band_scheduler::dispatch(context* ctx, const command& cmd) {
+    device::instance()->bar1()->write(ctx, cmd);
 }
 
 void band_scheduler::run() {
-    context* current = NULL;
-    fire_t handle;
-    boost::condition_variable_any cond2;
-    while (true) {
-        {
-            boost::unique_lock<boost::mutex> lock(mutex_);
-            while (queue_.empty()) {
-                cond_.wait(lock);
-            }
-            handle = queue_.front();
-            queue_.pop();
-        }
-
-        {
-            boost::unique_lock<mutex> lock(device::instance()->mutex_handle());
-            while (current != handle.first && device::instance()->is_active(current)) {
-                cond2.timed_wait(lock, wait_);
-            }
-
-            if (current != handle.first) {
-                // acquire GPU
-                // context change.
-                // To ensure all previous fires should be submitted, we flush BAR1.
-                current = handle.first;
-                const bool res = device::instance()->try_acquire_gpu(current);
-                ignore_unused_variable_warning(res);
-                A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
-            }
-            device::instance()->bar1()->write(current, handle.second);
-            A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active(current) ? "ACTIVE" : "STOP");
-        }
-    }
+//     context* current = NULL;
+//     fire_t handle;
+//     boost::condition_variable_any cond2;
+//     while (true) {
+//         {
+//             boost::unique_lock<boost::mutex> lock(mutex_);
+//             while (queue_.empty()) {
+//                 cond_.wait(lock);
+//             }
+//             handle = queue_.front();
+//             queue_.pop();
+//         }
+//
+//         {
+//             boost::unique_lock<mutex> lock(device::instance()->mutex_handle());
+//             while (current != handle.first && device::instance()->is_active(current)) {
+//                 cond2.timed_wait(lock, wait_);
+//             }
+//
+//             if (current != handle.first) {
+//                 // acquire GPU
+//                 // context change.
+//                 // To ensure all previous fires should be submitted, we flush BAR1.
+//                 current = handle.first;
+//                 const bool res = device::instance()->try_acquire_gpu(current);
+//                 ignore_unused_variable_warning(res);
+//                 A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
+//             }
+//             device::instance()->bar1()->write(current, handle.second);
+//             A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active(current) ? "ACTIVE" : "STOP");
+//         }
+//     }
 }
 
 }  // namespace a3

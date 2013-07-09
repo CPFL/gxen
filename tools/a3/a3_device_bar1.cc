@@ -105,7 +105,7 @@ void device_bar1::map(uint64_t virt, const struct page_entry& entry) {
 }
 
 void device_bar1::flush() {
-    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;
         registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000);

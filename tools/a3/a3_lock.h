@@ -3,10 +3,10 @@
 #include <boost/thread.hpp>
 namespace a3 {
 
-typedef boost::recursive_mutex mutex;
+typedef boost::recursive_mutex mutex_t;
 
 #define A3_SYNCHRONIZED(m) \
-    if (mutex::scoped_lock __LOCK__ = mutex::scoped_lock(m))
+    if (mutex_t::scoped_lock __LOCK__ = mutex_t::scoped_lock(m))
 
 }  // namespace a3
 #endif  // A3_H_

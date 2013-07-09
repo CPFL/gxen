@@ -29,7 +29,7 @@ namespace a3 {
 
 page::page(std::size_t n)
     : vram_() {
-    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
         vram_ = device::instance()->malloc(n);
     }
     // A3_LOG("page allocated 0x%" PRIx64 "\n", address());
@@ -37,7 +37,7 @@ page::page(std::size_t n)
 }
 
 page::~page() {
-    A3_SYNCHRONIZED(device::instance()->mutex_handle()) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
         device::instance()->free(vram_);
     }
 }

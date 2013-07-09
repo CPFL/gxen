@@ -65,7 +65,7 @@ static unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
 device::device()
     : device_()
     , virts_(2, -1)
-    , mutex_handle_()
+    , mutex_()
     , pmem_()
     , bars_()
     , bar1_()
@@ -191,7 +191,7 @@ void device::initialize(const bdf& bdf) {
 }
 
 uint32_t device::acquire_virt() {
-    mutex::scoped_lock lock(mutex_handle_);
+    mutex_t::scoped_lock lock(mutex());
     const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
     if (pos != virts_.npos) {
         virts_.set(pos, 0);
@@ -200,7 +200,7 @@ uint32_t device::acquire_virt() {
 }
 
 void device::release_virt(uint32_t virt) {
-    mutex::scoped_lock lock(mutex_handle_);
+    mutex_t::scoped_lock lock(mutex());
     virts_.set(virt, 1);
 }
 
@@ -248,7 +248,7 @@ void device::free(vram_memory* mem) {
 }
 
 bool device::try_acquire_gpu(context* ctx) {
-    A3_SYNCHRONIZED(mutex_handle()) {
+    A3_SYNCHRONIZED(mutex()) {
         if (domid_ >= 0) {
             if (domid_ == ctx->domid()) {
                 return true;
@@ -270,7 +270,7 @@ bool device::try_acquire_gpu(context* ctx) {
 }
 
 bool device::is_active(context* ctx) {
-    A3_SYNCHRONIZED(mutex_handle()) {
+    A3_SYNCHRONIZED(mutex()) {
         registers::accessor regs;
         // this is status register of pgraph
         if (regs.read32(0x400700)) {
@@ -300,13 +300,13 @@ bool device::is_active(context* ctx) {
 }
 
 void device::fire(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(mutex_handle()) {
+    A3_SYNCHRONIZED(mutex()) {
         scheduler_.enqueue(ctx, cmd);
     }
 }
 
 void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
-    A3_SYNCHRONIZED(mutex_handle()) {
+    A3_SYNCHRONIZED(mutex()) {
         playlist_->update(ctx, address, cmd);
     }
 }
