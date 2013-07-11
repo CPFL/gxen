@@ -55,7 +55,7 @@ class context : private boost::noncopyable {
     const barrier::table* barrier() const { return barrier_.get(); }
     channel_map* ramin_channel_map() { return &ramin_channel_map_; }
     const channel_map* ramin_channel_map() const { return &ramin_channel_map_; }
-    uint64_t vram_size() const { return A3_2G; }
+    uint64_t vram_size() const { return A3_MEMORY_SIZE; }
     uint64_t get_address_shift() const {
         return id() * vram_size();
     }

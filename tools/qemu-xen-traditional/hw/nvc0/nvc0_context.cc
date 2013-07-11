@@ -139,7 +139,7 @@ void context::notify_bar3_change() {
 }  // namespace nvc0
 
 extern "C" void nvc0_context_init(nvc0_state_t* state) {
-    // currenty, 3GB
-    state->priv = static_cast<void*>(new nvc0::context(state, 2ULL * 1024 * 1024 * 1024));
+    // currenty, 1GB
+    state->priv = static_cast<void*>(new nvc0::context(state, A3_MEMORY_SIZE));
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -12,6 +12,7 @@ namespace a3 {
 #define A3_DOMAIN_CHANNELS (A3_CHANNELS / 2)
 #define A3_1G 0x40000000ULL
 #define A3_2G (A3_1G * 2)
+#define A3_MEMORY_SIZE A3_1G
 #define A3_GPC_BCAST(r) (0x418000 + (r))
 #define A3_BAR0_SIZE (32ULL << 20)
 #define A3_BAR4_SIZE (0x1000ULL)
