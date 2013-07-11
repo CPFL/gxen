@@ -8,6 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 #include "a3.h"
+#include "a3_lock.h"
 #include "a3_channel.h"
 #include "a3_bar1_channel.h"
 #include "a3_bar3_channel.h"
@@ -88,6 +89,21 @@ class context : private boost::noncopyable {
         return pgds_[id];
     }
 
+    // BAND
+    void suspend(const command& cmd) {
+        A3_SYNCHRONIZED(mutex_) {
+            suspended_.push(cmd);
+        }
+    }
+    bool is_suspended() {
+        A3_SYNCHRONIZED(mutex_) {
+            return !suspended_.empty();
+        }
+        return false;
+    }
+    uint64_t budget() const { return budget_; }
+    uint64_t utilization() const { return utilization_; }
+    uint64_t bandwidth() const { return bandwidth_; }
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -110,11 +126,6 @@ class context : private boost::noncopyable {
         return it->second;
     }
     int pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host);
-
-    // BAND
-    void suspend(const command& cmd) {
-        suspended_.push(cmd);
-    }
 
     session* session_;
     bool through_;
@@ -143,9 +154,10 @@ class context : private boost::noncopyable {
     pv_page* pv_bar3_pgt_;
 
     // only touched by BAND scheduler
-    uint64_t budget_;
-    uint64_t bandwidth_;
-    uint64_t utilization_;
+    int64_t budget_;
+    int64_t bandwidth_;
+    int64_t utilization_;
+    mutex_t mutex_;
     std::queue<command> suspended_;
 };
 
