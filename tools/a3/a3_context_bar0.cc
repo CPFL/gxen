@@ -319,7 +319,8 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x022438:
-        buffer()->value = vram_size() / A3_1G;
+        // memory controller size
+        buffer()->value = A3_MEMORY_CTL_NUM;
         return;
 
     case 0x100cb8:
@@ -346,8 +347,9 @@ void context::read_bar0(const command& cmd) {
             return;
         }
 
-    case 0x121c75:
-        buffer()->value = vram_size() / A3_1G;
+    case 0x121c74:
+        // memory controller size
+        buffer()->value = A3_MEMORY_CTL_NUM;
         return;
 
     case 0x409500:
@@ -433,6 +435,20 @@ void context::read_bar0(const command& cmd) {
             }
 
             return;
+        }
+    }
+
+    // memomry controller
+    if (0x110200 <= cmd.offset && cmd.offset < 0x110200 + 0x1000 * 6) {
+        switch (cmd.offset) {
+            case 0x11020c:
+            case 0x11120c:
+            case 0x11220c:
+            case 0x11320c:
+            case 0x11420c:
+            case 0x11520c:
+                buffer()->value = A3_MEMORY_CTL_PART >> 20;
+                return;
         }
     }
 
