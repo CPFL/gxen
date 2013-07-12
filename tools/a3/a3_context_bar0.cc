@@ -104,6 +104,14 @@ void context::write_bar0(const command& cmd) {
             return;
         }
 
+    case 0x070000: {
+            // PFIFO flush state / trigger
+            registers::accessor regs;
+            regs.write32(cmd.offset, cmd.value);
+            A3_LOG("PRAMIN FLUSH STATE WRITE %" PRIx32 "\n", cmd.value);
+        }
+        return;
+
     case 0x022438:
         // memctrl size (2)
         return;
@@ -226,7 +234,7 @@ void context::write_bar0(const command& cmd) {
     }
 
     // pmem / PMEM
-    if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
+    if (0x700000 <= cmd.offset && cmd.offset < 0x800000) {
         const uint64_t base = get_phys_address(static_cast<uint64_t>(reg32(0x1700)) << 16);
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
@@ -318,6 +326,14 @@ void context::read_bar0(const command& cmd) {
         buffer()->value = reg32(cmd.offset);
         return;
 
+    case 0x070000: {
+            // PFIFO flush state / trigger
+            registers::accessor regs;
+            buffer()->value = regs.read32(cmd.offset);
+            A3_LOG("PRAMIN FLUSH STATE READ  %" PRIx32 "\n", buffer()->value);
+        }
+        return;
+
     case 0x022438:
         buffer()->value = vram_size() / A3_1G;
         return;
@@ -384,7 +400,7 @@ void context::read_bar0(const command& cmd) {
     }
 
     // pmem / PMEM
-    if (0x700000 <= cmd.offset && cmd.offset <= 0x7fffff) {
+    if (0x700000 <= cmd.offset && cmd.offset < 0x800000) {
         const uint64_t base = get_phys_address(static_cast<uint64_t>(reg32(0x1700)) << 16);
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
@@ -399,7 +415,7 @@ void context::read_bar0(const command& cmd) {
     }
 
     // PFIFO
-    if (0x002000 <= cmd.offset && cmd.offset <= 0x004000) {
+    if (0x002000 <= cmd.offset && cmd.offset < 0x004000) {
         // see pscnv/nvc0_fifo.c
         // 0x003000 + id * 8
         if (cmd.offset >= 0x003000 && (cmd.offset - 0x003000) <= A3_CHANNELS * 8) {
