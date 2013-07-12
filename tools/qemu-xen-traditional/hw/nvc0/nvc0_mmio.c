@@ -167,7 +167,9 @@ void nvc0_mmio_init(nvc0_state_t* state) {
     // BAR3 effective area is limited to 16MB (24bits)
     // So we should split this area. hard coded 8MB
     // pci_register_io_region(&state->device->dev, 3, 0x4000000 / 4, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
-    pci_register_io_region(&state->device->dev, 3, 0x1000000 / 2, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    // TODO(Yusuke Suzuki)
+    // This is hard coded value
+    pci_register_io_region(&state->device->dev, 3, (2ULL << 20), PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     nvc0_init_bar3(state);
 
     // Region ROM : Meomory
