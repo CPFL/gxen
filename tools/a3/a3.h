@@ -9,11 +9,12 @@ namespace a3 {
 #define A3_VERSION "0.0.1"
 #define A3_ENDPOINT "/tmp/a3_endpoint"
 #define A3_CHANNELS 128
-#define A3_DOMAIN_CHANNELS (A3_CHANNELS / 2)
 #define A3_1G 0x40000000ULL
 #define A3_2G (A3_1G * 2)
 
 #define A3_VM_NUM 8
+
+#define A3_DOMAIN_CHANNELS (A3_CHANNELS / A3_VM_NUM)
 
 #define A3_MEMORY_CTL_NUM 1
 #define A3_MEMORY_CTL_PART (A3_1G / 2)
