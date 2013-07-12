@@ -64,7 +64,7 @@ static unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
 
 device::device()
     : device_()
-    , virts_(2, -1)
+    , virts_(A3_VM_NUM, -1)
     , mutex_()
     , pmem_()
     , bars_()
