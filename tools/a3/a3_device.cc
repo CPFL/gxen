@@ -282,16 +282,20 @@ bool device::is_active(context* ctx) {
             return false;
         }
 
-        for (uint32_t pid = ctx->id() * A3_DOMAIN_CHANNELS, pidz = (ctx->id() + 1) * A3_DOMAIN_CHANNELS; pid < pidz; ++pid) {
-            const uint32_t offset = 0x3000 + 0x8 * pid + 0x4;
+        for (uint32_t pid = 0; pid < A3_DOMAIN_CHANNELS; ++pid) {
+            const uint32_t offset = 0x3000 + 0x8 * ((ctx->id() * A3_DOMAIN_CHANNELS) + pid) + 0x4;
             const uint32_t status = regs.read32(offset);
             if (status & 0x1UL) {
+                // 0b10000000110110000000100010000
+                //   10000000000000001000000000001
+                //             1000001000000000001
+                //                   1000000000001
                 // 0b10000000111110000000100010000
-                if (status & 270467344UL) {
-                    A3_LOG("active by chan %" PRIu32 "\n", pid);
+                if (status & 270205200UL) {
+                    A3_LOG("active by chan %" PRIu32 " 0x%" PRIx32 "\n", pid, status);
                     return true;
                 } else {
-                    A3_LOG("chan %" PRIu32 " is runnable but not active\n", pid);
+                    A3_LOG("chan %" PRIu32 " is runnable but not active 0x%" PRIx32 "\n", pid, status);
                 }
             }
         }
