@@ -174,17 +174,14 @@ static void nvc0_init_real_device(nvc0_state_t* state, uint8_t r_bus, uint8_t r_
 //         Capabilities: [600 v1] Vendor Specific Information: ID=0001 Rev=1 Len=024 <?>
 //         Kernel driver in use: pciback
 //         Kernel modules: nouveau, nvidiafb
-struct pt_dev * pci_nvc0_init(PCIBus *bus,
-        const char *e_dev_name, int e_devfn, uint8_t r_bus, uint8_t r_dev,
-        uint8_t r_func, uint32_t machine_irq, struct pci_access *pci_access,
-        char *opt) {
+struct pt_dev * pci_nvc0_init(PCIBus *bus, const char *e_dev_name) {
     struct pt_dev_with_state* result;
     nvc0_state_t* state;
     struct pci_config_header* pch;
     uint8_t *pci_conf;
     int instance;
 
-    result = (struct pt_dev_with_state*)pci_register_device(bus, "nvc0", sizeof(struct pt_dev_with_state), e_devfn, NULL, NULL);
+    result = (struct pt_dev_with_state*)pci_register_device(bus, "nvc0", sizeof(struct pt_dev_with_state), -1, NULL, NULL);
     state = nvc0_state(result);
     state->device = (struct pt_dev*)result;
 
@@ -193,7 +190,7 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus,
     state->guest = nvc0_guest_id;
     state->log = 0;
 
-    nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
+    // nvc0_init_real_device(state, r_bus, r_dev, r_func, pci_access);
 
     pci_conf = state->device->dev.config;
     pch = (struct pci_config_header *)state->device->dev.config;
