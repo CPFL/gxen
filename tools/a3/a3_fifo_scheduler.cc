@@ -83,8 +83,15 @@ void fifo_scheduler::run() {
         {
             boost::unique_lock<mutex_t> lock(device::instance()->mutex());
             if (current != handle.first) {
+                uint64_t counter = 0;
+                boost::this_thread::sleep(wait_);
                 while (device::instance()->is_active(current)) {
+                    ++counter;
                     cond2.timed_wait(lock, wait_);
+                    if ((counter % 1000) == 0) {
+                        printf("Too long stop %" PRIu64 "\n", counter);
+                        std::fflush(stdout);
+                    }
                 }
                 // acquire GPU
                 current = handle.first;
@@ -93,6 +100,11 @@ void fifo_scheduler::run() {
                 A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
             }
             device::instance()->bar1()->write(current, handle.second);
+            registers::accessor regs;
+            regs.write32(0x070000, 0x00000001);
+            if (!regs.wait_eq(0x070000, 0x00000002, 0x00000000)) {
+                A3_LOG("PRAMIN flush out\n");
+            }
             A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active(current) ? "ACTIVE" : "STOP");
         }
     }
