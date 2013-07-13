@@ -10,10 +10,7 @@ extern "C" {
 
 #include "pass-through.h"
 
-struct pt_dev* pci_nvc0_init(PCIBus *e_bus,
-        const char *e_dev_name, int e_devfn, uint8_t r_bus, uint8_t r_dev,
-        uint8_t r_func, uint32_t machine_irq, struct pci_access *pci_access,
-        char *opt);
+struct pt_dev * pci_nvc0_init(PCIBus *bus, const char *e_dev_name);
 
 #ifdef __cplusplus
 }
