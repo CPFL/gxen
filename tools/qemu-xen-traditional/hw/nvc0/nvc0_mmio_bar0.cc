@@ -33,6 +33,7 @@
 #include "nvc0_mmio_bar0.h"
 #include "nvc0_context.h"
 #include "nvc0_vm.h"
+#include "nvc0_vbios.inc"
 
 // crystal freq is 27000KHz
 #define GPU_CLOCKS_PER_NANO_SEC 27
@@ -54,17 +55,17 @@ static uint64_t timer_now(void) {
 //   control registers. 16MB in size. Is divided into several areas for
 //   each of the functional blocks of the card.
 extern "C" void nvc0_init_bar0(nvc0_state_t* state) {
-//     void* ptr = malloc(0x2000000);
-//     memset(ptr, 0, 0x2000000);
-//     state->bar[0].space = static_cast<uint8_t*>(ptr);
-//     nvc0_mmio_write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
-//
-//     // map vbios
-//     NVC0_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
-//     memcpy(state->bar[0].space + NV_PROM_OFFSET, nvc0_vbios, sizeof(nvc0_vbios));
-//
-//     // and initialization information from BIOS
-//     #include "nvc0_init.inc"
+    void* ptr = malloc(0x2000000);
+    memset(ptr, 0, 0x2000000);
+    state->bar[0].space = static_cast<uint8_t*>(ptr);
+    nvc0_mmio_write32(ptr, NV03_PMC_BOOT_0, NVC0_REG0);
+
+    // map vbios
+    NVC0_PRINTF("BIOS size ... %lu\n", sizeof(nvc0_vbios));
+    memcpy(state->bar[0].space + NV_PROM_OFFSET, nvc0_vbios, sizeof(nvc0_vbios));
+
+    // and initialization information from BIOS
+    // #include "nvc0_init.inc"
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
@@ -77,6 +78,9 @@ extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) 
         offset,
         { a3::command::BAR0, sizeof(uint8_t) }
     };
+    if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        return nvc0_read8(state->bar[0].space + cmd.offset);
+    }
     return ctx->message(cmd, true).value;
 }
 
@@ -90,6 +94,9 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
         offset,
         { a3::command::BAR0, sizeof(uint16_t) }
     };
+    if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        return nvc0_read16(state->bar[0].space + cmd.offset);
+    }
     return ctx->message(cmd, true).value;
 }
 
@@ -103,6 +110,10 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
         offset,
         { a3::command::BAR0, sizeof(uint8_t) }
     };
+    if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        nvc0_write8(cmd.value, state->bar[0].space + cmd.offset);
+        return;
+    }
     ctx->message(cmd, false);
 }
 
@@ -116,6 +127,10 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
         offset,
         { a3::command::BAR0, sizeof(uint16_t) }
     };
+    if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        nvc0_write16(cmd.value, state->bar[0].space + cmd.offset);
+        return;
+    }
     ctx->message(cmd, false);
 }
 
@@ -152,6 +167,11 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
             offset,
             { a3::command::BAR0, sizeof(uint32_t) }
         };
+
+        if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+            return nvc0_read32(state->bar[0].space + cmd.offset);
+        }
+
         ret = ctx->message(cmd, true).value;
     }
 
@@ -200,6 +220,11 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
         offset,
         { a3::command::BAR0, sizeof(uint32_t) }
     };
+
+    if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        nvc0_write32(cmd.value, state->bar[0].space + cmd.offset);
+        return;
+    }
     ctx->message(cmd, false);
     return;
 }
