@@ -11,6 +11,7 @@ int a3_xen_deassign_device(libxl_ctx* ctx, int domid, unsigned int encoded_bdf);
 int a3_xen_add_memory_mapping(libxl_ctx* ctx, int domid, unsigned long first_gfn, unsigned long first_mfn, unsigned long nr_mfns);
 int a3_xen_remove_memory_mapping(libxl_ctx* ctx, int domid, unsigned long first_gfn, unsigned long first_mfn, unsigned long nr_mfns);
 void* a3_xen_map_foreign_range(libxl_ctx* ctx, int domid, int size, int prot, unsigned long mfn);
+unsigned long a3_xen_gfn_to_mfn(libxl_ctx* ctx, int domid, unsigned long gfn);
 
 #ifdef __cplusplus
 }

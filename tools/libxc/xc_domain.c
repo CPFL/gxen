@@ -1514,6 +1514,22 @@ int xc_domain_set_virq_handler(xc_interface *xch, uint32_t domid, int virq)
     return do_domctl(xch, &domctl);
 }
 
+
+int xc_domain_gfn_to_mfn(xc_interface *xch, uint32_t domid, unsigned long gfn, unsigned long* mfn)
+{
+    DECLARE_DOMCTL;
+    int rc;
+
+    domctl.cmd = XEN_DOMCTL_gfn_to_mfn;
+    domctl.domain = domid;
+    domctl.u.gfn_to_mfn.gfn = gfn;
+    rc = do_domctl(xch, &domctl);
+
+    *mfn = domctl.u.gfn_to_mfn.mfn;
+
+    return rc;
+}
+
 /*
  * Local variables:
  * mode: C
