@@ -238,7 +238,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 // TODO(Yusuke Suzuki): specialize 0x0
                 struct page_entry gpte;
                 gpte.raw = 0x0;
-                const struct page_entry hpte = guest_to_host(0x0);
+                const struct page_entry hpte = guest_to_host(gpte);
                 const int ret = pv_map(pgt, index + i, 0x0, hpte.raw);
                 if (ret) {
                     return ret;
