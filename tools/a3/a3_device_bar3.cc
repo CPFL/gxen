@@ -220,24 +220,6 @@ void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint6
     }
 }
 
-namespace {
-
-static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
-    struct page_entry result;
-    result.raw = guest;
-    if (result.present && result.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-    }
-    return result.raw;
-}
-
-}  // namespace anonymous
-
 void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest, uint64_t next, uint32_t count) {
     // mode true          => map
     //      false         => unmap
@@ -248,11 +230,10 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
     for (uint32_t i = 0; i < count; ++i, guest += next) {
         const uint64_t hindex = index + i + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kPAGE_SIZE);
         const uint64_t goffset = ((index + i) * kPAGE_SIZE);
-        struct page_entry entry;
-        entry.raw = guest;
-        small_[hindex].refresh(ctx, entry);
-        const uint64_t host = guest_to_host_pte(ctx, guest);
-        entry.raw = host;
+        struct page_entry gentry;
+        gentry.raw = guest;
+        small_[hindex].refresh(ctx, gentry);
+        const struct page_entry entry = ctx->guest_to_host(gentry);
         map(hindex, entry);
         if (host) {
             barrier::page_entry* barrier_entry = NULL;

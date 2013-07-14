@@ -13,6 +13,8 @@
 #include "a3_bar1_channel.h"
 #include "a3_bar3_channel.h"
 #include "a3_session.h"
+#include "a3_page_table.h"
+#include "a3_device.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -104,6 +106,28 @@ class context : private boost::noncopyable {
     uint64_t budget() const { return budget_; }
     uint64_t utilization() const { return utilization_; }
     uint64_t bandwidth() const { return bandwidth_; }
+
+    inline struct page_entry guest_to_host(const struct page_entry& entry) {
+        struct page_entry result(entry);
+        if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
+            // rewrite address
+            const uint64_t g_field = result.address;
+            const uint64_t g_address = g_field << 12;
+            const uint64_t h_address = get_phys_address(g_address);
+            const uint64_t h_field = h_address >> 12;
+            result.address = h_field;
+        } else if (entry.target == page_entry::TARGET_TYPE_SYSRAM || entry.target == page_entry::TARGET_TYPE_SYSRAM_NO_SNOOP) {
+            // rewrite address
+            const uint64_t gfn = result.address;
+            uint64_t mfn = 0;
+            A3_SYNCHRONIZED(->mutex()) {
+                mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), ctx->domid(), gfn);
+            }
+            // const uint64_t h_address = ctx->get_phys_address(g_address);
+            result.address = mfn;
+        }
+        return result;
+    }
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
