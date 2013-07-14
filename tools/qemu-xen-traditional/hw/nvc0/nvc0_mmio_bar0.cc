@@ -169,7 +169,9 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         };
 
         if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
-            return nvc0_read32(state->bar[0].space + cmd.offset);
+            ret = nvc0_read32(state->bar[0].space + cmd.offset);
+            NVC0_LOG(state, "read PROM 0x%"PRIx64" => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)ret);
+            return ret;
         }
 
         ret = ctx->message(cmd, true).value;
