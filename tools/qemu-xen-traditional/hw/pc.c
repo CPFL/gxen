@@ -46,6 +46,8 @@
 #include "pass-through.h"
 #endif
 
+#include "hw/nvc0/nvc0_main.h"
+
 /* output Bochs bios info messages */
 //#define DEBUG_BIOS
 
@@ -1065,16 +1067,7 @@ vga_bios_error:
 	// Added code
 	// Create fake PCI device model for nvc0
 	if (nvc0_guest_id >= 0) {
-	    NVC0_PRINTF("PASS THROUGH 0x%X\n", devfn);
-	    pci_nvc0_init(dpci_infos.e_bus,
-		"VIRTUALIZED GPU",
-		devfn,
-		php_dev->r_bus,
-		php_dev->r_dev,
-		php_dev->r_func,
-		PT_MACHINE_IRQ_AUTO,
-		dpci_infos.pci_access,
-		php_dev->opt);
+	    pci_nvc0_init(pci_bus, "VIRTUALIZED GPU");
 	}
     }
 
