@@ -83,9 +83,6 @@ void band_scheduler::enqueue(context* ctx, const command& cmd) {
 void band_scheduler::acquire(context* ctx) {
     current_ = ctx;
     if (ctx != actual_) {
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->try_acquire_gpu(ctx);
-        }
         actual_ = ctx;
     }
 }

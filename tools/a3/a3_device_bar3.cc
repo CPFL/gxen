@@ -235,7 +235,7 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
         small_[hindex].refresh(ctx, gentry);
         const struct page_entry entry = ctx->guest_to_host(gentry);
         map(hindex, entry);
-        if (host) {
+        if (entry.raw) {
             barrier::page_entry* barrier_entry = NULL;
             const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {

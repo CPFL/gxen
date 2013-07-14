@@ -50,8 +50,6 @@ class device : private boost::noncopyable {
     void free(vram_memory* mem);
 
     // VT-d
-    bool try_acquire_gpu(context* ctx);
-    void acquire_gpu(context* ctx);
     int domid() const { return domid_; }
     bool is_active(context* ctx);
     void fire(context* ctx, const command& cmd);

@@ -120,8 +120,8 @@ class context : private boost::noncopyable {
             // rewrite address
             const uint64_t gfn = result.address;
             uint64_t mfn = 0;
-            A3_SYNCHRONIZED(->mutex()) {
-                mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), ctx->domid(), gfn);
+            A3_SYNCHRONIZED(device::instance()->mutex()) {
+                mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), gfn);
             }
             // const uint64_t h_address = ctx->get_phys_address(g_address);
             result.address = mfn;

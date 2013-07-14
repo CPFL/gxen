@@ -83,21 +83,8 @@ void fifo_scheduler::run() {
         {
             boost::unique_lock<mutex_t> lock(device::instance()->mutex());
             if (current != handle.first) {
-                uint64_t counter = 0;
-                boost::this_thread::sleep(wait_);
-                while (device::instance()->is_active(current)) {
-                    ++counter;
-                    cond2.timed_wait(lock, wait_);
-                    if ((counter % 1000) == 0) {
-                        printf("Too long stop %" PRIu64 "\n", counter);
-                        std::fflush(stdout);
-                    }
-                }
                 // acquire GPU
                 current = handle.first;
-                const bool res = device::instance()->try_acquire_gpu(current);
-                ignore_unused_variable_warning(res);
-                A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
             }
             device::instance()->bar1()->write(current, handle.second);
             registers::accessor regs;

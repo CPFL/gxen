@@ -247,29 +247,8 @@ void device::free(vram_memory* mem) {
     vram_->free(mem);
 }
 
-bool device::try_acquire_gpu(context* ctx) {
-    A3_SYNCHRONIZED(mutex()) {
-        if (domid_ >= 0) {
-            if (domid_ == ctx->domid()) {
-                return true;
-            }
-            const int rc = a3_xen_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
-            if (rc < 0) {
-                A3_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
-                return false;
-            }
-        }
-        domid_ = ctx->domid();
-        const int rc = a3_xen_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
-        if (rc < 0) {
-            A3_FPRINTF(stderr, "xc_assign_device failed - (%d)\n", rc);
-            return false;
-        }
-    }
-    return true;
-}
-
 bool device::is_active(context* ctx) {
+#if 0
     A3_SYNCHRONIZED(mutex()) {
         registers::accessor regs;
         // this is status register of pgraph
@@ -300,6 +279,7 @@ bool device::is_active(context* ctx) {
             }
         }
     }
+#endif
     return false;
 }
 
