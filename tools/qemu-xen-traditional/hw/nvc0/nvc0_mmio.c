@@ -31,6 +31,7 @@
 #include "nvc0_mmio_rom.h"
 #include "nvc0_para_virt.h"
 #include "pass-through.h"
+#include "a3_config.h"
 
 // function to access byte (index 0), word (index 1) and dword (index 2)
 typedef CPUReadMemoryFunc* CPUReadMemoryFuncBlock[3];
@@ -169,7 +170,7 @@ void nvc0_mmio_init(nvc0_state_t* state) {
     // pci_register_io_region(&state->device->dev, 3, 0x4000000 / 4, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     // TODO(Yusuke Suzuki)
     // This is hard coded value
-    pci_register_io_region(&state->device->dev, 3, (2ULL << 20), PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
+    pci_register_io_region(&state->device->dev, 3, A3_BAR3_ARENA_SIZE, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
     nvc0_init_bar3(state);
 
     // Region ROM : Meomory
@@ -179,7 +180,7 @@ void nvc0_mmio_init(nvc0_state_t* state) {
     if (nvc0_guest_id > 0) {
         // para virtualized
         // BAR4 4KB (1 page)
-        pci_register_io_region(&state->device->dev, 4, 0x1000, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
+        pci_register_io_region(&state->device->dev, 4, NOUVEAU_PV_SLOT_SIZE, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
     }
 }
 /* vim: set sw=4 ts=4 et tw=80 : */
