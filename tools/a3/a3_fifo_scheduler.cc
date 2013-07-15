@@ -67,9 +67,7 @@ void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
 }
 
 void fifo_scheduler::run() {
-    context* current = NULL;
     fire_t handle;
-    boost::condition_variable_any cond2;
     while (true) {
         {
             boost::unique_lock<boost::mutex> lock(mutex_);
@@ -79,20 +77,8 @@ void fifo_scheduler::run() {
             handle = queue_.front();
             queue_.pop();
         }
-
-        {
-            boost::unique_lock<mutex_t> lock(device::instance()->mutex());
-            if (current != handle.first) {
-                // acquire GPU
-                current = handle.first;
-            }
-            device::instance()->bar1()->write(current, handle.second);
-            registers::accessor regs;
-            regs.write32(0x070000, 0x00000001);
-            if (!regs.wait_eq(0x070000, 0x00000002, 0x00000000)) {
-                A3_LOG("PRAMIN flush out\n");
-            }
-            A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active(current) ? "ACTIVE" : "STOP");
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
+            device::instance()->bar1()->write(handle.first, handle.second);
         }
     }
 }
