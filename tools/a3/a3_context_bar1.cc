@@ -43,14 +43,16 @@ void context::write_bar1(const command& cmd) {
                         // When target TLB is not flushed, we should flush it lazily
                         channels(res.channel)->flush(this);
                     }
-                    device::instance()->fire(this, cmd);
+                    // device::instance()->fire(this, cmd);
                 }
                 break;
-
+#if 0
             default:
                 device::instance()->bar1()->write(this, cmd);
                 break;
+#endif
             }
+            device::instance()->bar1()->write(this, cmd);
         }
         return;
     }
