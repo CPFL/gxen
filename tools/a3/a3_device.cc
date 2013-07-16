@@ -75,9 +75,7 @@ device::device()
     , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
-    // , scheduler_(new fifo_scheduler_t(boost::posix_time::milliseconds(1)))
-    // , scheduler_(new direct_scheduler_t())
-    , scheduler_(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)))
+    , scheduler_()
     , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
@@ -91,6 +89,15 @@ device::device()
         fprintf(stderr, "cannot init xl context\n");
         std::exit(1);
     }
+
+
+    // Direct
+    // scheduler_.reset(new direct_scheduler_t());
+    // FIFO
+    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::milliseconds(1)));
+    // BAND
+    scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)));
+
     scheduler_->start();
     A3_LOG("device environment setup\n");
 }
