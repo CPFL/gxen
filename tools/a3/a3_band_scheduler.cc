@@ -109,6 +109,7 @@ void band_scheduler::enqueue(context* ctx, const command& cmd) {
     // on arrival
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
+        A3_LOG("ENQUEUE command\n");
         if (ctx->enqueue(cmd)) {
             inactive_.erase(contexts_t::s_iterator_to(*ctx));
             active_.push_back(*ctx);
@@ -118,6 +119,9 @@ void band_scheduler::enqueue(context* ctx, const command& cmd) {
 }
 
 bool band_scheduler::utilization_over_bandwidth(context* ctx) const {
+    if (bandwidth_ == boost::posix_time::microseconds(0)) {
+        return false;
+    }
     return (ctx->utilization().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) < (1.0 / (inactive_.size() + active_.size()));
 }
 
@@ -127,9 +131,11 @@ void band_scheduler::run() {
     while (true) {
         // check queued fires
         while (active_.empty()) {
+            A3_LOG("Q empty\n");
             cond_.wait(lock);
         }
         context* next = &active_.front();
+        assert(next->is_suspended());
 
         A3_LOG("context comes %" PRIu32 "\n", next->id());
 
@@ -148,17 +154,23 @@ void band_scheduler::run() {
             if (continue_current) {
                 next = current();
             }
+            assert(next->is_suspended());
         }
 
         current_ = next;
+        assert(current()->is_suspended());
         const command target = current()->dequeue();
-        if (current()->is_suspended()) {
+        const bool inactive = !current()->is_suspended();
+        if (inactive) {
             active_.erase(contexts_t::s_iterator_to(*current()));
             inactive_.push_back(*current());
         }
+        A3_LOG("DEQUEUE command [will be %s]\n", inactive ? "inactive" : "active");
+
         A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar1()->write(current(), target);
         }
+
         utilization_.start();
 
         while (device::instance()->is_active(current())) {
@@ -172,7 +184,9 @@ void band_scheduler::run() {
 
         current()->update_utilization(duration);
         if (current()->is_suspended()) {
+            // ulitization over budget
             if (current()->budget() < current()->utilization()) {
+                // utilization ratio over bandwidth ratio
                 if (utilization_over_bandwidth(current())) {
                     // lowering priority
                     active_.erase(contexts_t::s_iterator_to(*current()));

@@ -95,26 +95,17 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
 
     // BAND
     bool enqueue(const command& cmd) {
-        A3_SYNCHRONIZED(mutex_) {
-            const bool ret = suspended_.empty();
-            suspended_.push(cmd);
-            return ret;
-        }
-        return false;  // make compiler happy
+        const bool ret = suspended_.empty();
+        suspended_.push(cmd);
+        return ret;
     }
     command dequeue() {
-        A3_SYNCHRONIZED(mutex_) {
-            const command cmd = suspended_.front();
-            suspended_.pop();
-            return cmd;
-        }
-        return command();
+        const command cmd = suspended_.front();
+        suspended_.pop();
+        return cmd;
     }
     bool is_suspended() {
-        A3_SYNCHRONIZED(mutex_) {
-            return !suspended_.empty();
-        }
-        return false;
+        return !suspended_.empty();
     }
     boost::posix_time::time_duration budget() const { return budget_; }
     boost::posix_time::time_duration utilization() const { return utilization_; }
@@ -180,7 +171,6 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::posix_time::time_duration budget_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration utilization_;
-    mutex_t mutex_;
     std::queue<command> suspended_;
 };
 
