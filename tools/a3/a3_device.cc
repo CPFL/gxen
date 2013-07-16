@@ -42,6 +42,8 @@
 #include "a3_device_bar3.h"
 #include "a3_bit_mask.h"
 #include "a3_ignore_unused_variable_warning.h"
+#include "a3_fifo_scheduler.h"
+#include "a3_band_scheduler.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -51,7 +53,7 @@
 
 namespace a3 {
 
-static unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
+static inline unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
     unsigned int value;
 
     value = pcidev->domain << 16;
@@ -72,7 +74,7 @@ device::device()
     , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
-    , scheduler_(boost::posix_time::milliseconds(1))
+    , scheduler_(new fifo_scheduler(boost::posix_time::milliseconds(1)))
     , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
@@ -86,7 +88,7 @@ device::device()
         fprintf(stderr, "cannot init xl context\n");
         std::exit(1);
     }
-    scheduler_.start();
+    scheduler_->start();
     A3_LOG("device environment setup\n");
 }
 
@@ -285,7 +287,7 @@ bool device::is_active(context* ctx) {
 
 void device::fire(context* ctx, const command& cmd) {
     A3_SYNCHRONIZED(mutex()) {
-        scheduler_.enqueue(ctx, cmd);
+        scheduler_->enqueue(ctx, cmd);
     }
 }
 

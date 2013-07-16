@@ -7,6 +7,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
+#include <boost/intrusive/list_hook.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
 #include "a3_lock.h"
 #include "a3_channel.h"
@@ -14,7 +16,6 @@
 #include "a3_bar3_channel.h"
 #include "a3_session.h"
 #include "a3_page_table.h"
-#include "a3_device.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -29,7 +30,7 @@ struct unique_ptr {
 struct slot_t;
 class pv_page;
 
-class context : private boost::noncopyable {
+class context : private boost::noncopyable, public boost::intrusive::list_base_hook<> {
  public:
     typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
 
@@ -90,12 +91,24 @@ class context : private boost::noncopyable {
     pv_page* pgds(uint32_t id) {
         return pgds_[id];
     }
+    struct page_entry guest_to_host(const struct page_entry& entry);
 
     // BAND
-    void suspend(const command& cmd) {
+    bool enqueue(const command& cmd) {
         A3_SYNCHRONIZED(mutex_) {
+            const bool ret = suspended_.empty();
             suspended_.push(cmd);
+            return ret;
         }
+        return false;  // make compiler happy
+    }
+    command dequeue() {
+        A3_SYNCHRONIZED(mutex_) {
+            const command cmd = suspended_.front();
+            suspended_.pop();
+            return cmd;
+        }
+        return command();
     }
     bool is_suspended() {
         A3_SYNCHRONIZED(mutex_) {
@@ -103,31 +116,17 @@ class context : private boost::noncopyable {
         }
         return false;
     }
-    uint64_t budget() const { return budget_; }
-    uint64_t utilization() const { return utilization_; }
-    uint64_t bandwidth() const { return bandwidth_; }
-
-    inline struct page_entry guest_to_host(const struct page_entry& entry) {
-        struct page_entry result(entry);
-        if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
-            // rewrite address
-            const uint64_t g_field = result.address;
-            const uint64_t g_address = g_field << 12;
-            const uint64_t h_address = get_phys_address(g_address);
-            const uint64_t h_field = h_address >> 12;
-            result.address = h_field;
-        } else if (entry.target == page_entry::TARGET_TYPE_SYSRAM || entry.target == page_entry::TARGET_TYPE_SYSRAM_NO_SNOOP) {
-            // rewrite address
-            const uint64_t gfn = result.address;
-            uint64_t mfn = 0;
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), gfn);
-            }
-            // const uint64_t h_address = ctx->get_phys_address(g_address);
-            result.address = mfn;
-        }
-        return result;
+    boost::posix_time::time_duration budget() const { return budget_; }
+    boost::posix_time::time_duration utilization() const { return utilization_; }
+    boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
+    void replenish(const boost::posix_time::time_duration& budget) {
+        budget_ = budget;
+        utilization_ = boost::posix_time::microseconds(0);
     }
+    void update_utilization(const boost::posix_time::time_duration& duration) {
+        utilization_ += duration;
+    }
+
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -178,9 +177,9 @@ class context : private boost::noncopyable {
     pv_page* pv_bar3_pgt_;
 
     // only touched by BAND scheduler
-    int64_t budget_;
-    int64_t bandwidth_;
-    int64_t utilization_;
+    boost::posix_time::time_duration budget_;
+    boost::posix_time::time_duration bandwidth_;
+    boost::posix_time::time_duration utilization_;
     mutex_t mutex_;
     std::queue<command> suspended_;
 };
