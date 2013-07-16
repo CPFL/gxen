@@ -4,17 +4,7 @@
 namespace a3 {
 
 inline void software_page_entry::refresh(context* ctx, const struct page_entry& entry) {
-    struct page_entry result(entry);
-    if (entry.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-        // A3_LOG("Rewriting address 0x%" PRIx64 " to 0x%" PRIx64 "\n", g_address, h_address);
-    }
-    phys_ = result;
+    phys_ = ctx->guest_to_host(entry);
 }
 
 inline void software_page_entry::assign(const struct page_entry& entry) {

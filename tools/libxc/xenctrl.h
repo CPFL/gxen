@@ -779,6 +779,17 @@ int xc_domain_set_access_required(xc_interface *xch,
  */
 int xc_domain_set_virq_handler(xc_interface *xch, uint32_t domid, int virq);
 
+
+/**
+ * Added API
+ *
+ * @parm xch a handle to an open hypervisor interface
+ * @parm domid the domain id which will handle the VIRQ
+ * @parm gfn guest frame number
+ * return mfn on success, 0 on failure
+ */
+int xc_domain_gfn_to_mfn(xc_interface *xch, uint32_t domid, unsigned long gfn, unsigned long* mfn);
+
 /*
  * CPUPOOL MANAGEMENT FUNCTIONS
  */

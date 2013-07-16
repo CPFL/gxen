@@ -14,12 +14,6 @@ namespace a3 {
 
 class context;
 
-// TODO(Yusuke Suzuki):
-// This is hard coded value 16MB / 2
-// Because BAR3 effective area is limited to 16MB
-static const uint64_t kBAR3_ARENA_SIZE = 8 * size::MB;
-static const uint64_t kBAR3_TOTAL_SIZE = 16 * size::MB;
-
 class device_bar3 : private boost::noncopyable {
  public:
     friend class device;
@@ -53,8 +47,8 @@ class device_bar3 : private boost::noncopyable {
     page directory_;
     page entries_;
     std::vector<uint64_t> software_;
-    boost::array<software_page_entry, kBAR3_TOTAL_SIZE / kLARGE_PAGE_SIZE> large_;
-    boost::array<software_page_entry, kBAR3_TOTAL_SIZE / kSMALL_PAGE_SIZE> small_;
+    boost::array<software_page_entry, A3_BAR3_TOTAL_SIZE / kLARGE_PAGE_SIZE> large_;
+    boost::array<software_page_entry, A3_BAR3_TOTAL_SIZE / kSMALL_PAGE_SIZE> small_;
 };
 
 }  // namespace a3

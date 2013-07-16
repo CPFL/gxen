@@ -7,24 +7,22 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
 #include "a3_lock.h"
+#include "a3_scheduler.h"
 namespace a3 {
 
 class context;
-class device;
 
-class fifo_scheduler : private boost::noncopyable {
+class fifo_scheduler_t : public scheduler_t {
  public:
-    friend class device;
-
-    fifo_scheduler(const boost::posix_time::time_duration& wait);
-    ~fifo_scheduler();
-    void start();
-    void stop();
+    fifo_scheduler_t(const boost::posix_time::time_duration& wait);
+    virtual ~fifo_scheduler_t();
+    virtual void start();
+    virtual void stop();
+    virtual void enqueue(context* ctx, const command& cmd);
 
  private:
     typedef std::pair<context*, command> fire_t;
     void run();
-    void enqueue(context* ctx, const command& cmd);
 
     boost::posix_time::time_duration wait_;
     boost::scoped_ptr<boost::thread> thread_;
