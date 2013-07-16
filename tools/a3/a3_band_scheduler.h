@@ -9,14 +9,13 @@
 #include "a3.h"
 #include "a3_lock.h"
 #include "a3_context.h"
+#include "a3_scheduler.h"
 namespace a3 {
 
 class context;
-class device;
 
-class band_scheduler : private boost::noncopyable {
+class band_scheduler_t : public scheduler_t {
  public:
-    friend class device;
     typedef boost::intrusive::list<context> contexts_t;
 
     class timer_t {
@@ -34,18 +33,18 @@ class band_scheduler : private boost::noncopyable {
         boost::posix_time::ptime start_;
     };
 
-    band_scheduler(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period);
-    ~band_scheduler();
-    void start();
-    void stop();
-    void register_context(context* ctx);
-    void unregister_context(context* ctx);
+    band_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period);
+    virtual ~band_scheduler_t();
+    virtual void start();
+    virtual void stop();
+    virtual void register_context(context* ctx);
+    virtual void unregister_context(context* ctx);
+    virtual void enqueue(context* ctx, const command& cmd);
 
  private:
     typedef std::pair<context*, command> fire_t;
     void run();
     void replenish();
-    void enqueue(context* ctx, const command& cmd);
     bool utilization_over_bandwidth(context* ctx) const;
     context* current() const { return current_; }
 
