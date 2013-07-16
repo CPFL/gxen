@@ -74,7 +74,8 @@ device::device()
     , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
-    , scheduler_(new fifo_scheduler(boost::posix_time::milliseconds(1)))
+    // , scheduler_(new fifo_scheduler(boost::posix_time::milliseconds(1)))
+    , scheduler_(new band_scheduler(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)))
     , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
@@ -192,18 +193,20 @@ void device::initialize(const bdf& bdf) {
     A3_LOG("device initialized\n");
 }
 
-uint32_t device::acquire_virt() {
+uint32_t device::acquire_virt(context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
     if (pos != virts_.npos) {
         virts_.set(pos, 0);
     }
+    scheduler_->register_context(ctx);
     return pos;
 }
 
-void device::release_virt(uint32_t virt) {
+void device::release_virt(uint32_t virt, context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     virts_.set(virt, 1);
+    scheduler_->unregister_context(ctx);
 }
 
 uint32_t device::read(int bar, uint32_t offset, std::size_t size) {

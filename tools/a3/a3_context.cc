@@ -69,13 +69,13 @@ context::context(session* s, bool through)
 
 context::~context() {
     if (initialized_) {
-        device::instance()->release_virt(id_);
+        device::instance()->release_virt(id_, this);
         A3_LOG("END and release GPU id %u\n", id_);
     }
 }
 
 void context::initialize(int dom, bool para) {
-    id_ = device::instance()->acquire_virt();
+    id_ = device::instance()->acquire_virt(this);
     domid_ = dom;
     para_virtualized_ = para;
     if (para_virtualized()) {

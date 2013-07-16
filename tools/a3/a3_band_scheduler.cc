@@ -89,14 +89,16 @@ void band_scheduler::replenish() {
         // replenish
         {
             boost::unique_lock<boost::mutex> lock(mutex_);
-            const auto budget = period_ / (inactive_.size() + active_.size());
-            for (context& ctx: active_) {
-                ctx.replenish(budget);
+            if (active_.size() + inactive_.size()) {
+                const auto budget = period_ / (inactive_.size() + active_.size());
+                for (context& ctx: active_) {
+                    ctx.replenish(budget);
+                }
+                for (context& ctx: inactive_) {
+                    ctx.replenish(budget);
+                }
+                bandwidth_ = boost::posix_time::microseconds(0);
             }
-            for (context& ctx: inactive_) {
-                ctx.replenish(budget);
-            }
-            bandwidth_ = boost::posix_time::microseconds(0);
         }
         boost::this_thread::sleep(period_);
         boost::this_thread::yield();

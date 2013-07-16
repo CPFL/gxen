@@ -36,8 +36,8 @@ class device : private boost::noncopyable {
     void initialize(const bdf& bdf);
     static device* instance();
     bool initialized() const { return device_; }
-    uint32_t acquire_virt();
-    void release_virt(uint32_t virt);
+    uint32_t acquire_virt(context* ctx);
+    void release_virt(uint32_t virt, context* ctx);
     mutex_t& mutex() { return mutex_; }
     uint32_t read(int bar, uint32_t offset, std::size_t size);
     void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
@@ -69,8 +69,8 @@ class device : private boost::noncopyable {
     boost::scoped_ptr<device_bar3> bar3_;
     boost::scoped_ptr<vram> vram_;
     boost::scoped_ptr<playlist_t> playlist_;
-    boost::scoped_ptr<fifo_scheduler> scheduler_;
-    // boost::scoped_ptr<band_scheduler> scheduler_;
+    // boost::scoped_ptr<fifo_scheduler> scheduler_;
+    boost::scoped_ptr<band_scheduler> scheduler_;
     int domid_;
 
     // libxl
