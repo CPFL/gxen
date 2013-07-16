@@ -9,7 +9,6 @@
 #include "a3_xen.h"
 #include "a3_lock.h"
 #include "a3_session.h"
-#include "a3_fifo_scheduler.h"
 namespace a3 {
 
 class device_bar1;
@@ -18,6 +17,8 @@ class vram;
 class vram_memory;
 class context;
 class playlist_t;
+class fifo_scheduler;
+class band_scheduler;
 
 class device : private boost::noncopyable {
  public:
@@ -68,7 +69,8 @@ class device : private boost::noncopyable {
     boost::scoped_ptr<device_bar3> bar3_;
     boost::scoped_ptr<vram> vram_;
     boost::scoped_ptr<playlist_t> playlist_;
-    fifo_scheduler scheduler_;
+    boost::scoped_ptr<fifo_scheduler> scheduler_;
+    // boost::scoped_ptr<band_scheduler> scheduler_;
     int domid_;
 
     // libxl

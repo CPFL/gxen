@@ -284,5 +284,27 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     }
 }
 
+struct page_entry context::guest_to_host(const struct page_entry& entry) {
+    struct page_entry result(entry);
+    if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
+    } else if (entry.target == page_entry::TARGET_TYPE_SYSRAM || entry.target == page_entry::TARGET_TYPE_SYSRAM_NO_SNOOP) {
+        // rewrite address
+        const uint64_t gfn = result.address;
+        uint64_t mfn = 0;
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
+            mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), gfn);
+        }
+        // const uint64_t h_address = ctx->get_phys_address(g_address);
+        result.address = mfn;
+    }
+    return result;
+}
+
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */
