@@ -253,45 +253,11 @@ void device::free(vram_memory* mem) {
 }
 
 bool device::is_active(context* ctx) {
-#if 0
-    A3_SYNCHRONIZED(mutex()) {
-        registers::accessor regs;
-        // this is status register of pgraph
-        if (regs.read32(0x400700)) {
-            return true;
-        }
-
-        // PGRAPH register shows idle, but probably there's working channels
-        if (!ctx) {
-            return false;
-        }
-
-        for (uint32_t pid = 0; pid < A3_DOMAIN_CHANNELS; ++pid) {
-            const uint32_t offset = 0x3000 + 0x8 * ((ctx->id() * A3_DOMAIN_CHANNELS) + pid) + 0x4;
-            const uint32_t status = regs.read32(offset);
-            if (status & 0x1UL) {
-                // 0b10000000110110000000100010000
-                //   10000000000000001000000000001
-                //             1000001000000000001
-                //                   1000000000001
-                // 0b10000000111110000000100010000
-                if (status & 270205200UL) {
-                    A3_LOG("active by chan %" PRIu32 " 0x%" PRIx32 "\n", pid, status);
-                    return true;
-                } else {
-                    A3_LOG("chan %" PRIu32 " is runnable but not active 0x%" PRIx32 "\n", pid, status);
-                }
-            }
-        }
-    }
-#endif
-    return false;
+    return registers::read32(0x400700);
 }
 
 void device::fire(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(mutex()) {
-        scheduler_->enqueue(ctx, cmd);
-    }
+    scheduler_->enqueue(ctx, cmd);
 }
 
 void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
