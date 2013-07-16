@@ -34,23 +34,22 @@ namespace a3 {
 
 void context::write_bar1(const command& cmd) {
     if (poll_area::in_poll_area(this, cmd.offset)) {
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            const poll_area::channel_and_offset_t res = poll_area::extract_channel_and_offset(this, cmd.offset);
-            switch (res.offset) {
-            case 0x8C: {
-                    if (!para_virtualized()) {
-                        // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
-                        // When target TLB is not flushed, we should flush it lazily
-                        channels(res.channel)->flush(this);
-                    }
-                    device::instance()->fire(this, cmd);
+        const poll_area::channel_and_offset_t res = poll_area::extract_channel_and_offset(this, cmd.offset);
+        switch (res.offset) {
+        case 0x8C: {
+                if (!para_virtualized()) {
+                    // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
+                    // When target TLB is not flushed, we should flush it lazily
+                    channels(res.channel)->flush(this);
                 }
-                break;
-
-            default:
-                device::instance()->bar1()->write(this, cmd);
-                break;
+                device::instance()->fire(this, cmd);
             }
+            break;
+        default:
+            A3_SYNCHRONIZED(device::instance()->mutex()) {
+                device::instance()->bar1()->write(this, cmd);
+            }
+            break;
         }
         return;
     }

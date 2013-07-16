@@ -46,6 +46,8 @@
 #include "pass-through.h"
 #endif
 
+#include "hw/nvc0/nvc0_main.h"
+
 /* output Bochs bios info messages */
 //#define DEBUG_BIOS
 
@@ -1064,9 +1066,9 @@ vga_bios_error:
 	// TODO:(Constellation)
 	// Added code
 	// Create fake PCI device model for nvc0
-	// if (nvc0_guest_id >= 0) {
-	//     pci_nvc0_init(pci_bus);
-	// }
+	if (nvc0_guest_id >= 0) {
+	    pci_nvc0_init(pci_bus, "VIRTUALIZED GPU");
+	}
     }
 
     for(i = 0; i < MAX_SERIAL_PORTS; i++) {

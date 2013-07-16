@@ -814,6 +814,13 @@ struct xen_domctl_set_virq_handler {
 typedef struct xen_domctl_set_virq_handler xen_domctl_set_virq_handler_t;
 DEFINE_XEN_GUEST_HANDLE(xen_domctl_set_virq_handler_t);
 
+struct xen_domctl_gfn_to_mfn {
+    uint64_t gfn;
+    uint64_t mfn;
+};
+typedef struct xen_domctl_gfn_to_mfn xen_domctl_gfn_to_mfn_t;
+DEFINE_XEN_GUEST_HANDLE(xen_domctl_gfn_to_mfn_t);
+
 #if defined(__i386__) || defined(__x86_64__)
 /* XEN_DOMCTL_setvcpuextstate */
 /* XEN_DOMCTL_getvcpuextstate */
@@ -914,6 +921,7 @@ struct xen_domctl {
 #define XEN_DOMCTL_set_access_required           64
 #define XEN_DOMCTL_audit_p2m                     65
 #define XEN_DOMCTL_set_virq_handler              66
+#define XEN_DOMCTL_gfn_to_mfn                    67
 #define XEN_DOMCTL_gdbsx_guestmemio            1000
 #define XEN_DOMCTL_gdbsx_pausevcpu             1001
 #define XEN_DOMCTL_gdbsx_unpausevcpu           1002
@@ -969,6 +977,7 @@ struct xen_domctl {
         struct xen_domctl_set_access_required access_required;
         struct xen_domctl_audit_p2m         audit_p2m;
         struct xen_domctl_set_virq_handler  set_virq_handler;
+        struct xen_domctl_gfn_to_mfn        gfn_to_mfn;
         struct xen_domctl_gdbsx_memio       gdbsx_guest_memio;
         struct xen_domctl_gdbsx_pauseunp_vcpu gdbsx_pauseunp_vcpu;
         struct xen_domctl_gdbsx_domstatus   gdbsx_domstatus;

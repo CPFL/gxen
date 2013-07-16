@@ -1522,6 +1522,33 @@ long arch_do_domctl(
     }
     break;
 
+    case XEN_DOMCTL_gfn_to_mfn:
+    {
+        struct domain *d;
+
+        ret = -ESRCH;
+        d = rcu_lock_domain_by_id(domctl->domain);
+        if ( d != NULL )
+        {
+	    struct page_info* page;
+	    unsigned long gfn = domctl->u.gfn_to_mfn.gfn;
+	    page = get_page_from_gfn(d, gfn, NULL, P2M_ALLOC);
+
+	    ret = -ENOMEM;
+	    if (!page)
+	    {
+		rcu_unlock_domain(d);
+	    }
+
+	    ret = 0;
+	    domctl->u.gfn_to_mfn.mfn = page_to_mfn(page);
+	    put_page(page);
+            rcu_unlock_domain(d);
+	    copy_to_guest(u_domctl, domctl, 1);
+        }
+    }
+    break;
+
     default:
         ret = iommu_do_domctl(domctl, u_domctl);
         break;

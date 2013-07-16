@@ -4,18 +4,8 @@
 #include <cassert>
 #include <stdint.h>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include "a3_config.h"
 namespace a3 {
-
-#define A3_VERSION "0.0.1"
-#define A3_ENDPOINT "/tmp/a3_endpoint"
-#define A3_CHANNELS 128
-#define A3_DOMAIN_CHANNELS (A3_CHANNELS / 2)
-#define A3_1G 0x40000000ULL
-#define A3_2G (A3_1G * 2)
-#define A3_GPC_BCAST(r) (0x418000 + (r))
-#define A3_BAR0_SIZE (32ULL << 20)
-#define A3_BAR4_SIZE (0x1000ULL)
-#define A3_GUEST_DATA_SIZE (0x1000ULL * 4)
 
 #if defined(NDEBUG)
     #define A3_FPRINTF(stream, fmt, args...) do { } while (0)

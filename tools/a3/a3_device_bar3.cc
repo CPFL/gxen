@@ -40,8 +40,8 @@ device_bar3::device_bar3(device::bar_t bar)
     , size_(bar.size)
     , ramin_(1)
     , directory_(8)
-    , entries_(kBAR3_TOTAL_SIZE / 0x1000 / 0x1000 * 8)
-    , software_(kBAR3_TOTAL_SIZE / 0x8)
+    , entries_(A3_BAR3_TOTAL_SIZE / 0x1000 / 0x1000 * 8)
+    , software_(A3_BAR3_TOTAL_SIZE / 0x8)
     , large_()
     , small_()
 {
@@ -51,7 +51,7 @@ device_bar3::device_bar3(device::bar_t bar)
 
     // construct channel ramin
     mmio::write64(&ramin_, 0x0200, directory_.address());
-    mmio::write64(&ramin_, 0x0208, kBAR3_TOTAL_SIZE - 1);
+    mmio::write64(&ramin_, 0x0208, A3_BAR3_TOTAL_SIZE - 1);
 
     // construct minimum page table
     struct page_directory dir = { };
@@ -69,28 +69,28 @@ void device_bar3::refresh() {
 
 void device_bar3::map_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
-    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
+    const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("mapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
 void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     const uint64_t guest = ctx->bar3_address() + offset;
-    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
+    const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("unmapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
 }
 
 void device_bar3::map_xen_page_batch(context* ctx, uint64_t offset, uint32_t count) {
     const uint64_t guest = ctx->bar3_address() + offset;
-    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
+    const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("batch mapping %" PRIx64 " to %" PRIx64 " %" PRIu32 "\n", guest, host, count);
     a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
 }
 
 void device_bar3::unmap_xen_page_batch(context* ctx, uint64_t offset, uint32_t count) {
     const uint64_t guest = ctx->bar3_address() + offset;
-    const uint64_t host = address() + ctx->id() * kBAR3_ARENA_SIZE + offset;
+    const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("batch unmapping %" PRIx64 " to %" PRIx64 " %" PRIu32 "\n", guest, host, count);
     a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
 }
@@ -105,12 +105,12 @@ void device_bar3::map(uint64_t index, const struct page_entry& entry) {
 void device_bar3::shadow(context* ctx, uint64_t phys) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
     // At first remove all
-    // a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
-    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * kBAR3_ARENA_SIZE) >> kPAGE_SHIFT, kBAR3_ARENA_SIZE / 0x1000);
+    // a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * A3_BAR3_ARENA_SIZE) >> kPAGE_SHIFT, A3_BAR3_ARENA_SIZE / 0x1000);
+    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * A3_BAR3_ARENA_SIZE) >> kPAGE_SHIFT, A3_BAR3_ARENA_SIZE / 0x1000);
 
     // FIXME(Yusuke Suzuki): optimize it
-    for (uint64_t address = 0; address < kBAR3_ARENA_SIZE; address += kPAGE_SIZE) {
-        const uint64_t virt = ctx->id() * kBAR3_ARENA_SIZE + address;
+    for (uint64_t address = 0; address < A3_BAR3_ARENA_SIZE; address += kPAGE_SIZE) {
+        const uint64_t virt = ctx->id() * A3_BAR3_ARENA_SIZE + address;
         struct software_page_entry entry;
         const uint64_t gphys = resolve(ctx, address, &entry);
         const uint64_t index = virt / kPAGE_SIZE;
@@ -132,8 +132,8 @@ void device_bar3::shadow(context* ctx, uint64_t phys) {
 }
 
 void device_bar3::reset_barrier(context* ctx, uint64_t old, uint64_t addr, bool old_remap) {
-    const uint64_t shift = ctx->id() * kBAR3_ARENA_SIZE / kPAGE_SIZE;
-    for (uint64_t index = 0, iz = kBAR3_ARENA_SIZE / kPAGE_SIZE; index < iz; ++index) {
+    const uint64_t shift = ctx->id() * A3_BAR3_ARENA_SIZE / kPAGE_SIZE;
+    for (uint64_t index = 0, iz = A3_BAR3_ARENA_SIZE / kPAGE_SIZE; index < iz; ++index) {
         const uint64_t hindex = shift + index;
         const uint64_t target = software_[hindex];
         if (target == old && old_remap) {
@@ -159,7 +159,7 @@ uint64_t device_bar3::resolve(context* ctx, uint64_t gvaddr, struct software_pag
         return UINT64_MAX;
     }
 
-    const uint64_t hvaddr = gvaddr + ctx->id() * kBAR3_ARENA_SIZE;
+    const uint64_t hvaddr = gvaddr + ctx->id() * A3_BAR3_ARENA_SIZE;
     {
         const uint64_t index = hvaddr / kSMALL_PAGE_SIZE;
         const uint64_t rest = hvaddr % kSMALL_PAGE_SIZE;
@@ -195,7 +195,7 @@ uint64_t device_bar3::resolve(context* ctx, uint64_t gvaddr, struct software_pag
 
 void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint64_t host) {
     // software page table
-    const uint64_t hindex = index + ((ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE);
+    const uint64_t hindex = index + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kPAGE_SIZE);
     const uint64_t goffset = (index * kPAGE_SIZE);
     struct page_entry entry;
 
@@ -220,24 +220,6 @@ void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint6
     }
 }
 
-namespace {
-
-static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
-    struct page_entry result;
-    result.raw = guest;
-    if (result.present && result.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-    }
-    return result.raw;
-}
-
-}  // namespace anonymous
-
 void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest, uint64_t next, uint32_t count) {
     // mode true          => map
     //      false         => unmap
@@ -246,15 +228,14 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
     int32_t range = -1;
     uint64_t init_page = -1;
     for (uint32_t i = 0; i < count; ++i, guest += next) {
-        const uint64_t hindex = index + i + ((ctx->id() * kBAR3_ARENA_SIZE) / kPAGE_SIZE);
+        const uint64_t hindex = index + i + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kPAGE_SIZE);
         const uint64_t goffset = ((index + i) * kPAGE_SIZE);
-        struct page_entry entry;
-        entry.raw = guest;
-        small_[hindex].refresh(ctx, entry);
-        const uint64_t host = guest_to_host_pte(ctx, guest);
-        entry.raw = host;
+        struct page_entry gentry;
+        gentry.raw = guest;
+        small_[hindex].refresh(ctx, gentry);
+        const struct page_entry entry = ctx->guest_to_host(gentry);
         map(hindex, entry);
-        if (host) {
+        if (entry.raw) {
             barrier::page_entry* barrier_entry = NULL;
             const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
@@ -308,10 +289,10 @@ void device_bar3::refresh_table(context* ctx, uint64_t phys) {
     struct page_directory dir = page_directory::create(&pmem, phys);
     if (dir.large_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
-        const std::size_t count = std::min(kBAR3_ARENA_SIZE/ kLARGE_PAGE_SIZE, page_directory::large_size_count(dir));
+        const std::size_t count = std::min<std::size_t>(A3_BAR3_ARENA_SIZE/ kLARGE_PAGE_SIZE, page_directory::large_size_count(dir));
         assert(count <= kLARGE_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
-            const uint64_t hindex = i + ((ctx->id() * kBAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE);
+            const uint64_t hindex = i + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE);
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
             if (page_entry::create(&pmem, address + item, &entry)) {
@@ -322,16 +303,16 @@ void device_bar3::refresh_table(context* ctx, uint64_t phys) {
         }
     } else {
         struct software_page_entry entry = { };
-        std::fill(large_.begin() + ((ctx->id() * kBAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE),
-                  large_.begin() + (((ctx->id() + 1)* kBAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE), entry);
+        std::fill(large_.begin() + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE),
+                  large_.begin() + (((ctx->id() + 1)* A3_BAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE), entry);
     }
 
     if (dir.small_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
-        const std::size_t count = kBAR3_ARENA_SIZE / kSMALL_PAGE_SIZE;
+        const std::size_t count = A3_BAR3_ARENA_SIZE / kSMALL_PAGE_SIZE;
         assert(count <= kSMALL_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
-            const uint64_t hindex = i + ((ctx->id() * kBAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE);
+            const uint64_t hindex = i + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE);
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
             if (page_entry::create(&pmem, address + item, &entry)) {
@@ -342,8 +323,8 @@ void device_bar3::refresh_table(context* ctx, uint64_t phys) {
         }
     } else {
         struct software_page_entry entry = { };
-        std::fill(small_.begin() + ((ctx->id() * kBAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE),
-                  small_.begin() + (((ctx->id() + 1)* kBAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE), entry);
+        std::fill(small_.begin() + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE),
+                  small_.begin() + (((ctx->id() + 1)* A3_BAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE), entry);
     }
 }
 
