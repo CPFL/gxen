@@ -1,5 +1,5 @@
 /*
- * A3 FIFO scheduler
+ * A3 direct scheduler
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -23,63 +23,15 @@
  */
 #include <stdint.h>
 #include "a3.h"
-#include "a3_fifo_scheduler.h"
+#include "a3_direct_scheduler.h"
 #include "a3_context.h"
-#include "a3_registers.h"
 #include "a3_device.h"
 #include "a3_device_bar1.h"
-#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait)
-    : wait_(wait)
-    , thread_()
-    , mutex_()
-    , cond_()
-    , queue_()
-{
-}
-
-fifo_scheduler_t::~fifo_scheduler_t() {
-    stop();
-}
-
-void fifo_scheduler_t::start() {
-    if (thread_) {
-        stop();
-    }
-    thread_.reset(new boost::thread(&fifo_scheduler_t::run, this));
-}
-
-void fifo_scheduler_t::stop() {
-    if (thread_) {
-        thread_->interrupt();
-        thread_.reset();
-    }
-}
-
-void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
-    {
-        boost::unique_lock<boost::mutex> lock(mutex_);
-        queue_.push(fire_t(ctx, cmd));
-    }
-    cond_.notify_one();
-}
-
-void fifo_scheduler_t::run() {
-    fire_t handle;
-    while (true) {
-        {
-            boost::unique_lock<boost::mutex> lock(mutex_);
-            while (queue_.empty()) {
-                cond_.wait(lock);
-            }
-            handle = queue_.front();
-            queue_.pop();
-        }
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar1()->write(handle.first, handle.second);
-        }
+void direct_scheduler_t::enqueue(context* ctx, const command& cmd) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
+        device::instance()->bar1()->write(ctx, cmd);
     }
 }
 

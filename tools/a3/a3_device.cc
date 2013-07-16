@@ -44,6 +44,7 @@
 #include "a3_ignore_unused_variable_warning.h"
 #include "a3_fifo_scheduler.h"
 #include "a3_band_scheduler.h"
+#include "a3_direct_scheduler.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -74,8 +75,9 @@ device::device()
     , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
-    // , scheduler_(new fifo_scheduler(boost::posix_time::milliseconds(1)))
-    , scheduler_(new band_scheduler(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)))
+    // , scheduler_(new fifo_scheduler_t(boost::posix_time::milliseconds(1)))
+    // , scheduler_(new direct_scheduler_t())
+    , scheduler_(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)))
     , domid_(-1)
     , xl_ctx_()
     , xl_logger_()

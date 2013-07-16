@@ -31,7 +31,7 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-band_scheduler::band_scheduler(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period)
+band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period)
     : wait_(wait)
     , designed_(designed)
     , period_(period)
@@ -48,12 +48,12 @@ band_scheduler::band_scheduler(const boost::posix_time::time_duration& wait, con
 }
 
 
-void band_scheduler::register_context(context* ctx) {
+void band_scheduler_t::register_context(context* ctx) {
     boost::unique_lock<boost::mutex> lock(mutex_);
     inactive_.push_back(*ctx);
 }
 
-void band_scheduler::unregister_context(context* ctx) {
+void band_scheduler_t::unregister_context(context* ctx) {
     boost::unique_lock<boost::mutex> lock(mutex_);
     inactive_.remove_if([ctx](const context& target) {
         return &target == ctx;
@@ -63,19 +63,19 @@ void band_scheduler::unregister_context(context* ctx) {
     });
 }
 
-band_scheduler::~band_scheduler() {
+band_scheduler_t::~band_scheduler_t() {
     stop();
 }
 
-void band_scheduler::start() {
+void band_scheduler_t::start() {
     if (thread_ || replenisher_) {
         stop();
     }
-    thread_.reset(new boost::thread(&band_scheduler::run, this));
-    replenisher_.reset(new boost::thread(&band_scheduler::replenish, this));
+    thread_.reset(new boost::thread(&band_scheduler_t::run, this));
+    replenisher_.reset(new boost::thread(&band_scheduler_t::replenish, this));
 }
 
-void band_scheduler::stop() {
+void band_scheduler_t::stop() {
     if (thread_) {
         thread_->interrupt();
         thread_.reset();
@@ -84,7 +84,7 @@ void band_scheduler::stop() {
     }
 }
 
-void band_scheduler::replenish() {
+void band_scheduler_t::replenish() {
     while (true) {
         // replenish
         {
@@ -105,7 +105,7 @@ void band_scheduler::replenish() {
     }
 }
 
-void band_scheduler::enqueue(context* ctx, const command& cmd) {
+void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
@@ -118,14 +118,14 @@ void band_scheduler::enqueue(context* ctx, const command& cmd) {
     cond_.notify_one();
 }
 
-bool band_scheduler::utilization_over_bandwidth(context* ctx) const {
+bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
         return false;
     }
     return (ctx->utilization().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) < (1.0 / (inactive_.size() + active_.size()));
 }
 
-void band_scheduler::run() {
+void band_scheduler_t::run() {
     boost::unique_lock<boost::mutex> lock(mutex_);
     boost::condition_variable_any cond;
     while (true) {
