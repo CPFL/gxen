@@ -269,7 +269,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
                     channel->table()->allocate_shadow_address();
                     already = channel->table()->shadow_address();
                     reuse = channel->generate_original();
-                    // channel->flush(this);
+                    if (!a3::flags::lazy_shadowing) {
+                        channel->flush(this);
+                    }
                 }
             }
         }
