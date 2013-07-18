@@ -31,6 +31,7 @@
 #include "a3_device_bar1.h"
 #include "a3_context.h"
 #include "a3_mmio.h"
+#include "a3_registers.h"
 namespace a3 {
 
 #if 0

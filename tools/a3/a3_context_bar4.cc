@@ -25,6 +25,7 @@
 #include "a3.h"
 #include "a3_context.h"
 #include "a3_pmem.h"
+#include "a3_registers.h"
 #include "a3_software_page_table.h"
 #include "a3_channel.h"
 #include "a3_bit_mask.h"

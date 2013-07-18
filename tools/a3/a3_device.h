@@ -40,6 +40,8 @@ class device : private boost::noncopyable {
     mutex_t& mutex() { return mutex_; }
     uint32_t read(int bar, uint32_t offset, std::size_t size);
     void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
+    uint32_t read_pmem(uint64_t addr, std::size_t size);
+    void write_pmem(uint64_t addr, uint32_t val, std::size_t size);
     uint32_t pmem() const { return pmem_; }
     void set_pmem(uint32_t pmem) { pmem_ = pmem; }
     device_bar1* bar1() { return bar1_.get(); }

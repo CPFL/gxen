@@ -33,6 +33,7 @@
 #include "a3_barrier.h"
 #include "a3_mmio.h"
 #include "a3_page_table.h"
+#include "a3_registers.h"
 namespace a3 {
 
 device_bar3::device_bar3(device::bar_t bar)
