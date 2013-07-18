@@ -6,6 +6,7 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/static_assert.hpp>
 #include "a3_config.h"
+#include "a3_flags.h"
 namespace a3 {
 
 #if defined(NDEBUG)
