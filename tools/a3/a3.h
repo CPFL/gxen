@@ -4,6 +4,7 @@
 #include <cassert>
 #include <stdint.h>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/static_assert.hpp>
 #include "a3_config.h"
 namespace a3 {
 
@@ -19,6 +20,8 @@ namespace a3 {
 #define A3_LOG(fmt, args...) A3_FPRINTF(stdout, fmt, ##args)
 
 #define A3_UNREACHABLE() assert(0)
+
+BOOST_STATIC_ASSERT(A3_MEMORY_CTL_NUM != 0);
 
 namespace interprocess = boost::interprocess;
 
