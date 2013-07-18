@@ -106,8 +106,7 @@ void device_bar3::map(uint64_t index, const struct page_entry& entry) {
 void device_bar3::shadow(context* ctx, uint64_t phys) {
     A3_LOG("%" PRIu32 " BAR3 shadowed\n", ctx->id());
     // At first remove all
-    // a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * A3_BAR3_ARENA_SIZE) >> kPAGE_SHIFT, A3_BAR3_ARENA_SIZE / 0x1000);
-    a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), ctx->bar3_address() >> kPAGE_SHIFT, (address() + ctx->id() * A3_BAR3_ARENA_SIZE) >> kPAGE_SHIFT, A3_BAR3_ARENA_SIZE / 0x1000);
+    unmap_xen_page_batch(ctx, 0, A3_BAR3_ARENA_SIZE / 0x1000);
 
     // FIXME(Yusuke Suzuki): optimize it
     for (uint64_t address = 0; address < A3_BAR3_ARENA_SIZE; address += kPAGE_SIZE) {
