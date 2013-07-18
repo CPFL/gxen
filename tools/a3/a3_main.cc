@@ -75,6 +75,8 @@ int main(int argc, char** argv) {
     cmd.Add("help", "help", 'h', "print this message");
     cmd.Add("version", "version", 'v', "print the version");
     cmd.Add("through", "through", 't', "through I/O");
+    cmd.Add("lazy-shadowing", "lazy-shadowing", 0, "Enable lazy shadowing");
+    cmd.Add("bar3-remapping", "bar3-remapping", 0, "Enable BAR3 remapping");
     cmd.set_footer("[program_file] [arguments]");
 
     if (!cmd.Parse(argc, argv)) {
@@ -103,6 +105,10 @@ int main(int argc, char** argv) {
 
     A3_LOG("BDF: %02x:%02x.%01x\n", bdf.bus, bdf.dev, bdf.func);
     A3_LOG("through: %s\n", cmd.Exist("through") ? "enabled" : "disabled");
+
+    // set flags
+    a3::flags::lazy_shadowing = cmd.Exist("lazy-shadowing");
+    a3::flags::bar3_remapping = cmd.Exist("bar3-remapping");
 
     c::device::instance()->initialize(bdf);
 
