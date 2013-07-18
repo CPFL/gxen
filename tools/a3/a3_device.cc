@@ -90,13 +90,12 @@ device::device()
         std::exit(1);
     }
 
-
     // Direct
-    // scheduler_.reset(new direct_scheduler_t());
+    scheduler_.reset(new direct_scheduler_t());
     // FIFO
     // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::milliseconds(1)));
     // BAND
-    scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)));
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)));
 
     scheduler_->start();
     A3_LOG("device environment setup\n");
@@ -199,6 +198,8 @@ void device::initialize(const bdf& bdf) {
     // init playlist
     playlist_.reset(new playlist_t());
 
+    pmem_ = read(0, 0x1700, sizeof(uint32_t));
+
     A3_LOG("device initialized\n");
 }
 
@@ -272,6 +273,31 @@ void device::fire(context* ctx, const command& cmd) {
 void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
     A3_SYNCHRONIZED(mutex()) {
         playlist_->update(ctx, address, cmd);
+    }
+}
+
+uint32_t device::read_pmem(uint64_t addr, std::size_t size) {
+    A3_SYNCHRONIZED(mutex()) {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        if (shifted != pmem_) {
+            // change pmem
+            pmem_ = shifted;
+            write(0, 0x1700, shifted, sizeof(uint32_t));
+        }
+        return read(0, 0x700000 + (addr & 0x000000fffffULL), size);
+    }
+    return 0;  // make compiler happy
+}
+
+void device::write_pmem(uint64_t addr, uint32_t val, std::size_t size) {
+    A3_SYNCHRONIZED(mutex()) {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        if (shifted != pmem_) {
+            // change pmem
+            pmem_ = shifted;
+            write(0, 0x1700, shifted, sizeof(uint32_t));
+        }
+        write(0, 0x700000 + (addr & 0x000000fffffULL), val, size);
     }
 }
 

@@ -29,6 +29,7 @@
 #include "a3_shadow_page_table.h"
 #include "a3_barrier.h"
 #include "a3_pmem.h"
+#include "a3_registers.h"
 #include "a3_inttypes.h"
 #include "a3_page.h"
 #include "a3_pv_page.h"

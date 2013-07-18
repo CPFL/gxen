@@ -2,30 +2,45 @@
 #define A3_pmem_H_
 #include <boost/noncopyable.hpp>
 #include "a3_device.h"
-#include "a3_registers.h"
 namespace a3 {
 namespace pmem {
 
 class accessor : private boost::noncopyable {
  public:
-    explicit accessor();
-    ~accessor();
+    accessor()
+        : lock_(a3::device::instance()->mutex())
+    {
+    }
 
     uint32_t read(uint64_t addr, std::size_t size);
     void write(uint64_t addr, uint32_t val, std::size_t size);
 
-    uint32_t read32(uint64_t addr);
-    void write32(uint64_t addr, uint32_t val);
-    uint32_t read16(uint64_t addr);
-    void write16(uint64_t addr, uint16_t val);
-    uint32_t read8(uint64_t addr);
-    void write8(uint64_t addr, uint8_t val);
+    uint32_t read32(uint64_t addr) {
+        return read(addr, sizeof(uint32_t));
+    }
+
+    void write32(uint64_t addr, uint32_t val) {
+        write(addr, val, sizeof(uint32_t));
+    }
+
+    uint32_t read16(uint64_t addr) {
+        return read(addr, sizeof(uint16_t));
+    }
+
+    void write16(uint64_t addr, uint16_t val) {
+        write(addr, val, sizeof(uint16_t));
+    }
+
+    uint32_t read8(uint64_t addr) {
+        return read(addr, sizeof(uint8_t));
+    }
+
+    void write8(uint64_t addr, uint8_t val) {
+        write(addr, val, sizeof(uint8_t));
+    }
 
  private:
-    void change_current(uint64_t addr);
-
-    registers::accessor regs_;
-    uint32_t old_;
+    mutex_t::scoped_lock lock_;
 };
 
 inline uint32_t read32(uint64_t addr) {
