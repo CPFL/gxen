@@ -93,9 +93,9 @@ device::device()
     // Direct
     scheduler_.reset(new direct_scheduler_t());
     // FIFO
-    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::milliseconds(1)));
+    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(30)));
     // BAND
-    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(1000)));
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(30)));
 
     scheduler_->start();
     A3_LOG("device environment setup\n");
