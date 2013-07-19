@@ -167,11 +167,11 @@ void band_scheduler_t::run() {
         }
         A3_LOG("DEQUEUE command [will be %s]\n", inactive ? "inactive" : "active");
 
+        utilization_.start();
+
         A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar1()->write(current(), target);
         }
-
-        utilization_.start();
 
         while (device::instance()->is_active(current())) {
             cond.timed_wait(lock, wait_);
