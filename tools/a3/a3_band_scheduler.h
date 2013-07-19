@@ -10,6 +10,7 @@
 #include "a3_lock.h"
 #include "a3_context.h"
 #include "a3_scheduler.h"
+#include "a3_timer.h"
 namespace a3 {
 
 class context;
@@ -17,21 +18,6 @@ class context;
 class band_scheduler_t : public scheduler_t {
  public:
     typedef boost::intrusive::list<context> contexts_t;
-
-    class timer_t {
-     public:
-        void start() {
-            start_ = boost::posix_time::microsec_clock::local_time();
-        }
-
-        boost::posix_time::time_duration elapsed() const {
-            auto now = boost::posix_time::microsec_clock::local_time();
-            return now - start_;
-        }
-
-     private:
-        boost::posix_time::ptime start_;
-    };
 
     band_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period);
     virtual ~band_scheduler_t();
