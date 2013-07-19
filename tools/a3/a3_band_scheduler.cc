@@ -85,17 +85,24 @@ void band_scheduler_t::stop() {
 }
 
 void band_scheduler_t::replenish() {
+    uint64_t count = 0;
     while (true) {
         // replenish
         {
             boost::unique_lock<boost::mutex> lock(mutex_);
             if (active_.size() + inactive_.size()) {
-                const auto budget = period_ / (inactive_.size() + active_.size());
-                for (context& ctx: active_) {
-                    ctx.replenish(budget);
-                }
-                for (context& ctx: inactive_) {
-                    ctx.replenish(budget);
+                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                    A3_LOG("UTIL: LOG %" PRIu64 "\n", count);
+                    const auto budget = period_ / (inactive_.size() + active_.size());
+                    for (context& ctx: active_) {
+                        A3_LOG("UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        ctx.replenish(budget);
+                    }
+                    for (context& ctx: inactive_) {
+                        A3_LOG("UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        ctx.replenish(budget);
+                    }
+                    ++count;
                 }
                 bandwidth_ = boost::posix_time::microseconds(0);
             }
@@ -122,7 +129,7 @@ bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
         return false;
     }
-    return (ctx->utilization().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) < (1.0 / (inactive_.size() + active_.size()));
+    return (ctx->utilization().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / (inactive_.size() + active_.size()));
 }
 
 void band_scheduler_t::run() {
@@ -168,10 +175,13 @@ void band_scheduler_t::run() {
         A3_LOG("DEQUEUE command [will be %s]\n", inactive ? "inactive" : "active");
 
         utilization_.start();
+        lock.unlock();
 
         A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar1()->write(current(), target);
         }
+
+        lock.lock();
 
         while (device::instance()->is_active(current())) {
             cond.timed_wait(lock, wait_);

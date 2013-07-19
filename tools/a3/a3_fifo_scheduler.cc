@@ -75,14 +75,20 @@ void fifo_scheduler_t::stop() {
 }
 
 void fifo_scheduler_t::replenish() {
+    uint64_t count = 0;
     while (true) {
         // replenish
         {
             boost::unique_lock<boost::mutex> lock(mutex_);
             if (contexts_.size()) {
                 const auto budget = period_ / contexts_.size();
-                for (context& ctx: contexts_) {
-                    ctx.replenish(budget);
+                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                    A3_LOG("UTIL: LOG %" PRIu64 "\n", count);
+                    for (context& ctx: contexts_) {
+                        A3_LOG("UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        ctx.replenish(budget);
+                    }
+                    ++count;
                 }
                 bandwidth_ = boost::posix_time::microseconds(0);
             }
@@ -117,6 +123,8 @@ void fifo_scheduler_t::run() {
         A3_SYNCHRONIZED(device::instance()->mutex()) {
             device::instance()->bar1()->write(handle.first, handle.second);
         }
+
+        lock.lock();
 
         while (device::instance()->is_active(handle.first)) {
             cond.timed_wait(lock, wait_);
