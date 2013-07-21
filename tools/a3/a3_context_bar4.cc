@@ -52,6 +52,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
         return 0;
     } else if (pgt == pv_bar1_large_pgt_) {
         bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, guest);
+        A3_UNREACHABLE();
         // TODO(Yusuke Suzuki) sync
 //                 A3_SYNCHRONIZED(device::instance()->mutex()) {
 //                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);
@@ -75,7 +76,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
-    A3_LOG("A3 call %d : %s\n", static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
+    A3_LOG("A3 call from [%" PRIu32 "] %d : %s\n", id(), static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
@@ -237,10 +238,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t count = slot->u32[3];
             for (uint32_t i = 0; i < count; ++i) {
                 // TODO(Yusuke Suzuki): specialize 0x0
-                struct page_entry gpte;
-                gpte.raw = 0x0;
-                const struct page_entry hpte = guest_to_host(gpte);
-                const int ret = pv_map(pgt, index + i, 0x0, hpte.raw);
+                const int ret = pv_map(pgt, index + i, 0x0, 0x0);
                 if (ret) {
                     return ret;
                 }
@@ -379,7 +377,12 @@ void context::read_bar4(const command& cmd) {
             A3_LOG("Guest physical call data cookie %" PRIx32 "\n", reinterpret_cast<uint32_t*>(guest_)[0]);
             buffer()->value = 0x0;
         }
-        break;
+        return;
+
+    case 0x00000c: {  // A3 call
+            buffer()->value = 0xdeadbeef;
+        }
+        return;
     }
 }
 

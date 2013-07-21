@@ -83,9 +83,9 @@ void fifo_scheduler_t::replenish() {
             if (contexts_.size()) {
                 const auto budget = period_ / contexts_.size();
                 if (bandwidth_ != boost::posix_time::microseconds(0)) {
-                    A3_LOG("UTIL: LOG %" PRIu64 "\n", count);
+                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
                     for (context& ctx: contexts_) {
-                        A3_LOG("UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
                         ctx.replenish(budget);
                     }
                     ++count;
