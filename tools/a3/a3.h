@@ -50,7 +50,8 @@ class command {
 
     enum utility_t {
         UTILITY_PGRAPH_STATUS = 0,
-        UTILITY_REGISTER_READ
+        UTILITY_REGISTER_READ,
+        UTILITY_CLEAR_SHADOWING_UTILIZATION
     };
 
     uint32_t type;

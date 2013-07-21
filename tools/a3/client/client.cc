@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     };
 
     if (rest.empty()) {
-        command.value = a3::command::UTILITY_PGRAPH_STATUS;
+        command.value = a3::command::UTILITY_CLEAR_SHADOWING_UTILIZATION;
     } else if (rest.front() == "register" && rest.size() >= 2) {
         command.value = a3::command::UTILITY_REGISTER_READ;
         command.offset = strtol(rest[1].c_str(), NULL, 16);
