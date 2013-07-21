@@ -55,6 +55,9 @@ context::context(session* s, bool through)
     , reg32_()
     , ramin_channel_map_()
     , bar3_address_()
+    , flush_times_()
+    , shadowing_times_()
+    , shadowing_(boost::posix_time::microseconds(0))
     , para_virtualized_(false)
     , pv32_()
     , guest_()
@@ -128,6 +131,18 @@ bool context::handle(const command& cmd) {
                     ignore_unused_variable_warning(status);
                     A3_LOG("chan%0u => %" PRIx32 "\n", pid, status);
                 }
+            }
+            break;
+
+        case command::UTILITY_CLEAR_SHADOWING_UTILIZATION: {
+                A3_SYNCHRONIZED(device::instance()->mutex()) {
+                    for (context* ctx : device::instance()->contexts()) {
+                        if (ctx) {
+                            ctx->clear_shadowing_utilization();
+                        }
+                    }
+                }
+                A3_LOG("clear context shadowing utilizations\n");
             }
             break;
         }
@@ -232,6 +247,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     uint64_t already = 0;
     channel::page_table_reuse_t* reuse;
 
+    A3_FATAL(stdout, "flush times %" PRIu64 "\n", increment_flush_times());
     A3_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables

@@ -68,6 +68,7 @@ static inline unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
 device::device()
     : device_()
     , virts_(A3_VM_NUM, -1)
+    , contexts_(A3_VM_NUM, NULL)
     , mutex_()
     , pmem_()
     , bars_()
@@ -210,6 +211,7 @@ uint32_t device::acquire_virt(context* ctx) {
     const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
     if (pos != virts_.npos) {
         virts_.set(pos, 0);
+        contexts_[pos] = ctx;
     }
     scheduler_->register_context(ctx);
     return pos;
@@ -219,6 +221,7 @@ void device::release_virt(uint32_t virt, context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     virts_.set(virt, 1);
     scheduler_->unregister_context(ctx);
+    contexts_[virt] = NULL;
 }
 
 uint32_t device::read(int bar, uint32_t offset, std::size_t size) {

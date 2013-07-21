@@ -93,6 +93,25 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     }
     struct page_entry guest_to_host(const struct page_entry& entry);
 
+    uint64_t increment_flush_times() {
+        return ++flush_times_;
+    }
+
+    uint64_t increment_shadowing_times() {
+        return ++shadowing_times_;
+    }
+
+    boost::posix_time::time_duration increment_shadowing(const boost::posix_time::time_duration& time) {
+        shadowing_ += time;
+        return shadowing_;
+    }
+
+    void clear_shadowing_utilization() {
+        flush_times_ = 0;
+        shadowing_times_ = 0;
+        shadowing_ = boost::posix_time::microseconds(0);
+    }
+
     // BAND
     bool enqueue(const command& cmd) {
         const bool ret = suspended_.empty();
@@ -154,6 +173,11 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::scoped_array<uint32_t> reg32_;
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
+
+    // shadowing utilization
+    uint64_t flush_times_;
+    uint64_t shadowing_times_;
+    boost::posix_time::time_duration shadowing_;
 
     // PV
     bool para_virtualized_;

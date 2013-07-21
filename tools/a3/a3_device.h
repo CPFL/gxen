@@ -50,6 +50,7 @@ class device : private boost::noncopyable {
     const device_bar3* bar3() const { return bar3_.get(); }
     vram_memory* malloc(std::size_t n);
     void free(vram_memory* mem);
+    const std::vector<context*>& contexts() const { return contexts_; }
 
     // VT-d
     int domid() const { return domid_; }
@@ -63,6 +64,7 @@ class device : private boost::noncopyable {
  private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
+    std::vector<context*> contexts_;
     mutex_t mutex_;
     uint32_t pmem_;
     boost::array<bar_t, 5> bars_;
