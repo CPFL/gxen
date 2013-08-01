@@ -1,6 +1,7 @@
 #ifndef A3_BAND_SCHEDULER_H_
 #define A3_BAND_SCHEDULER_H_
 #include <queue>
+#include <atomic>
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 #include <boost/scoped_ptr.hpp>

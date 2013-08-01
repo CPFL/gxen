@@ -55,12 +55,12 @@ LINK = $(call quiet-command,$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS),"  LINK  $@")
 	$(call quiet-command,rm -f $@ && $(AR) rcs $@ $^,"  AR    $@")
 
 %.d: %.c
-	@set -e; $(CC) -MM $(CPPFLAGS) $< \
+	@set -e; $(CC) -MM $(CPPFLAGS) $(CFLAGS) $< \
 	    | sed "s/\($*\)\.o[ :]*/\1.o $@ : /g" > $@; \
 	    [ -s $@ ] || rm -f $@
 
 %.d: %.cc
-	@set -e; $(CXX) -MM $(CPPFLAGS) $< \
+	@set -e; $(CXX) -MM $(CPPFLAGS) $(CXXFLAGS) $< \
 	    | sed "s/\($*\)\.o[ :]*/\1.o $@ : /g" > $@; \
 	    [ -s $@ ] || rm -f $@
 
