@@ -137,6 +137,8 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
         utilization_ += duration;
     }
 
+    mutex_t& band_mutex() const { return band_mutex_; }
+
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -192,6 +194,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     pv_page* pv_bar3_pgt_;
 
     // only touched by BAND scheduler
+    mutex_t band_mutex_;
     boost::posix_time::time_duration budget_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration utilization_;
