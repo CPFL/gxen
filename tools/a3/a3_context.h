@@ -7,12 +7,15 @@
 #include <boost/unordered_map.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
+#include <boost/intrusive/list_hook.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
 #include "a3_lock.h"
 #include "a3_channel.h"
 #include "a3_bar1_channel.h"
 #include "a3_bar3_channel.h"
 #include "a3_session.h"
+#include "a3_page_table.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -27,7 +30,7 @@ struct unique_ptr {
 struct slot_t;
 class pv_page;
 
-class context : private boost::noncopyable {
+class context : private boost::noncopyable, public boost::intrusive::list_base_hook<> {
  public:
     typedef boost::unordered_multimap<uint64_t, channel*> channel_map;
 
@@ -55,7 +58,7 @@ class context : private boost::noncopyable {
     const barrier::table* barrier() const { return barrier_.get(); }
     channel_map* ramin_channel_map() { return &ramin_channel_map_; }
     const channel_map* ramin_channel_map() const { return &ramin_channel_map_; }
-    uint64_t vram_size() const { return A3_2G; }
+    uint64_t vram_size() const { return A3_MEMORY_SIZE; }
     uint64_t get_address_shift() const {
         return id() * vram_size();
     }
@@ -88,22 +91,52 @@ class context : private boost::noncopyable {
     pv_page* pgds(uint32_t id) {
         return pgds_[id];
     }
+    struct page_entry guest_to_host(const struct page_entry& entry);
+
+    uint64_t increment_flush_times() {
+        return ++flush_times_;
+    }
+
+    uint64_t increment_shadowing_times() {
+        return ++shadowing_times_;
+    }
+
+    boost::posix_time::time_duration increment_shadowing(const boost::posix_time::time_duration& time) {
+        shadowing_ += time;
+        return shadowing_;
+    }
+
+    void clear_shadowing_utilization() {
+        flush_times_ = 0;
+        shadowing_times_ = 0;
+        shadowing_ = boost::posix_time::microseconds(0);
+    }
 
     // BAND
-    void suspend(const command& cmd) {
-        A3_SYNCHRONIZED(mutex_) {
-            suspended_.push(cmd);
-        }
+    bool enqueue(const command& cmd) {
+        const bool ret = suspended_.empty();
+        suspended_.push(cmd);
+        return ret;
+    }
+    command dequeue() {
+        const command cmd = suspended_.front();
+        suspended_.pop();
+        return cmd;
     }
     bool is_suspended() {
-        A3_SYNCHRONIZED(mutex_) {
-            return !suspended_.empty();
-        }
-        return false;
+        return !suspended_.empty();
     }
-    uint64_t budget() const { return budget_; }
-    uint64_t utilization() const { return utilization_; }
-    uint64_t bandwidth() const { return bandwidth_; }
+    boost::posix_time::time_duration budget() const { return budget_; }
+    boost::posix_time::time_duration utilization() const { return utilization_; }
+    boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
+    void replenish(const boost::posix_time::time_duration& budget) {
+        budget_ = budget;
+        utilization_ = boost::posix_time::microseconds(0);
+    }
+    void update_utilization(const boost::posix_time::time_duration& duration) {
+        utilization_ += duration;
+    }
+
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -141,6 +174,11 @@ class context : private boost::noncopyable {
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
 
+    // shadowing utilization
+    uint64_t flush_times_;
+    uint64_t shadowing_times_;
+    boost::posix_time::time_duration shadowing_;
+
     // PV
     bool para_virtualized_;
     boost::scoped_array<uint32_t> pv32_;
@@ -154,10 +192,9 @@ class context : private boost::noncopyable {
     pv_page* pv_bar3_pgt_;
 
     // only touched by BAND scheduler
-    int64_t budget_;
-    int64_t bandwidth_;
-    int64_t utilization_;
-    mutex_t mutex_;
+    boost::posix_time::time_duration budget_;
+    boost::posix_time::time_duration bandwidth_;
+    boost::posix_time::time_duration utilization_;
     std::queue<command> suspended_;
 };
 

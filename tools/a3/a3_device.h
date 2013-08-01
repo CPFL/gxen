@@ -9,7 +9,6 @@
 #include "a3_xen.h"
 #include "a3_lock.h"
 #include "a3_session.h"
-#include "a3_fifo_scheduler.h"
 namespace a3 {
 
 class device_bar1;
@@ -18,6 +17,7 @@ class vram;
 class vram_memory;
 class context;
 class playlist_t;
+class scheduler_t;
 
 class device : private boost::noncopyable {
  public:
@@ -35,11 +35,13 @@ class device : private boost::noncopyable {
     void initialize(const bdf& bdf);
     static device* instance();
     bool initialized() const { return device_; }
-    uint32_t acquire_virt();
-    void release_virt(uint32_t virt);
+    uint32_t acquire_virt(context* ctx);
+    void release_virt(uint32_t virt, context* ctx);
     mutex_t& mutex() { return mutex_; }
     uint32_t read(int bar, uint32_t offset, std::size_t size);
     void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
+    uint32_t read_pmem(uint64_t addr, std::size_t size);
+    void write_pmem(uint64_t addr, uint32_t val, std::size_t size);
     uint32_t pmem() const { return pmem_; }
     void set_pmem(uint32_t pmem) { pmem_ = pmem; }
     device_bar1* bar1() { return bar1_.get(); }
@@ -48,10 +50,9 @@ class device : private boost::noncopyable {
     const device_bar3* bar3() const { return bar3_.get(); }
     vram_memory* malloc(std::size_t n);
     void free(vram_memory* mem);
+    const std::vector<context*>& contexts() const { return contexts_; }
 
     // VT-d
-    bool try_acquire_gpu(context* ctx);
-    void acquire_gpu(context* ctx);
     int domid() const { return domid_; }
     bool is_active(context* ctx);
     void fire(context* ctx, const command& cmd);
@@ -63,6 +64,7 @@ class device : private boost::noncopyable {
  private:
     struct pci_device* device_;
     boost::dynamic_bitset<> virts_;
+    std::vector<context*> contexts_;
     mutex_t mutex_;
     uint32_t pmem_;
     boost::array<bar_t, 5> bars_;
@@ -70,7 +72,7 @@ class device : private boost::noncopyable {
     boost::scoped_ptr<device_bar3> bar3_;
     boost::scoped_ptr<vram> vram_;
     boost::scoped_ptr<playlist_t> playlist_;
-    fifo_scheduler scheduler_;
+    boost::scoped_ptr<scheduler_t> scheduler_;
     int domid_;
 
     // libxl

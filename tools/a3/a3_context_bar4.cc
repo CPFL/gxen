@@ -25,6 +25,7 @@
 #include "a3.h"
 #include "a3_context.h"
 #include "a3_pmem.h"
+#include "a3_registers.h"
 #include "a3_software_page_table.h"
 #include "a3_channel.h"
 #include "a3_bit_mask.h"
@@ -41,20 +42,6 @@ static uint64_t round_up(uint64_t x, uint64_t y) {
     return (((x) + (y - 1)) & ~(y - 1));
 }
 
-static inline uint64_t guest_to_host_pte(context* ctx, uint64_t guest) {
-    struct page_entry result;
-    result.raw = guest;
-    if (result.present && result.target == page_entry::TARGET_TYPE_VRAM) {
-        // rewrite address
-        const uint64_t g_field = result.address;
-        const uint64_t g_address = g_field << 12;
-        const uint64_t h_address = ctx->get_phys_address(g_address);
-        const uint64_t h_field = h_address >> 12;
-        result.address = h_field;
-    }
-    return result.raw;
-}
-
 }  // namespace anonymous
 
 int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host) {
@@ -65,6 +52,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
         return 0;
     } else if (pgt == pv_bar1_large_pgt_) {
         bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, guest);
+        A3_UNREACHABLE();
         // TODO(Yusuke Suzuki) sync
 //                 A3_SYNCHRONIZED(device::instance()->mutex()) {
 //                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);
@@ -88,7 +76,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
-    A3_LOG("A3 call %d : %s\n", static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
+    A3_LOG("A3 call from [%" PRIu32 "] %d : %s\n", id(), static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
@@ -179,8 +167,10 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             // TODO(Yusuke Suzuki): validation
             const uint32_t index = slot->u32[2];
             const uint64_t guest = slot->u64[2];
-            const uint64_t host = guest_to_host_pte(this, guest);
-            return pv_map(pgt, index, guest, host);
+            struct page_entry gpte;
+            gpte.raw = guest;
+            const struct page_entry hpte = guest_to_host(gpte);
+            return pv_map(pgt, index, guest, hpte.raw);
         }
         return 0;
 
@@ -202,7 +192,10 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 return 0;
             } else {
                 for (uint32_t i = 0; i < count; ++i, guest += next) {
-                    const int ret = pv_map(pgt, index + i, guest, guest_to_host_pte(this, guest));
+                    struct page_entry gpte;
+                    gpte.raw = guest;
+                    const struct page_entry hpte = guest_to_host(gpte);
+                    const int ret = pv_map(pgt, index + i, guest, hpte.raw);
                     if (ret) {
                         A3_LOG("INVALID...\n");
                         return ret;
@@ -223,8 +216,10 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t count = slot->u32[3];
             for (uint32_t i = 0; i < count; ++i) {
                 const uint64_t guest = slot->u64[2 + i];
-                const uint64_t host = guest_to_host_pte(this, guest);
-                const int ret = pv_map(pgt, index + i, guest, host);
+                struct page_entry gpte;
+                gpte.raw = guest;
+                const struct page_entry hpte = guest_to_host(gpte);
+                const int ret = pv_map(pgt, index + i, guest, hpte.raw);
                 if (ret) {
                     return ret;
                 }
@@ -243,7 +238,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             const uint32_t count = slot->u32[3];
             for (uint32_t i = 0; i < count; ++i) {
                 // TODO(Yusuke Suzuki): specialize 0x0
-                const int ret = pv_map(pgt, index + i, 0x0, guest_to_host_pte(this, 0x0));
+                const int ret = pv_map(pgt, index + i, 0x0, 0x0);
                 if (ret) {
                     return ret;
                 }
@@ -382,7 +377,12 @@ void context::read_bar4(const command& cmd) {
             A3_LOG("Guest physical call data cookie %" PRIx32 "\n", reinterpret_cast<uint32_t*>(guest_)[0]);
             buffer()->value = 0x0;
         }
-        break;
+        return;
+
+    case 0x00000c: {  // A3 call
+            buffer()->value = 0xdeadbeef;
+        }
+        return;
     }
 }
 

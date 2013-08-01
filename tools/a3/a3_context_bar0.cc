@@ -176,7 +176,9 @@ void context::write_bar0(const command& cmd) {
                     A3_SYNCHRONIZED(device::instance()->mutex()) {
                         for (iter_t it = range.first; it != range.second; ++it) {
                             const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
-                            it->second->flush(this);
+                            if (a3::flags::lazy_shadowing) {
+                                it->second->flush(this);
+                            }
                             A3_LOG("    channel %d ramin graph with cmd %" PRIX32 " with addr %" PRIX64 " : %" PRIX32 " => %" PRIX32 "\n", it->second->id(), cmd.value, it->second->shadow_ramin()->address(), data, res);
 
                             // Because we doesn't recognize PCOPY engine initialization
@@ -335,7 +337,8 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x022438:
-        buffer()->value = vram_size() / A3_1G;
+        // memory controller size
+        buffer()->value = A3_MEMORY_CTL_NUM;
         return;
 
     case 0x100cb8:
@@ -362,8 +365,9 @@ void context::read_bar0(const command& cmd) {
             return;
         }
 
-    case 0x121c75:
-        buffer()->value = vram_size() / A3_1G;
+    case 0x121c74:
+        // memory controller size
+        buffer()->value = A3_MEMORY_CTL_NUM;
         return;
 
     case 0x409500:
@@ -452,6 +456,20 @@ void context::read_bar0(const command& cmd) {
         }
     }
 
+    // memomry controller
+    if (0x110200 <= cmd.offset && cmd.offset < 0x110200 + 0x1000 * 6) {
+        switch (cmd.offset) {
+            case 0x11020c:
+            case 0x11120c:
+            case 0x11220c:
+            case 0x11320c:
+            case 0x11420c:
+            case 0x11520c:
+                buffer()->value = A3_MEMORY_CTL_PART >> 20;
+                return;
+        }
+    }
+
     registers::accessor regs;
     buffer()->value = regs.read(cmd.offset, cmd.size());
 }
@@ -505,7 +523,9 @@ uint32_t context::encode_to_shadow_ramin(uint32_t value) {
     } else {
         for (iter_t it = range.first; it != range.second; ++it) {
             A3_LOG("encode: virt %" PRIX64 " to shadow ramin %" PRIX64 "\n", virt, it->second->shadow_ramin()->address());
-            it->second->flush(this);
+            if (a3::flags::lazy_shadowing) {
+                it->second->flush(this);
+            }
             return bit_clear<28>(value) | (it->second->shadow_ramin()->address() >> 12);
         }
     }

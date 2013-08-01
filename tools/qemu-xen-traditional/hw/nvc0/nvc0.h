@@ -48,7 +48,7 @@ typedef struct nvc0_bar {
     uint32_t addr;    //  MMIO GPA
     uint32_t size;    //  MMIO memory size
     int type;
-    // uint8_t* space;   //  workspace memory
+    uint8_t* space;   //  workspace memory
     uint8_t* real;    //  MMIO HVA
 } nvc0_bar_t;
 

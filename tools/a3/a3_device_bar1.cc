@@ -31,6 +31,7 @@
 #include "a3_device_bar1.h"
 #include "a3_context.h"
 #include "a3_mmio.h"
+#include "a3_registers.h"
 namespace a3 {
 
 #if 0
@@ -148,7 +149,7 @@ void device_bar1::pv_reflect_entry(context* ctx, bool big, uint32_t index, uint6
     entry.raw = host;
     if (big) {
     } else {
-        map(index * kSMALL_PAGE_SIZE, entry);
+        map(((ctx->id() * A3_DOMAIN_CHANNELS) + index) * kSMALL_PAGE_SIZE, entry);
     }
 }
 

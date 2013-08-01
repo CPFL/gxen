@@ -28,6 +28,7 @@
 #include "a3_context.h"
 #include "a3_pmem.h"
 #include "a3_bit_mask.h"
+#include "a3_registers.h"
 namespace a3 {
 
 playlist_t::playlist_t()

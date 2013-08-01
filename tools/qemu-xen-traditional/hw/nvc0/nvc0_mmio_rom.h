@@ -20,7 +20,6 @@ void nvc0_mmio_rom_writeb(void *opaque, target_phys_addr_t addr, uint32_t val);
 void nvc0_mmio_rom_writew(void *opaque, target_phys_addr_t addr, uint32_t val);
 void nvc0_mmio_rom_writed(void *opaque, target_phys_addr_t addr, uint32_t val);
 
-
 #ifdef __cplusplus
 }
 #endif

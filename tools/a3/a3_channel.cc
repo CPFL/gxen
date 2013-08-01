@@ -29,12 +29,14 @@
 #include "a3_shadow_page_table.h"
 #include "a3_barrier.h"
 #include "a3_pmem.h"
+#include "a3_registers.h"
 #include "a3_inttypes.h"
 #include "a3_page.h"
 #include "a3_pv_page.h"
 #include "a3_bit_mask.h"
 #include "a3_device_bar3.h"
 #include "a3_mmio.h"
+#include "a3_timer.h"
 namespace a3 {
 
 channel::channel(int id)
@@ -190,6 +192,8 @@ void channel::flush(context* ctx) {
         return;
     }
 
+    A3_FATAL(stdout, "shadowing times %" PRIu64 "\n", ctx->increment_shadowing_times());
+
     // clear dirty flags
     channel* origin = NULL;
     for (page_table_reuse_t::size_type pos = derived_->find_first(); pos != derived_->npos; pos = derived_->find_next(pos)) {
@@ -201,7 +205,14 @@ void channel::flush(context* ctx) {
     }
 
     // shadowing...
-    origin->table()->refresh_page_directories(ctx, table()->page_directory_address());
+    {
+        timer_t timer;
+        timer.start();
+        origin->table()->refresh_page_directories(ctx, table()->page_directory_address());
+        auto duration = ctx->increment_shadowing(timer.elapsed());
+        A3_FATAL(stdout, "shadowing duration %" PRIu64 "\n", static_cast<uint64_t>(duration.total_microseconds()));
+    }
+
     registers::accessor regs;
     A3_LOG("flush %d %" PRIx64 "\n", origin->id(), origin->table()->shadow_address());
     regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);

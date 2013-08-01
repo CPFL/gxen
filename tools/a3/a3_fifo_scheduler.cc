@@ -31,8 +31,9 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-fifo_scheduler::fifo_scheduler(const boost::posix_time::time_duration& wait)
+fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period)
     : wait_(wait)
+    , period_(period)
     , thread_()
     , mutex_()
     , cond_()
@@ -40,25 +41,64 @@ fifo_scheduler::fifo_scheduler(const boost::posix_time::time_duration& wait)
 {
 }
 
-fifo_scheduler::~fifo_scheduler() {
+fifo_scheduler_t::~fifo_scheduler_t() {
     stop();
 }
 
-void fifo_scheduler::start() {
+void fifo_scheduler_t::register_context(context* ctx) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    contexts_.push_back(*ctx);
+}
+
+void fifo_scheduler_t::unregister_context(context* ctx) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    contexts_.remove_if([ctx](const context& target) {
+        return &target == ctx;
+    });
+}
+
+void fifo_scheduler_t::start() {
     if (thread_) {
         stop();
     }
-    thread_.reset(new boost::thread(&fifo_scheduler::run, this));
+    thread_.reset(new boost::thread(&fifo_scheduler_t::run, this));
+    replenisher_.reset(new boost::thread(&fifo_scheduler_t::replenish, this));
 }
 
-void fifo_scheduler::stop() {
+void fifo_scheduler_t::stop() {
     if (thread_) {
         thread_->interrupt();
         thread_.reset();
+        replenisher_->interrupt();
+        replenisher_.reset();
     }
 }
 
-void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
+void fifo_scheduler_t::replenish() {
+    uint64_t count = 0;
+    while (true) {
+        // replenish
+        {
+            boost::unique_lock<boost::mutex> lock(mutex_);
+            if (contexts_.size()) {
+                const auto budget = period_ / contexts_.size();
+                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
+                    for (context& ctx: contexts_) {
+                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        ctx.replenish(budget);
+                    }
+                    ++count;
+                }
+                bandwidth_ = boost::posix_time::microseconds(0);
+            }
+        }
+        boost::this_thread::sleep(period_);
+        boost::this_thread::yield();
+    }
+}
+
+void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
         queue_.push(fire_t(ctx, cmd));
@@ -66,35 +106,33 @@ void fifo_scheduler::enqueue(context* ctx, const command& cmd) {
     cond_.notify_one();
 }
 
-void fifo_scheduler::run() {
-    context* current = NULL;
-    fire_t handle;
-    boost::condition_variable_any cond2;
+void fifo_scheduler_t::run() {
+    boost::condition_variable_any cond;
+    boost::unique_lock<boost::mutex> lock(mutex_);
     while (true) {
-        {
-            boost::unique_lock<boost::mutex> lock(mutex_);
-            while (queue_.empty()) {
-                cond_.wait(lock);
-            }
-            handle = queue_.front();
-            queue_.pop();
+        fire_t handle;
+        while (queue_.empty()) {
+            cond_.wait(lock);
+        }
+        handle = queue_.front();
+        queue_.pop();
+
+        lock.unlock();
+        utilization_.start();
+
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
+            device::instance()->bar1()->write(handle.first, handle.second);
         }
 
-        {
-            boost::unique_lock<mutex_t> lock(device::instance()->mutex());
-            if (current != handle.first) {
-                while (device::instance()->is_active(current)) {
-                    cond2.timed_wait(lock, wait_);
-                }
-                // acquire GPU
-                current = handle.first;
-                const bool res = device::instance()->try_acquire_gpu(current);
-                ignore_unused_variable_warning(res);
-                A3_LOG("Acquire GPU [%s]\n", res ? "OK" : "NG");
-            }
-            device::instance()->bar1()->write(current, handle.second);
-            A3_LOG("timer thread fires FIRE %" PRIu32 " [%s]\n", current->id(), device::instance()->is_active(current) ? "ACTIVE" : "STOP");
+        lock.lock();
+
+        while (device::instance()->is_active(handle.first)) {
+            cond.timed_wait(lock, wait_);
         }
+
+        const auto duration = utilization_.elapsed();
+        bandwidth_ += duration;
+        handle.first->update_utilization(duration);
     }
 }
 

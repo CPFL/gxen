@@ -1,5 +1,5 @@
 /*
- * A3 NVC0 PMEM
+ * A3 flags
  *
  * Copyright (c) 2012-2013 Yusuke Suzuki
  *
@@ -21,19 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "a3_pmem.h"
-#include "a3_device.h"
-#include "a3_bit_mask.h"
+#include <stdint.h>
+#include "a3.h"
+#include "a3_flags.h"
 namespace a3 {
-namespace pmem {
 
-uint32_t accessor::read(uint64_t addr, std::size_t size) {
-    return device::instance()->read_pmem(addr, size);
-}
+bool flags::lazy_shadowing = false;
+bool flags::bar3_remapping = false;
 
-void accessor::write(uint64_t addr, uint32_t val, std::size_t size) {
-    device::instance()->write_pmem(addr, val, size);
-}
-
-} }  // namespace a3::pmem
-/* vim: set sw=4 ts=4 et tw=80 : */
+}  // namespace a3

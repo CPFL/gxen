@@ -42,6 +42,9 @@
 #include "a3_device_bar3.h"
 #include "a3_bit_mask.h"
 #include "a3_ignore_unused_variable_warning.h"
+#include "a3_fifo_scheduler.h"
+#include "a3_band_scheduler.h"
+#include "a3_direct_scheduler.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -51,7 +54,7 @@
 
 namespace a3 {
 
-static unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
+static inline unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
     unsigned int value;
 
     value = pcidev->domain << 16;
@@ -64,7 +67,8 @@ static unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
 
 device::device()
     : device_()
-    , virts_(2, -1)
+    , virts_(A3_VM_NUM, -1)
+    , contexts_(A3_VM_NUM, NULL)
     , mutex_()
     , pmem_()
     , bars_()
@@ -72,7 +76,7 @@ device::device()
     , bar3_()
     , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
-    , scheduler_(boost::posix_time::milliseconds(1))
+    , scheduler_()
     , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
@@ -86,7 +90,17 @@ device::device()
         fprintf(stderr, "cannot init xl context\n");
         std::exit(1);
     }
-    scheduler_.start();
+
+    // Direct
+    scheduler_.reset(new direct_scheduler_t());
+    // FIFO
+    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(30)));
+    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
+    // BAND
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(500), boost::posix_time::milliseconds(30)));
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
+
+    scheduler_->start();
     A3_LOG("device environment setup\n");
 }
 
@@ -187,21 +201,27 @@ void device::initialize(const bdf& bdf) {
     // init playlist
     playlist_.reset(new playlist_t());
 
+    pmem_ = read(0, 0x1700, sizeof(uint32_t));
+
     A3_LOG("device initialized\n");
 }
 
-uint32_t device::acquire_virt() {
+uint32_t device::acquire_virt(context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
     if (pos != virts_.npos) {
         virts_.set(pos, 0);
+        contexts_[pos] = ctx;
     }
+    scheduler_->register_context(ctx);
     return pos;
 }
 
-void device::release_virt(uint32_t virt) {
+void device::release_virt(uint32_t virt, context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     virts_.set(virt, 1);
+    scheduler_->unregister_context(ctx);
+    contexts_[virt] = NULL;
 }
 
 uint32_t device::read(int bar, uint32_t offset, std::size_t size) {
@@ -247,67 +267,42 @@ void device::free(vram_memory* mem) {
     vram_->free(mem);
 }
 
-bool device::try_acquire_gpu(context* ctx) {
-    A3_SYNCHRONIZED(mutex()) {
-        if (domid_ >= 0) {
-            if (domid_ == ctx->domid()) {
-                return true;
-            }
-            const int rc = a3_xen_deassign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
-            if (rc < 0) {
-                A3_FPRINTF(stderr, "xc_deassign_device failed domid: %d - (%d)\n", domid(), rc);
-                return false;
-            }
-        }
-        domid_ = ctx->domid();
-        const int rc = a3_xen_assign_device(xl_ctx_, domid(), pcidev_encode_bdf(&xl_device_pci_));
-        if (rc < 0) {
-            A3_FPRINTF(stderr, "xc_assign_device failed - (%d)\n", rc);
-            return false;
-        }
-    }
-    return true;
-}
-
 bool device::is_active(context* ctx) {
-    A3_SYNCHRONIZED(mutex()) {
-        registers::accessor regs;
-        // this is status register of pgraph
-        if (regs.read32(0x400700)) {
-            return true;
-        }
-
-        // PGRAPH register shows idle, but probably there's working channels
-        if (!ctx) {
-            return false;
-        }
-
-        for (uint32_t pid = ctx->id() * A3_DOMAIN_CHANNELS, pidz = (ctx->id() + 1) * A3_DOMAIN_CHANNELS; pid < pidz; ++pid) {
-            const uint32_t offset = 0x3000 + 0x8 * pid + 0x4;
-            const uint32_t status = regs.read32(offset);
-            if (status & 0x1UL) {
-                // 0b10000000111110000000100010000
-                if (status & 270467344UL) {
-                    A3_LOG("active by chan %" PRIu32 "\n", pid);
-                    return true;
-                } else {
-                    A3_LOG("chan %" PRIu32 " is runnable but not active\n", pid);
-                }
-            }
-        }
-    }
-    return false;
+    return registers::read32(0x400700);
 }
 
 void device::fire(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(mutex()) {
-        scheduler_.enqueue(ctx, cmd);
-    }
+    scheduler_->enqueue(ctx, cmd);
 }
 
 void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
     A3_SYNCHRONIZED(mutex()) {
         playlist_->update(ctx, address, cmd);
+    }
+}
+
+uint32_t device::read_pmem(uint64_t addr, std::size_t size) {
+    A3_SYNCHRONIZED(mutex()) {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        if (shifted != pmem_) {
+            // change pmem
+            pmem_ = shifted;
+            write(0, 0x1700, shifted, sizeof(uint32_t));
+        }
+        return read(0, 0x700000 + (addr & 0x000000fffffULL), size);
+    }
+    return 0;  // make compiler happy
+}
+
+void device::write_pmem(uint64_t addr, uint32_t val, std::size_t size) {
+    A3_SYNCHRONIZED(mutex()) {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        if (shifted != pmem_) {
+            // change pmem
+            pmem_ = shifted;
+            write(0, 0x1700, shifted, sizeof(uint32_t));
+        }
+        write(0, 0x700000 + (addr & 0x000000fffffULL), val, size);
     }
 }
 

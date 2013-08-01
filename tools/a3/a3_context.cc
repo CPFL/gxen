@@ -55,6 +55,9 @@ context::context(session* s, bool through)
     , reg32_()
     , ramin_channel_map_()
     , bar3_address_()
+    , flush_times_()
+    , shadowing_times_()
+    , shadowing_(boost::posix_time::microseconds(0))
     , para_virtualized_(false)
     , pv32_()
     , guest_()
@@ -69,13 +72,13 @@ context::context(session* s, bool through)
 
 context::~context() {
     if (initialized_) {
-        device::instance()->release_virt(id_);
+        device::instance()->release_virt(id_, this);
         A3_LOG("END and release GPU id %u\n", id_);
     }
 }
 
 void context::initialize(int dom, bool para) {
-    id_ = device::instance()->acquire_virt();
+    id_ = device::instance()->acquire_virt(this);
     domid_ = dom;
     para_virtualized_ = para;
     if (para_virtualized()) {
@@ -128,6 +131,18 @@ bool context::handle(const command& cmd) {
                     ignore_unused_variable_warning(status);
                     A3_LOG("chan%0u => %" PRIx32 "\n", pid, status);
                 }
+            }
+            break;
+
+        case command::UTILITY_CLEAR_SHADOWING_UTILIZATION: {
+                A3_SYNCHRONIZED(device::instance()->mutex()) {
+                    for (context* ctx : device::instance()->contexts()) {
+                        if (ctx) {
+                            ctx->clear_shadowing_utilization();
+                        }
+                    }
+                }
+                A3_LOG("clear context shadowing utilizations\n");
             }
             break;
         }
@@ -232,6 +247,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     uint64_t already = 0;
     channel::page_table_reuse_t* reuse;
 
+    A3_FATAL(stdout, "flush times %" PRIu64 "\n", increment_flush_times());
     A3_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables
@@ -269,7 +285,9 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
                     channel->table()->allocate_shadow_address();
                     already = channel->table()->shadow_address();
                     reuse = channel->generate_original();
-                    // channel->flush(this);
+                    if (!a3::flags::lazy_shadowing) {
+                        channel->flush(this);
+                    }
                 }
             }
         }
@@ -282,6 +300,27 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         regs.write32(0x100cb8, vsp);
         regs.write32(0x100cbc, trigger);
     }
+}
+
+struct page_entry context::guest_to_host(const struct page_entry& entry) {
+    struct page_entry result(entry);
+    if (entry.present && entry.target == page_entry::TARGET_TYPE_VRAM) {
+        // rewrite address
+        const uint64_t g_field = result.address;
+        const uint64_t g_address = g_field << 12;
+        const uint64_t h_address = get_phys_address(g_address);
+        const uint64_t h_field = h_address >> 12;
+        result.address = h_field;
+    } else if (entry.target == page_entry::TARGET_TYPE_SYSRAM || entry.target == page_entry::TARGET_TYPE_SYSRAM_NO_SNOOP) {
+        // rewrite address
+        const uint64_t gfn = result.address;
+        uint64_t mfn = 0;
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
+            mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), gfn);
+        }
+        result.address = mfn;
+    }
+    return result;
 }
 
 }  // namespace a3
