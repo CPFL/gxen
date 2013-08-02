@@ -49,12 +49,12 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
 
 
 void band_scheduler_t::register_context(context* ctx) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::unique_lock<boost::mutex> lock(sched_mutex_);
     contexts_.push_back(*ctx);
 }
 
 void band_scheduler_t::unregister_context(context* ctx) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::unique_lock<boost::mutex> lock(sched_mutex_);
     contexts_.erase(contexts_t::s_iterator_to(*ctx));
 }
 
@@ -79,13 +79,42 @@ void band_scheduler_t::stop() {
     }
 }
 
+static void yield_chance(const boost::posix_time::time_duration& duration) {
+    auto now = boost::posix_time::microsec_clock::local_time();
+    const auto wait = now + duration;
+    while (now < wait) {
+        boost::this_thread::yield();
+        now = boost::posix_time::microsec_clock::local_time();
+    }
+}
+
 void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
     ctx->enqueue(cmd);
+#if 0
     {
-        boost::unique_lock<boost::mutex> lock(mutex_);
-        counter_.fetch_add(1);
+        if (ctx->budeget() < boost::posix_time::microseconds(0) && ctx->bandwidth_used() > ctx->bandwidth() && contexts_.size() != 1) {
+            boost::unique_lock<boost::mutex> lock(sched_mutex_);
+            if (current() == ctx) {
+                current_ = NULL;
+                lock.unlock();
+                yield_chance();
+                lock.lock();
+
+                if (current_ == NULL) {
+                    current_ = ctx;
+                }
+            }
+        }
     }
+
+    boost::unique_lock<boost::mutex> lock(sched_mutex_);
+    if (current_ && current_ != ctx) {
+    } else {
+        current_ = ctx;
+    }
+#endif
+    counter_.fetch_add(1);
     cond_.notify_one();
 }
 
@@ -93,18 +122,22 @@ void band_scheduler_t::replenish() {
     uint64_t count = 0;
     while (true) {
         // replenish
-        if (!contexts_.empty()) {
-            boost::unique_lock<boost::mutex> lock(mutex_);
-            if (bandwidth_ != boost::posix_time::microseconds(0)) {
-                A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                const auto budget = period_ / contexts_.size();
-                for (context& ctx : contexts_) {
-                    A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
-                    ctx.replenish(budget);
+        {
+            boost::unique_lock<boost::mutex> lock(sched_mutex_);
+            if (!contexts_.empty()) {
+                boost::unique_lock<boost::mutex> lock(fire_mutex_);
+                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
+                    // const auto budget = period_ * 0.5 / contexts_.size();
+                    const auto budget = period_ / 2 / contexts_.size();
+                    for (context& ctx : contexts_) {
+                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        ctx.replenish(budget, period_);
+                    }
+                    ++count;
                 }
-                ++count;
+                bandwidth_ = boost::posix_time::microseconds(0);
             }
-            bandwidth_ = boost::posix_time::microseconds(0);
         }
         boost::this_thread::sleep(period_);
         boost::this_thread::yield();
@@ -115,101 +148,63 @@ bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
         return false;
     }
-    return (ctx->utilization().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / (inactive_.size() + active_.size()));
+    return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts_.size());
+}
+
+context* band_scheduler_t::select_next_context() {
+    boost::unique_lock<boost::mutex> lock(sched_mutex_);
+
+    if (current()) {
+        // lowering priority
+        if (current()->budget() < boost::posix_time::microseconds(0) && current()->bandwidth_used() > current()->bandwidth()) {
+            contexts_.erase(contexts_t::s_iterator_to(*ctx));
+            contexts_.push_back(*ctx);
+        }
+    }
+
+    context* next = NULL;
+    for (context& ctx : contexts_) {
+        if (ctx.is_suspended()) {
+            next = &ctx;
+        }
+    }
+
+    if (next && next != current() && utilization_over_bandwidth(next)) {
+        if (current()->is_suspended()) {
+            return current();
+        }
+    }
+    return next;
+}
+
+void band_scheduler_t::submit(context* ctx) {
+    boost::unique_lock<boost::mutex> lock(fire_mutex_);
+    command cmd;
+    counter_.fetch_sub(1);
+    ctx.dequeue(&cmd);
+
+    utilization_.start();
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
+        device::instance()->bar1()->write(ctx, cmd);
+    }
+
+    while (device::instance()->is_active(ctx)) {
+        boost::this_thread::yield();
+    }
+
+    const auto duration = utilization_.elapsed();
+    bandwidth_ += duration;
 }
 
 void band_scheduler_t::run() {
-#if 0
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    boost::condition_variable_any cond;
     while (true) {
-        // check queued fires
-        while (active_.empty()) {
-            A3_LOG("Q empty\n");
-            cond_.wait(lock);
-        }
-        context* next = &active_.front();
-        assert(next->is_suspended());
-
-        A3_LOG("context comes %" PRIu32 "\n", next->id());
-
-        if (current() && next != current() && utilization_over_bandwidth(next)) {
-            // wait short time
-            bool continue_current = false;
-            if (current()->is_suspended()) {
-                continue_current = true;
-            } else {
-                cond.timed_wait(lock, designed_);
-                if (current()->is_suspended()) {
-                    continue_current = true;
-                }
-            }
-
-            if (continue_current) {
-                next = current();
-            }
-            assert(next->is_suspended());
-        }
-
-        current_ = next;
-        assert(current()->is_suspended());
-        const command target = current()->dequeue();
-        const bool inactive = !current()->is_suspended();
-        if (inactive) {
-            active_.erase(contexts_t::s_iterator_to(*current()));
-            inactive_.push_back(*current());
-        }
-        A3_LOG("DEQUEUE command [will be %s]\n", inactive ? "inactive" : "active");
-
-        utilization_.start();
-        lock.unlock();
-
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar1()->write(current(), target);
-        }
-
-        lock.lock();
-
-        while (device::instance()->is_active(current())) {
-            cond.timed_wait(lock, wait_);
-        }
-
-        // on completion
-
-        const auto duration = utilization_.elapsed();
-        bandwidth_ += duration;
-
-        current()->update_utilization(duration);
-        if (current()->is_suspended()) {
-            // ulitization over budget
-            if (current()->budget() < current()->utilization()) {
-                // utilization ratio over bandwidth ratio
-                if (utilization_over_bandwidth(current())) {
-                    // lowering priority
-                    active_.erase(contexts_t::s_iterator_to(*current()));
-                    active_.push_back(*current());
-                }
-            }
-        }
-    }
-#endif
-
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    while (true) {
-        lock.lock();
         while (!counter_.load()) {
-            cond_.wait(lock);
+            boost::this_thread::yield();
         }
-
-        context* next = NULL;
-        command cmd;
-        for (context& ctx : contexts_) {
-            if (ctx.dequeue(&cmd)) {
-                next = &ctx;
-            }
+        context* ctx = select_next_context();
+        if (ctx) {
+            submit(ctx);
         }
-        counter_.fetch_sub(1);
-        lock.unlock();
     }
 }
 
