@@ -78,10 +78,10 @@ void context::replenish(const boost::posix_time::time_duration& credit, const bo
             budget_ = boost::posix_time::microseconds(0);
         }
 
-        if (budeget_ < (-threshold)) {
+        if (budget_ < (-threshold)) {
             budget_ = boost::posix_time::microseconds(0);
         }
-        bandwidth_used_ = boost::posix_time::miscroseconds(0);
+        bandwidth_used_ = boost::posix_time::microseconds(0);
     }
 }
 
