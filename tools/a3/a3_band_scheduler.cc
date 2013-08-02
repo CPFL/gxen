@@ -50,17 +50,12 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
 
 void band_scheduler_t::register_context(context* ctx) {
     boost::unique_lock<boost::mutex> lock(mutex_);
-    inactive_.push_back(*ctx);
+    contexts_.push_back(*ctx);
 }
 
 void band_scheduler_t::unregister_context(context* ctx) {
     boost::unique_lock<boost::mutex> lock(mutex_);
-    inactive_.remove_if([ctx](const context& target) {
-        return &target == ctx;
-    });
-    active_.remove_if([ctx](const context& target) {
-        return &target == ctx;
-    });
+    contexts_.erase(contexts_t::s_iterator_to(*ctx));
 }
 
 band_scheduler_t::~band_scheduler_t() {
@@ -86,13 +81,10 @@ void band_scheduler_t::stop() {
 
 void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
+    ctx->enqueue(cmd);
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
-        A3_LOG("ENQUEUE command\n");
-        if (ctx->enqueue(cmd)) {
-            inactive_.erase(contexts_t::s_iterator_to(*ctx));
-            active_.push_back(*ctx);
-        }
+        counter_.fetch_add(1);
     }
     cond_.notify_one();
 }
@@ -101,24 +93,18 @@ void band_scheduler_t::replenish() {
     uint64_t count = 0;
     while (true) {
         // replenish
-        {
+        if (!contexts_.empty()) {
             boost::unique_lock<boost::mutex> lock(mutex_);
-            if (active_.size() + inactive_.size()) {
-                if (bandwidth_ != boost::posix_time::microseconds(0)) {
-                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                    const auto budget = period_ / (inactive_.size() + active_.size());
-                    for (context& ctx: active_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
-                        ctx.replenish(budget);
-                    }
-                    for (context& ctx: inactive_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
-                        ctx.replenish(budget);
-                    }
-                    ++count;
+            if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
+                const auto budget = period_ / contexts_.size();
+                for (context& ctx : contexts_) {
+                    A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                    ctx.replenish(budget);
                 }
-                bandwidth_ = boost::posix_time::microseconds(0);
+                ++count;
             }
+            bandwidth_ = boost::posix_time::microseconds(0);
         }
         boost::this_thread::sleep(period_);
         boost::this_thread::yield();
@@ -133,6 +119,7 @@ bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
 }
 
 void band_scheduler_t::run() {
+#if 0
     boost::unique_lock<boost::mutex> lock(mutex_);
     boost::condition_variable_any cond;
     while (true) {
@@ -204,6 +191,25 @@ void band_scheduler_t::run() {
                 }
             }
         }
+    }
+#endif
+
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    while (true) {
+        lock.lock();
+        while (!counter_.load()) {
+            cond_.wait(lock);
+        }
+
+        context* next = NULL;
+        command cmd;
+        for (context& ctx : contexts_) {
+            if (ctx.dequeue(&cmd)) {
+                next = &ctx;
+            }
+        }
+        counter_.fetch_sub(1);
+        lock.unlock();
     }
 }
 

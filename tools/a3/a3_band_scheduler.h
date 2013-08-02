@@ -44,9 +44,11 @@ class band_scheduler_t : public scheduler_t {
     boost::condition_variable cond_;
     contexts_t active_;
     contexts_t inactive_;
+    contexts_t contexts_;
     context* current_;
     timer_t utilization_;
     boost::posix_time::time_duration bandwidth_;
+    std::atomic_uintmax_t counter_;
 };
 
 }  // namespace a3
