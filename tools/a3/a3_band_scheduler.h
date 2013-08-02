@@ -34,6 +34,8 @@ class band_scheduler_t : public scheduler_t {
     void replenish();
     bool utilization_over_bandwidth(context* ctx) const;
     context* current() const { return current_; }
+    context* select_next_context();
+    void submit(context* ctx);
 
     boost::posix_time::time_duration wait_;
     boost::posix_time::time_duration designed_;
@@ -41,6 +43,9 @@ class band_scheduler_t : public scheduler_t {
     boost::scoped_ptr<boost::thread> thread_;
     boost::scoped_ptr<boost::thread> replenisher_;
     boost::mutex mutex_;
+    boost::mutex contexts_mutex_;
+    boost::mutex fire_mutex_;
+    boost::mutex sched_mutex_;
     boost::condition_variable cond_;
     contexts_t active_;
     contexts_t inactive_;

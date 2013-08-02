@@ -113,39 +113,15 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     }
 
     // BAND
-    bool enqueue(const command& cmd) {
-        A3_SYNCHRONIZED(band_mutex()) {
-            const bool ret = suspended_.empty();
-            suspended_.push(cmd);
-            return ret;
-        }
-        return false;
-    }
-    bool dequeue(command* cmd) {
-        A3_SYNCHRONIZED(band_mutex()) {
-            if (suspended_.empty()) {
-                return false;
-            }
-            *cmd = suspended_.front();
-            return true;
-        }
-        return false;
-    }
-    bool is_suspended() {
-        return !suspended_.empty();
-    }
+    bool enqueue(const command& cmd);
+    bool dequeue(command* cmd);
+    bool is_suspended();
     boost::posix_time::time_duration budget() const { return budget_; }
-    boost::posix_time::time_duration utilization() const { return utilization_; }
-    uint64_t bandwidth() const { return bandwidth_; }
-    void replenish(const boost::posix_time::time_duration& budget) {
-        budget_ = budget;
-        utilization_ = boost::posix_time::microseconds(0);
-    }
-    void update_utilization(const boost::posix_time::time_duration& duration) {
-        utilization_ += duration;
-    }
-
+    boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
+    boost::posix_time::time_duration bandwidth_used() const { return bandwidth_used_; }
+    void replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold);
     mutex_t& band_mutex() { return band_mutex_; }
+    void update_budget(const boost::posix_time::time_duration& credit);
 
  private:
     void initialize(int domid, bool para);
@@ -204,9 +180,8 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     // only touched by BAND scheduler
     mutex_t band_mutex_;
     boost::posix_time::time_duration budget_;
-    boost::posix_time::time_duration utilization_;
-    uint64_t bandwidth_;
-    uint64_t bandwidth_used_;
+    boost::posix_time::time_duration bandwidth_;
+    boost::posix_time::time_duration bandwidth_used_;
     std::queue<command> suspended_;
 };
 
