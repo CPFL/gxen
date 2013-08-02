@@ -131,7 +131,7 @@ void band_scheduler_t::replenish() {
                     // const auto budget = period_ * 0.5 / contexts_.size();
                     const auto budget = period_ / 2 / contexts_.size();
                     for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.utilization().total_microseconds()) / bandwidth_.total_microseconds()));
+                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.bandwidth_used().total_microseconds()) / bandwidth_.total_microseconds()));
                         ctx.replenish(budget, period_);
                     }
                     ++count;
@@ -156,7 +156,8 @@ context* band_scheduler_t::select_next_context() {
 
     if (current()) {
         // lowering priority
-        if (current()->budget() < boost::posix_time::microseconds(0) && current()->bandwidth_used() > current()->bandwidth()) {
+        context* ctx = current();
+        if (ctx->budget() < boost::posix_time::microseconds(0) && utilization_over_bandwidth(ctx)) {
             contexts_.erase(contexts_t::s_iterator_to(*ctx));
             contexts_.push_back(*ctx);
         }
@@ -181,7 +182,7 @@ void band_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
     command cmd;
     counter_.fetch_sub(1);
-    ctx.dequeue(&cmd);
+    ctx->dequeue(&cmd);
 
     utilization_.start();
     A3_SYNCHRONIZED(device::instance()->mutex()) {
