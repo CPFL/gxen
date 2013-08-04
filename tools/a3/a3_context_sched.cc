@@ -52,6 +52,7 @@ bool context::dequeue(command* cmd) {
             return false;
         }
         *cmd = suspended_.front();
+        suspended_.pop();
         return true;
     }
     return false;
