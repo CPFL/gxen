@@ -44,6 +44,7 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
     , current_()
     , utilization_()
     , bandwidth_()
+    , counter2_()
 {
 }
 
@@ -129,7 +130,7 @@ void band_scheduler_t::replenish() {
                 if (bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
                     // const auto budget = period_ * 0.5 / contexts_.size();
-                    const auto budget = period_ / 2 / contexts_.size();
+                    const auto budget = period_ / 4 / contexts_.size();
                     for (context& ctx : contexts_) {
                         A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.bandwidth_used().total_microseconds()) / bandwidth_.total_microseconds()));
                         ctx.replenish(budget, period_);
@@ -140,13 +141,13 @@ void band_scheduler_t::replenish() {
             }
         }
         boost::this_thread::sleep(period_);
-        boost::this_thread::yield();
+        // boost::this_thread::yield();
     }
 }
 
 bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
-        return false;
+        return true;
     }
     return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts_.size());
 }
@@ -163,24 +164,51 @@ context* band_scheduler_t::select_next_context() {
         }
     }
 
+    context* over = NULL;
     context* next = NULL;
     for (context& ctx : contexts_) {
         if (ctx.is_suspended()) {
-            next = &ctx;
+            if (ctx.budget() < boost::posix_time::microseconds(0) && utilization_over_bandwidth(&ctx)) {
+                if (!over) {
+                    over = &ctx;
+                }
+            } else {
+                if (!next) {
+                    next = &ctx;
+                }
+            }
+            if (over && next) {
+                break;
+            }
         }
     }
 
+    if (!next && over) {
+        next = over;
+    }
+
+#if 0
+
+    if (!current()) {
+        return next;
+    }
+
+
     if (next && next != current() && utilization_over_bandwidth(next)) {
+        // yield_chance();
         if (current()->is_suspended()) {
             return current();
         }
     }
+
+#endif
     return next;
 }
 
 void band_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
     command cmd;
+
     counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
@@ -195,16 +223,18 @@ void band_scheduler_t::submit(context* ctx) {
 
     const auto duration = utilization_.elapsed();
     bandwidth_ += duration;
+    ctx->update_budget(duration);
 }
 
 void band_scheduler_t::run() {
     while (true) {
-        while (!counter_.load()) {
-            boost::this_thread::yield();
+        {
+            while (!counter_.load()) {
+                boost::this_thread::yield();
+            }
         }
-        context* ctx = select_next_context();
-        if (ctx) {
-            submit(ctx);
+        if ((current_ = select_next_context())) {
+            submit(current());
         }
     }
 }

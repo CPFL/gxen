@@ -67,6 +67,11 @@ context::context(session* s, bool through)
     , pv_bar1_small_pgt_()
     , pv_bar3_pgd_()
     , pv_bar3_pgt_()
+    , band_mutex_()
+    , budget_()
+    , bandwidth_()
+    , bandwidth_used_()
+    , suspended_()
 {
 }
 
@@ -247,7 +252,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     uint64_t already = 0;
     channel::page_table_reuse_t* reuse;
 
-    A3_FATAL(stdout, "flush times %" PRIu64 "\n", increment_flush_times());
+    // A3_FATAL(stdout, "flush times %" PRIu64 "\n", increment_flush_times());
     A3_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables
