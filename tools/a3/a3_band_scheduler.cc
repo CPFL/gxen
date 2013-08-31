@@ -141,7 +141,7 @@ void band_scheduler_t::replenish() {
             }
         }
         boost::this_thread::sleep(period_);
-        // boost::this_thread::yield();
+        boost::this_thread::yield();
     }
 }
 
@@ -228,10 +228,8 @@ void band_scheduler_t::submit(context* ctx) {
 
 void band_scheduler_t::run() {
     while (true) {
-        {
-            while (!counter_.load()) {
-                boost::this_thread::yield();
-            }
+        while (!counter_.load()) {
+            boost::this_thread::yield();
         }
         if ((current_ = select_next_context())) {
             submit(current());
