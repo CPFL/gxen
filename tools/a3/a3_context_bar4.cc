@@ -113,6 +113,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                     A3_LOG("INVALID...\n");
                     return -EINVAL;
                 }
+                assert(pgt0);
             }
 
             pv_page* pgt1 = NULL;
@@ -122,11 +123,13 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                     A3_LOG("INVALID...\n");
                     return -EINVAL;
                 }
+                assert(pgt1);
             }
+
 
             if (pgd == pv_bar1_pgd_) {
                 // CAUTION: inverted (pgt1 & pgt0)
-                if (pv_bar1_large_pgt_ != pgt1) {
+                if (pgt1 && pv_bar1_large_pgt_ != pgt1) {
                     pv_bar1_large_pgt_ = pgt1;
                     // TODO(Yusuke Suzuki)
                     // set xen shadow for PV
@@ -135,7 +138,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                         device::instance()->bar1()->pv_scan(this);
                     }
                 }
-                if (pv_bar1_small_pgt_ != pgt0) {
+                if (pgt0 && pv_bar1_small_pgt_ != pgt0) {
                     pv_bar1_small_pgt_ = pgt0;
                     bar1_channel()->table()->pv_scan(this, 0, false, pgt0);
                     A3_SYNCHRONIZED(device::instance()->mutex()) {
