@@ -35,6 +35,7 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
     : wait_(wait)
     , designed_(designed)
     , period_(period)
+    , gpu_idle_()
     , thread_()
     , replenisher_()
     , mutex_()
@@ -138,6 +139,7 @@ void band_scheduler_t::replenish() {
                     ++count;
                 }
                 bandwidth_ = boost::posix_time::microseconds(0);
+                gpu_idle_ = boost::posix_time::microseconds(0);
             }
         }
         boost::this_thread::sleep(period_);
@@ -228,9 +230,12 @@ void band_scheduler_t::submit(context* ctx) {
 
 void band_scheduler_t::run() {
     while (true) {
+        gpu_idle_timer_.start();
         while (!counter_.load()) {
             boost::this_thread::yield();
         }
+        const auto duration = gpu_idle_timer_.elapsed();
+        gpu_idle_ += duration;
         if ((current_ = select_next_context())) {
             submit(current());
         }
