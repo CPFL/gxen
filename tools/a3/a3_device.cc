@@ -44,6 +44,7 @@
 #include "a3_ignore_unused_variable_warning.h"
 #include "a3_fifo_scheduler.h"
 #include "a3_band_scheduler.h"
+#include "a3_credit_scheduler.h"
 #include "a3_direct_scheduler.h"
 
 #define NVC0_VENDOR 0x10DE
@@ -100,6 +101,7 @@ device::device()
     // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(500), boost::posix_time::milliseconds(30)));
     // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
     scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(25)));
+    // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(25)));
 
     scheduler_->start();
     A3_LOG("device environment setup\n");
