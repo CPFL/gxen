@@ -46,6 +46,7 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
     , current_()
     , utilization_()
     , bandwidth_()
+    , sampling_bandwidth_()
     , counter2_()
 {
 }
@@ -130,7 +131,8 @@ void band_scheduler_t::replenish() {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
-                boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                // boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                boost::posix_time::time_duration period = bandwidth_;
                 if (bandwidth_ != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx : contexts_) {
@@ -226,6 +228,7 @@ void band_scheduler_t::submit(context* ctx) {
 
     const auto duration = utilization_.elapsed();
     bandwidth_ += duration;
+    sampling_bandwidth_ += duration;
     ctx->update_budget(duration);
 }
 
@@ -249,16 +252,22 @@ void band_scheduler_t::sampling() {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
-                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
                     for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.bandwidth_used().total_microseconds()) / bandwidth_.total_microseconds()));
+                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+                        ctx.clear_sampling_bandwidth_used();
                     }
                     ++count;
                 }
+                sampling_bandwidth_ = boost::posix_time::microseconds(0);
             }
         }
-        boost::this_thread::sleep(boost::posix_time::microseconds(50));
+        // boost::this_thread::sleep(boost::posix_time::microseconds(500));
+        // boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        // boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        // boost::this_thread::sleep(boost::posix_time::microseconds(1000));
         boost::this_thread::yield();
     }
 }

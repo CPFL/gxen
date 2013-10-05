@@ -58,6 +58,7 @@ class band_scheduler_t : public scheduler_t {
     timer_t utilization_;
     timer_t gpu_idle_timer_;
     boost::posix_time::time_duration bandwidth_;
+    boost::posix_time::time_duration sampling_bandwidth_;
     std::atomic_uintmax_t counter_;
     uint64_t counter2_;
 };
