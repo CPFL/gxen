@@ -37,6 +37,7 @@
 #include "a3_device_bar3.h"
 #include "a3_mmio.h"
 #include "a3_timer.h"
+#include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
 channel::channel(int id)
@@ -210,6 +211,7 @@ void channel::flush(context* ctx) {
         timer.start();
         origin->table()->refresh_page_directories(ctx, table()->page_directory_address());
         auto duration = ctx->increment_shadowing(timer.elapsed());
+        a3::ignore_unused_variable_warning(duration);
         // A3_FATAL(stdout, "shadowing duration %" PRIu64 "\n", static_cast<uint64_t>(duration.total_microseconds()));
     }
 
