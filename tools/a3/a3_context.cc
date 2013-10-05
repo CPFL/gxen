@@ -71,6 +71,7 @@ context::context(session* s, bool through)
     , budget_()
     , bandwidth_()
     , bandwidth_used_()
+    , sampling_bandwidth_used_()
     , suspended_()
 {
 }
