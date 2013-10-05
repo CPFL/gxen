@@ -32,6 +32,7 @@ class band_scheduler_t : public scheduler_t {
     typedef std::pair<context*, command> fire_t;
     void run();
     void replenish();
+    void sampling();
     bool utilization_over_bandwidth(context* ctx) const;
     context* current() const { return current_; }
     context* select_next_context();
@@ -43,6 +44,7 @@ class band_scheduler_t : public scheduler_t {
     boost::posix_time::time_duration gpu_idle_;
     boost::scoped_ptr<boost::thread> thread_;
     boost::scoped_ptr<boost::thread> replenisher_;
+    boost::scoped_ptr<boost::thread> sampler_;
     boost::mutex mutex_;
     boost::mutex contexts_mutex_;
     boost::mutex fire_mutex_;
