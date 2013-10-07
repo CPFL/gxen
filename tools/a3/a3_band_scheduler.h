@@ -20,7 +20,7 @@ class band_scheduler_t : public scheduler_t {
  public:
     typedef boost::intrusive::list<context> contexts_t;
 
-    band_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period);
+    band_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~band_scheduler_t();
     virtual void start();
     virtual void stop();
@@ -41,6 +41,7 @@ class band_scheduler_t : public scheduler_t {
     boost::posix_time::time_duration wait_;
     boost::posix_time::time_duration designed_;
     boost::posix_time::time_duration period_;
+    boost::posix_time::time_duration sample_;
     boost::posix_time::time_duration gpu_idle_;
     boost::scoped_ptr<boost::thread> thread_;
     boost::scoped_ptr<boost::thread> replenisher_;
