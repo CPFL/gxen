@@ -31,10 +31,11 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period)
+credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
     : wait_(wait)
     , designed_(designed)
     , period_(period)
+    , sample_(sample)
     , gpu_idle_()
     , thread_()
     , replenisher_()
@@ -226,10 +227,9 @@ void credit_scheduler_t::sampling() {
             }
         }
         // boost::this_thread::sleep(boost::posix_time::microseconds(500));
-        // boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         // boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
         // boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+        boost::this_thread::sleep(sample_);
         boost::this_thread::yield();
     }
 }
