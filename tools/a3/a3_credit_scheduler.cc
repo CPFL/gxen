@@ -87,15 +87,6 @@ void credit_scheduler_t::stop() {
     }
 }
 
-static void yield_chance(const boost::posix_time::time_duration& duration) {
-    auto now = boost::posix_time::microsec_clock::local_time();
-    const auto wait = now + duration;
-    while (now < wait) {
-        boost::this_thread::yield();
-        now = boost::posix_time::microsec_clock::local_time();
-    }
-}
-
 void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
     ctx->enqueue(cmd);
@@ -111,8 +102,8 @@ void credit_scheduler_t::replenish() {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
-                // boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                boost::posix_time::time_duration period = bandwidth_;
+                boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                // boost::posix_time::time_duration period = bandwidth_;
                 if (bandwidth_ != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx : contexts_) {
@@ -176,7 +167,6 @@ context* credit_scheduler_t::select_next_context() {
 
 void credit_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
-    gpu_idle_ += gpu_idle_timer_.elapsed();
     command cmd;
 
     counter_.fetch_sub(1);
@@ -199,9 +189,14 @@ void credit_scheduler_t::submit(context* ctx) {
 
 void credit_scheduler_t::run() {
     while (true) {
+        bool idle = false;
         gpu_idle_timer_.start();
         while (!counter_.load()) {
             boost::this_thread::yield();
+            idle = true;
+        }
+        if (idle) {
+            gpu_idle_ += gpu_idle_timer_.elapsed();
         }
         if ((current_ = select_next_context())) {
             submit(current());

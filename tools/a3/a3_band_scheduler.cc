@@ -111,8 +111,8 @@ void band_scheduler_t::replenish() {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
-                // boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                boost::posix_time::time_duration period = bandwidth_;
+                boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                // boost::posix_time::time_duration period = bandwidth_;
                 if (bandwidth_ != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx : contexts_) {
@@ -148,6 +148,7 @@ context* band_scheduler_t::select_next_context() {
         }
     }
 
+    context* under = NULL;
     context* over = NULL;
     context* next = NULL;
     for (context& ctx : contexts_) {
@@ -157,18 +158,20 @@ context* band_scheduler_t::select_next_context() {
                     over = &ctx;
                 }
             } else {
-                if (!next) {
-                    next = &ctx;
+                if (!under) {
+                    under = &ctx;
                 }
             }
-            if (over && next) {
+            if (over && under) {
                 break;
             }
         }
     }
 
-    if (!next && over) {
+    if (!under && over) {
         next = over;
+    } else {
+        next = under;
     }
 
     if (!current()) {
@@ -176,7 +179,7 @@ context* band_scheduler_t::select_next_context() {
     }
 
 
-    if (next && next != current() && current()->bandwidth_used() < next->bandwidth_used()) {
+    if (next && next != current() && !utilization_over_bandwidth(current())) {
         yield_chance(boost::posix_time::microseconds(500));
         if (current()->is_suspended()) {
             return current();
@@ -188,7 +191,6 @@ context* band_scheduler_t::select_next_context() {
 
 void band_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
-    gpu_idle_ += gpu_idle_timer_.elapsed();
     command cmd;
 
     counter_.fetch_sub(1);
@@ -211,9 +213,14 @@ void band_scheduler_t::submit(context* ctx) {
 
 void band_scheduler_t::run() {
     while (true) {
+        bool idle = false;
         gpu_idle_timer_.start();
         while (!counter_.load()) {
             boost::this_thread::yield();
+            idle = true;
+        }
+        if (idle) {
+            gpu_idle_ += gpu_idle_timer_.elapsed();
         }
         if ((current_ = select_next_context())) {
             submit(current());
