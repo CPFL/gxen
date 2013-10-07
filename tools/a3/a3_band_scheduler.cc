@@ -82,6 +82,8 @@ void band_scheduler_t::stop() {
         thread_.reset();
         replenisher_->interrupt();
         replenisher_.reset();
+        sampler_->interrupt();
+        sampler_.reset();
     }
 }
 
@@ -97,29 +99,6 @@ static void yield_chance(const boost::posix_time::time_duration& duration) {
 void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
     ctx->enqueue(cmd);
-#if 0
-    {
-        if (ctx->budeget() < boost::posix_time::microseconds(0) && ctx->bandwidth_used() > ctx->bandwidth() && contexts_.size() != 1) {
-            boost::unique_lock<boost::mutex> lock(sched_mutex_);
-            if (current() == ctx) {
-                current_ = NULL;
-                lock.unlock();
-                yield_chance();
-                lock.lock();
-
-                if (current_ == NULL) {
-                    current_ = ctx;
-                }
-            }
-        }
-    }
-
-    boost::unique_lock<boost::mutex> lock(sched_mutex_);
-    if (current_ && current_ != ctx) {
-    } else {
-        current_ = ctx;
-    }
-#endif
     counter_.fetch_add(1);
     cond_.notify_one();
 }
