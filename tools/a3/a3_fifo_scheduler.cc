@@ -73,6 +73,8 @@ void fifo_scheduler_t::stop() {
         thread_.reset();
         replenisher_->interrupt();
         replenisher_.reset();
+        sampler_->interrupt();
+        sampler_.reset();
     }
 }
 
