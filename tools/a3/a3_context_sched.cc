@@ -72,16 +72,20 @@ void context::update_budget(const boost::posix_time::time_duration& credit) {
     sampling_bandwidth_used_ += credit;
 }
 
-void context::replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold) {
+void context::replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle) {
     A3_SYNCHRONIZED(band_mutex()) {
         budget_ += credit;
 
-        if (budget_ > threshold) {
-            budget_ = boost::posix_time::microseconds(0);
-        }
+        if (idle && budget_ >= bandwidth) {
+            budget_ = bandwidth;
+        } else {
+            if (budget_ > threshold) {
+                budget_ = boost::posix_time::microseconds(0);
+            }
 
-        if (budget_ < (-threshold)) {
-            budget_ = boost::posix_time::microseconds(0);
+            if (budget_ < (-threshold)) {
+                budget_ = boost::posix_time::microseconds(0);
+            }
         }
         bandwidth_used_ = boost::posix_time::microseconds(0);
     }

@@ -35,7 +35,7 @@ class credit_scheduler_t : public scheduler_t {
     void sampling();
     bool utilization_over_bandwidth(context* ctx) const;
     context* current() const { return current_; }
-    context* select_next_context();
+    context* select_next_context(bool idle);
     void submit(context* ctx);
 
     boost::posix_time::time_duration wait_;
@@ -60,6 +60,7 @@ class credit_scheduler_t : public scheduler_t {
     timer_t gpu_idle_timer_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration sampling_bandwidth_;
+    boost::posix_time::time_duration previous_bandwidth_;
     std::atomic_uintmax_t counter_;
     uint64_t counter2_;
 };
