@@ -85,12 +85,12 @@ void fifo_scheduler_t::replenish() {
         {
             boost::unique_lock<boost::mutex> lock(mutex_);
             if (contexts_.size()) {
-                boost::posix_time::time_duration period = bandwidth_;
-                // boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                boost::posix_time::time_duration defaults = period_ / contexts_.size();
+                if (period != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx: contexts_) {
-                        ctx.replenish(budget, period_);
+                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
                     }
                     // ++count;
                 }

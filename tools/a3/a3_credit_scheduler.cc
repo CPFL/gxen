@@ -103,11 +103,13 @@ void credit_scheduler_t::replenish() {
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                boost::posix_time::time_duration defaults = period_ / contexts_.size();
+                previous_bandwidth_ = period;
                 // boost::posix_time::time_duration period = bandwidth_;
-                if (bandwidth_ != boost::posix_time::microseconds(0)) {
+                if (period != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx : contexts_) {
-                        ctx.replenish(budget, period_);
+                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
                     }
                     // ++count;
                 }
@@ -124,11 +126,18 @@ bool credit_scheduler_t::utilization_over_bandwidth(context* ctx) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
         return true;
     }
+    if (ctx->bandwidth_used() > (previous_bandwidth_ / contexts_.size())) {
+        return true;
+    }
     return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts_.size());
 }
 
-context* credit_scheduler_t::select_next_context() {
+context* credit_scheduler_t::select_next_context(bool idle) {
     boost::unique_lock<boost::mutex> lock(sched_mutex_);
+
+    if (idle) {
+        gpu_idle_ += gpu_idle_timer_.elapsed();
+    }
 
     if (current()) {
         // lowering priority
@@ -139,26 +148,36 @@ context* credit_scheduler_t::select_next_context() {
         }
     }
 
+    context* band = NULL;
+    context* under = NULL;
     context* over = NULL;
     context* next = NULL;
     for (context& ctx : contexts_) {
         if (ctx.is_suspended()) {
-            if (ctx.budget() < boost::posix_time::microseconds(0) && utilization_over_bandwidth(&ctx)) {
+            if (ctx.budget() < boost::posix_time::microseconds(0)) {
                 if (!over) {
                     over = &ctx;
                 }
+            } else if (utilization_over_bandwidth(&ctx)) {
+                if (!band) {
+                    band = &ctx;
+                }
             } else {
-                if (!next) {
-                    next = &ctx;
+                if (!under) {
+                    under = &ctx;
                 }
             }
-            if (over && next) {
+            if (over && under && band) {
                 break;
             }
         }
     }
 
-    if (!next && over) {
+    if (under) {
+        next = under;
+    } else if (band) {
+        next = band;
+    } else {
         next = over;
     }
 
@@ -195,10 +214,7 @@ void credit_scheduler_t::run() {
             boost::this_thread::yield();
             idle = true;
         }
-        if (idle) {
-            gpu_idle_ += gpu_idle_timer_.elapsed();
-        }
-        if ((current_ = select_next_context())) {
+        if ((current_ = select_next_context(idle))) {
             submit(current());
         }
     }
