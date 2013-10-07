@@ -191,21 +191,18 @@ context* band_scheduler_t::select_next_context() {
         next = over;
     }
 
-#if 0
-
     if (!current()) {
         return next;
     }
 
 
-    if (next && next != current() && utilization_over_bandwidth(next)) {
-        // yield_chance();
+    if (next && next != current() && current()->bandwidth_used() < next->bandwidth_used()) {
+        yield_chance(boost::posix_time::microseconds(500));
         if (current()->is_suspended()) {
             return current();
         }
     }
 
-#endif
     return next;
 }
 
@@ -264,9 +261,9 @@ void band_scheduler_t::sampling() {
             }
         }
         // boost::this_thread::sleep(boost::posix_time::microseconds(500));
-        // boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         // boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        // boost::this_thread::sleep(boost::posix_time::milliseconds(50));
         // boost::this_thread::sleep(boost::posix_time::microseconds(1000));
         boost::this_thread::yield();
     }
