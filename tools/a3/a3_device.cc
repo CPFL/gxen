@@ -98,8 +98,8 @@ device::device()
     // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
     // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
     // BAND
-    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
-    scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
+    scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
     // Credit
     // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
     // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
