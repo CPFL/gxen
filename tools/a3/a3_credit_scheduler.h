@@ -61,8 +61,7 @@ class credit_scheduler_t : public scheduler_t {
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration sampling_bandwidth_;
     boost::posix_time::time_duration previous_bandwidth_;
-    std::atomic_uintmax_t counter_;
-    uint64_t counter2_;
+    uint64_t counter_;
 };
 
 }  // namespace a3
