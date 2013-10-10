@@ -48,6 +48,7 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
     , utilization_()
     , bandwidth_()
     , sampling_bandwidth_()
+    , counter_()
     , counter2_()
 {
 }
@@ -99,7 +100,10 @@ static void yield_chance(const boost::posix_time::time_duration& duration) {
 void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
     ctx->enqueue(cmd);
-    counter_.fetch_add(1);
+    {
+        boost::unique_lock<boost::mutex> lock(counter_mutex_);
+        counter_.fetch_add(1);
+    }
     cond_.notify_one();
 }
 
@@ -208,7 +212,6 @@ void band_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
     command cmd;
 
-    counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
     utilization_.start();
@@ -230,11 +233,17 @@ void band_scheduler_t::run() {
     while (true) {
         bool idle = false;
         gpu_idle_timer_.start();
+        boost::unique_lock<boost::mutex> lock(counter_mutex_);
         while (!counter_.load()) {
             boost::this_thread::yield();
             idle = true;
+            cond_.wait(lock);
         }
         if ((current_ = select_next_context(idle))) {
+            {
+                counter_.fetch_sub(1);
+                lock.unlock();
+            }
             submit(current());
         }
     }
