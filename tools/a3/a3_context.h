@@ -16,6 +16,7 @@
 #include "a3_bar3_channel.h"
 #include "a3_session.h"
 #include "a3_page_table.h"
+#include "a3_instruments.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -93,24 +94,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     }
     struct page_entry guest_to_host(const struct page_entry& entry);
 
-    uint64_t increment_flush_times() {
-        return ++flush_times_;
-    }
-
-    uint64_t increment_shadowing_times() {
-        return ++shadowing_times_;
-    }
-
-    boost::posix_time::time_duration increment_shadowing(const boost::posix_time::time_duration& time) {
-        shadowing_ += time;
-        return shadowing_;
-    }
-
-    void clear_shadowing_utilization() {
-        flush_times_ = 0;
-        shadowing_times_ = 0;
-        shadowing_ = boost::posix_time::microseconds(0);
-    }
+    instruments_t* instruments() const { return instruments_.get(); }
 
     // BAND
     bool enqueue(const command& cmd);
@@ -162,10 +146,8 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
 
-    // shadowing utilization
-    uint64_t flush_times_;
-    uint64_t shadowing_times_;
-    boost::posix_time::time_duration shadowing_;
+    // instruments_t
+    unique_ptr<instruments_t>::type instruments_;
 
     // PV
     bool para_virtualized_;

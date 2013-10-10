@@ -55,9 +55,7 @@ context::context(session* s, bool through)
     , reg32_()
     , ramin_channel_map_()
     , bar3_address_()
-    , flush_times_()
-    , shadowing_times_()
-    , shadowing_(boost::posix_time::microseconds(0))
+    , instruments_(new instruments_t(this))
     , para_virtualized_(false)
     , pv32_()
     , guest_()
@@ -144,7 +142,7 @@ bool context::handle(const command& cmd) {
                 A3_SYNCHRONIZED(device::instance()->mutex()) {
                     for (context* ctx : device::instance()->contexts()) {
                         if (ctx) {
-                            ctx->clear_shadowing_utilization();
+                            ctx->instruments()->clear_shadowing_utilization();
                         }
                     }
                 }
