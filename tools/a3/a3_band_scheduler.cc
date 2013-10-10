@@ -232,16 +232,18 @@ void band_scheduler_t::run() {
     while (true) {
         bool idle = false;
         gpu_idle_timer_.start();
-        boost::unique_lock<boost::mutex> lock(counter_mutex_);
-        while (!counter_) {
-            boost::this_thread::yield();
-            idle = true;
-            cond_.wait(lock);
+        {
+            boost::unique_lock<boost::mutex> lock(counter_mutex_);
+            while (!counter_) {
+                boost::this_thread::yield();
+                idle = true;
+                cond_.wait(lock);
+            }
         }
         if ((current_ = select_next_context(idle))) {
             {
+                boost::unique_lock<boost::mutex> lock(counter_mutex_);
                 counter_ -= 1;
-                lock.unlock();
             }
             submit(current());
         }
