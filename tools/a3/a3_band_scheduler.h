@@ -42,6 +42,7 @@ class band_scheduler_t : public scheduler_t {
     boost::posix_time::time_duration designed_;
     boost::posix_time::time_duration period_;
     boost::posix_time::time_duration sample_;
+    boost::posix_time::time_duration gpu_idle_;
     boost::scoped_ptr<boost::thread> thread_;
     boost::scoped_ptr<boost::thread> replenisher_;
     boost::scoped_ptr<boost::thread> sampler_;
@@ -57,11 +58,11 @@ class band_scheduler_t : public scheduler_t {
     context* current_;
     timer_t utilization_;
     timer_t gpu_idle_timer_;
-    boost::posix_time::time_duration gpu_idle_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration sampling_bandwidth_;
     boost::posix_time::time_duration previous_bandwidth_;
-    uint64_t counter_;
+    std::atomic_uintmax_t counter_;
+    uint64_t counter2_;
 };
 
 }  // namespace a3
