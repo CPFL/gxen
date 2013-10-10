@@ -48,7 +48,7 @@ credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& w
     , utilization_()
     , bandwidth_()
     , sampling_bandwidth_()
-    , counter2_()
+    , counter_()
 {
 }
 
@@ -90,7 +90,10 @@ void credit_scheduler_t::stop() {
 void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
     ctx->enqueue(cmd);
-    counter_.fetch_add(1);
+    {
+        boost::unique_lock<boost::mutex> lock(counter_mutex_);
+        counter_ += 1;
+    }
     cond_.notify_one();
 }
 
@@ -188,7 +191,6 @@ void credit_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
     command cmd;
 
-    counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
     utilization_.start();
@@ -210,11 +212,17 @@ void credit_scheduler_t::run() {
     while (true) {
         bool idle = false;
         gpu_idle_timer_.start();
-        while (!counter_.load()) {
+        boost::unique_lock<boost::mutex> lock(counter_mutex_);
+        while (!counter_) {
             boost::this_thread::yield();
             idle = true;
+            cond_.wait(lock);
         }
         if ((current_ = select_next_context(idle))) {
+            {
+                counter_ -= 1;
+                lock.unlock();
+            }
             submit(current());
         }
     }
