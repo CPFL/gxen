@@ -2,10 +2,7 @@
 #define A3_INSTRUMENTS_H_
 #include <boost/noncopyable.hpp>
 #include "a3.h"
-#include "a3_lock.h"
-#include "a3_context.h"
-#include "a3_scheduler.h"
-#include "a3_timer.h"
+#include "a3_pv_slot.h"
 namespace a3 {
 
 class context;
@@ -33,6 +30,8 @@ class instruments_t : private boost::noncopyable {
         shadowing_ = boost::posix_time::microseconds(0);
     }
 
+    void hypercall(const command& cmd, slot_t* slot);
+
  private:
     context* ctx_;
 
@@ -40,6 +39,9 @@ class instruments_t : private boost::noncopyable {
     uint64_t flush_times_;
     uint64_t shadowing_times_;
     boost::posix_time::time_duration shadowing_;
+
+    // hypercalls
+    uint64_t hypercalls_;
 };
 
 }  // namespace a3
