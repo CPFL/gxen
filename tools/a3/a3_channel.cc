@@ -210,7 +210,7 @@ void channel::flush(context* ctx) {
         timer_t timer;
         timer.start();
         origin->table()->refresh_page_directories(ctx, table()->page_directory_address());
-        auto duration = ctx->increment_shadowing(timer.elapsed());
+        auto duration = ctx->instruments()->increment_shadowing(timer.elapsed());
         a3::ignore_unused_variable_warning(duration);
         // A3_FATAL(stdout, "shadowing duration %" PRIu64 "\n", static_cast<uint64_t>(duration.total_microseconds()));
     }
