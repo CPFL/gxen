@@ -104,8 +104,9 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
     boost::posix_time::time_duration bandwidth_used() const { return bandwidth_used_; }
     boost::posix_time::time_duration sampling_bandwidth_used() const { return sampling_bandwidth_used_; }
+    boost::posix_time::time_duration sampling_bandwidth_used_100() const { return sampling_bandwidth_used_100_; }
     void replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle);
-    void clear_sampling_bandwidth_used();
+    void clear_sampling_bandwidth_used(uint64_t point);
     mutex_t& band_mutex() { return band_mutex_; }
     void update_budget(const boost::posix_time::time_duration& credit);
 
@@ -167,6 +168,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration bandwidth_used_;
     boost::posix_time::time_duration sampling_bandwidth_used_;
+    boost::posix_time::time_duration sampling_bandwidth_used_100_;
     std::queue<command> suspended_;
 };
 

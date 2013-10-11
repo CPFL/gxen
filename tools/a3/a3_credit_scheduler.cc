@@ -48,6 +48,7 @@ credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& w
     , utilization_()
     , bandwidth_()
     , sampling_bandwidth_()
+    , sampling_bandwidth_100_()
     , counter_()
 {
 }
@@ -188,6 +189,7 @@ void credit_scheduler_t::submit(context* ctx) {
     const auto duration = utilization_.elapsed();
     bandwidth_ += duration;
     sampling_bandwidth_ += duration;
+    sampling_bandwidth_100_ += duration;
     ctx->update_budget(duration);
 }
 
@@ -215,6 +217,7 @@ void credit_scheduler_t::run() {
 
 void credit_scheduler_t::sampling() {
     uint64_t count = 0;
+    uint64_t points = 0;
     while (true) {
         // sampling
         {
@@ -224,17 +227,21 @@ void credit_scheduler_t::sampling() {
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
                     for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
-                        ctx.clear_sampling_bandwidth_used();
+                        A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
+                        if (points % 5 == 4) {
+                            A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+                        }
+                        ctx.clear_sampling_bandwidth_used(points);
                     }
                     ++count;
+                    points = (points + 1) % 5;
                 }
-                sampling_bandwidth_ = boost::posix_time::microseconds(0);
+                sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
+                if (points % 5 == 4) {
+                    sampling_bandwidth_ = boost::posix_time::microseconds(0);
+                }
             }
         }
-        // boost::this_thread::sleep(boost::posix_time::microseconds(500));
-        // boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-        // boost::this_thread::sleep(boost::posix_time::microseconds(1000));
         boost::this_thread::sleep(sample_);
         boost::this_thread::yield();
     }
