@@ -59,6 +59,7 @@ class credit_scheduler_t : public scheduler_t {
     timer_t gpu_idle_timer_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration sampling_bandwidth_;
+    boost::posix_time::time_duration sampling_bandwidth_100_;
     boost::posix_time::time_duration previous_bandwidth_;
     uint64_t counter_;
 };
