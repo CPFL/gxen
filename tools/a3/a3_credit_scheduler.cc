@@ -125,16 +125,6 @@ void credit_scheduler_t::replenish() {
     }
 }
 
-bool credit_scheduler_t::utilization_over_bandwidth(context* ctx) const {
-    if (bandwidth_ == boost::posix_time::microseconds(0)) {
-        return true;
-    }
-    if (ctx->bandwidth_used() > (previous_bandwidth_ / contexts_.size())) {
-        return true;
-    }
-    return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts_.size());
-}
-
 context* credit_scheduler_t::select_next_context(bool idle) {
     boost::unique_lock<boost::mutex> lock(sched_mutex_);
 
@@ -145,13 +135,12 @@ context* credit_scheduler_t::select_next_context(bool idle) {
     if (current()) {
         // lowering priority
         context* ctx = current();
-        if (ctx->budget() < boost::posix_time::microseconds(0) && utilization_over_bandwidth(ctx)) {
+        if (ctx->budget() < boost::posix_time::microseconds(0)) {
             contexts_.erase(contexts_t::s_iterator_to(*ctx));
             contexts_.push_back(*ctx);
         }
     }
 
-    context* band = NULL;
     context* under = NULL;
     context* over = NULL;
     context* next = NULL;
@@ -161,16 +150,12 @@ context* credit_scheduler_t::select_next_context(bool idle) {
                 if (!over) {
                     over = &ctx;
                 }
-            } else if (utilization_over_bandwidth(&ctx)) {
-                if (!band) {
-                    band = &ctx;
-                }
             } else {
                 if (!under) {
                     under = &ctx;
                 }
             }
-            if (over && under && band) {
+            if (over && under) {
                 break;
             }
         }
@@ -178,8 +163,6 @@ context* credit_scheduler_t::select_next_context(bool idle) {
 
     if (under) {
         next = under;
-    } else if (band) {
-        next = band;
     } else {
         next = over;
     }
