@@ -70,6 +70,7 @@ context::context(session* s, bool through)
     , bandwidth_()
     , bandwidth_used_()
     , sampling_bandwidth_used_()
+    , sampling_bandwidth_used_100_()
     , suspended_()
 {
 }
