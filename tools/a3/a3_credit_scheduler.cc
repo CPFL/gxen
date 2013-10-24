@@ -113,7 +113,7 @@ void credit_scheduler_t::replenish() {
                 if (period != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx : contexts_) {
-                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
+                        ctx.replenish(budget, budget * 2, defaults, bandwidth_ == boost::posix_time::microseconds(0));
                     }
                     // ++count;
                 }
@@ -142,33 +142,12 @@ context* credit_scheduler_t::select_next_context(bool idle) {
         }
     }
 
-    context* under = NULL;
-    context* over = NULL;
-    context* next = NULL;
     for (context& ctx : contexts_) {
         if (ctx.is_suspended()) {
-            if (ctx.budget() < boost::posix_time::microseconds(0)) {
-                if (!over) {
-                    over = &ctx;
-                }
-            } else {
-                if (!under) {
-                    under = &ctx;
-                }
-            }
-            if (over && under) {
-                break;
-            }
+            return &ctx;
         }
     }
-
-    if (under) {
-        next = under;
-    } else {
-        next = over;
-    }
-
-    return next;
+    return NULL;
 }
 
 void credit_scheduler_t::submit(context* ctx) {
@@ -224,22 +203,30 @@ void credit_scheduler_t::sampling() {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
-                if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
+                uint64_t next_points = points;
+                const bool use100 = sampling_bandwidth_100_ != boost::posix_time::microseconds(0);
+                const bool use500 = sampling_bandwidth_ != boost::posix_time::microseconds(0);
+                if (use100 || use500) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
                     for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
-                        if (points % 5 == 4) {
-                            A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+                        if (use100) {
+                            A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
+                        }
+                        if (use500) {
+                            if (points % 5 == 4) {
+                                A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+                            }
                         }
                         ctx.clear_sampling_bandwidth_used(points);
                     }
                     ++count;
-                    points = (points + 1) % 5;
+                    next_points = (points + 1) % 5;
                 }
                 sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
                 if (points % 5 == 4) {
                     sampling_bandwidth_ = boost::posix_time::microseconds(0);
                 }
+                points = next_points;
             }
         }
         boost::this_thread::sleep(sample_);
