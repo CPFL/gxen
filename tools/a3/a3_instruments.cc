@@ -40,7 +40,7 @@ instruments_t::instruments_t(context* ctx)
 void instruments_t::hypercall(const command& cmd, slot_t* slot) {
     ++hypercalls_;
     A3_FATAL(stdout, "[hypercalls] %" PRIu64 "\n", hypercalls_);
-    A3_LOG("A3 call from [%" PRIu32 "] %d : %s\n", id(), static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
+    A3_LOG("A3 call from [%" PRIu32 "] %d : %s\n", ctx_->id(), static_cast<int>(slot->u8[0]), kPV_OPS_STRING[slot->u8[0]]);
 }
 
 }  // namespace a3
