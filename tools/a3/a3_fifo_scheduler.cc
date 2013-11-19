@@ -152,11 +152,11 @@ void fifo_scheduler_t::sampling() {
             boost::unique_lock<boost::mutex> lock(mutex_);
             if (!contexts_.empty()) {
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
-                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
+                    // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
                     for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
+                        // A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
                         if (points % 5 == 4) {
-                            A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+                            // A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
                         }
                         ctx.clear_sampling_bandwidth_used(points);
                     }
