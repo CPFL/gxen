@@ -19,7 +19,7 @@ class page : private boost::noncopyable {
     uint64_t size() const;
 
  private:
-    vram_memory* vram_;
+    vram_t* vram_;
 };
 
 }  // namespace a3

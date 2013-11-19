@@ -4,58 +4,47 @@
 #include <cstdlib>
 #include <boost/pool/pool.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/intrusive/list.hpp>
 #include "a3.h"
+#include "a3_page_table.h"
 namespace a3 {
-
-struct gpu_memory_allocator {
-    typedef std::size_t size_type;
-    typedef std::ptrdiff_t difference_type;
-
-    static char* base;
-
-    // real memory is not needed
-    static char* malloc(const size_type bytes) {
-        if (base) {
-            A3_UNREACHABLE();
-        }
-        base = reinterpret_cast<char*>(std::malloc(bytes));
-        return base;
-    }
-
-    static void free(char* const block) {
-        std::free(block);
-        base = NULL;
-    }
-};
 
 class vram;
 
-class vram_memory : private boost::noncopyable {
+class vram_t
+    : public boost::intrusive::list_base_hook<>
+    , public boost::noncopyable
+    {
  public:
     friend class vram;
     uint64_t address() const { return address_; }
-    std::size_t n() const { return n_; }
+    std::size_t n() const { return units_; }
 
  private:
-    vram_memory(uint64_t address, std::size_t n) : address_(address), n_(n) { }
-
+    vram_t(uint64_t address, std::size_t n)
+        : address_(address)
+        , units_(n)
+    { }
     uint64_t address_;
-    std::size_t n_;    // page size
+    std::size_t units_;
 };
 
 class vram {
  public:
+    typedef boost::intrusive::list<vram_t> free_list_t;
     vram(uint64_t mem, uint64_t size);
-    vram_memory* malloc(std::size_t n = 1);  // n is the number of pages
-    void free(vram_memory* mem);
+
+    vram_t* malloc(std::size_t n = 1);  // n is the number of pages
+    void free(vram_t* mem);
+    std::size_t max_pages() const { return size_ / kPAGE_SIZE; }
 
  private:
-    uint64_t encode(void* ptr);
-    void* decode(uint64_t address);
+    bool more(std::size_t n);
 
     uint64_t mem_;
     uint64_t size_;
-    boost::pool<gpu_memory_allocator> pool_;
+    uint64_t cursor_;
+    free_list_t free_list_;
 };
 
 }  // namespace a3

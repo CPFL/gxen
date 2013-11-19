@@ -24,48 +24,64 @@
 #include "a3_vram.h"
 namespace a3 {
 
-char* gpu_memory_allocator::base = NULL;
-
 vram::vram(uint64_t mem, uint64_t size)
     : mem_(mem)
     , size_(size)
-    , pool_(sizeof(void*), size / 0x1000, size / 0x1000) {
+    , cursor_(0) {
 }
 
-uint64_t vram::encode(void* ptr) {
-    const uint64_t data = reinterpret_cast<uint64_t>(ptr);
-    const uint64_t offset = (data - reinterpret_cast<uint64_t>(gpu_memory_allocator::base)) / sizeof(void*) * 0x1000;
-    return mem_ + offset;
-}
+// K&R malloc
 
-void* vram::decode(uint64_t address) {
-    const uint64_t offset = address - mem_;
-    const uint64_t data = (offset / 0x1000 * sizeof(void*)) + reinterpret_cast<uint64_t>(gpu_memory_allocator::base);
-    return reinterpret_cast<void*>(data);
-}
-
-vram_memory* vram::malloc(std::size_t n) {
-    void* ptr;
-    if (n == 1) {
-        ptr = pool_.malloc();
-    } else {
-        ptr = pool_.ordered_malloc(n);
+bool vram::more(std::size_t n) {
+    // round with 32
+    const std::size_t pages = ((n + 32 - 1) / 32) * 32;
+    const uint64_t address = mem_ + cursor_ * kPAGE_SIZE;
+    cursor_ += pages;
+    if (cursor_ > max_pages()) {
+        return false;
     }
 
-    return new vram_memory(encode(ptr), n);
+    free(new vram_t(address, pages));
+    return true;
 }
 
-void vram::free(vram_memory* mem) {
-    if (!mem) {
-        return;
+vram_t* vram::malloc(std::size_t n) {
+    do {
+        for (auto& entry : free_list_) {
+            if (entry.units_ >= n) {
+                if (entry.units_ == n) {
+                    free_list_.erase(free_list_t::s_iterator_to(entry));
+                    return &entry;
+                }
+                entry.units_ -= n;
+                return new vram_t(entry.address_ + entry.units_ * kPAGE_SIZE, n);
+            }
+        }
+        if (!more(n)) {
+            std::abort();
+        }
+    } while (true);
+}
+
+void vram::free(vram_t* entry) {
+    const auto range = std::equal_range(free_list_.begin(), free_list_.end(), *entry, [](const vram_t& i, const vram_t& j) {
+        return i.address_ < j.address_;
+    });
+    auto& prev = range.first;
+    auto& next = range.second;
+    free_list_.insert(next, *entry);
+    if (next != free_list_.end() && (entry->address_ + entry->units_ * kPAGE_SIZE) == next->address_) {
+        // join current and next
+        entry->units_ += next->units_;
+        vram_t* del = &*next;
+        free_list_.erase(free_list_t::s_iterator_to(*del));
+        delete del;
     }
-    void* ptr = decode(mem->address());
-    if (mem->n() == 1) {
-        pool_.free(ptr);
-    } else {
-        pool_.ordered_free(ptr, mem->n());
+    if (prev != free_list_.end() && (prev->address_ + prev->units_ * kPAGE_SIZE) == entry->address_) {
+        prev->units_ += entry->units_;
+        free_list_.erase(free_list_t::s_iterator_to(*entry));
+        delete entry;
     }
-    delete mem;
 }
 
 }  // namespace a3

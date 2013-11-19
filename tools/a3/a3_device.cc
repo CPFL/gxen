@@ -263,11 +263,11 @@ device* device::instance() {
     return &boost::details::pool::singleton_default<device>::instance();
 }
 
-vram_memory* device::malloc(std::size_t n) {
+vram_t* device::malloc(std::size_t n) {
     return vram_->malloc(n);
 }
 
-void device::free(vram_memory* mem) {
+void device::free(vram_t* mem) {
     vram_->free(mem);
 }
 

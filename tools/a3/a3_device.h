@@ -14,7 +14,7 @@ namespace a3 {
 class device_bar1;
 class device_bar3;
 class vram;
-class vram_memory;
+class vram_t;
 class context;
 class playlist_t;
 class scheduler_t;
@@ -48,8 +48,8 @@ class device : private boost::noncopyable {
     const device_bar1* bar1() const { return bar1_.get(); }
     device_bar3* bar3() { return bar3_.get(); }
     const device_bar3* bar3() const { return bar3_.get(); }
-    vram_memory* malloc(std::size_t n);
-    void free(vram_memory* mem);
+    vram_t* malloc(std::size_t n);
+    void free(vram_t* mem);
     const std::vector<context*>& contexts() const { return contexts_; }
 
     // VT-d
