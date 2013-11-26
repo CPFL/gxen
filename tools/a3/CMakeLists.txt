@@ -74,39 +74,39 @@ else()
 endif()
 
 add_executable(a3
-    a3_band_scheduler.cc
-    a3_bar1_channel.cc
-    a3_bar3_channel.cc
-    a3_barrier.cc
-    a3_channel.cc
-    a3_context_bar0.cc
-    a3_context_bar1.cc
-    a3_context_bar3.cc
-    a3_context_bar4.cc
-    a3_context_barrier.cc
-    a3_context.cc
-    a3_context_sched.cc
-    a3_credit_scheduler.cc
-    a3_device_bar1.cc
-    a3_device_bar3.cc
-    a3_device.cc
-    a3_device_table.cc
-    a3_direct_scheduler.cc
-    a3_fifo_scheduler.cc
-    a3_flags.cc
-    a3_instruments.cc
-    a3_main.cc
-    a3_page.cc
-    a3_playlist.cc
-    a3_pmem.cc
-    a3_poll_area.cc
-    a3_registers.cc
-    a3_scheduler.cc
-    a3_session.cc
-    a3_shadow_page_table.cc
-    a3_software_page_table.cc
-    a3_vram.cc
-    a3_xen.c
+    band_scheduler.cc
+    bar1_channel.cc
+    bar3_channel.cc
+    barrier.cc
+    channel.cc
+    context_bar0.cc
+    context_bar1.cc
+    context_bar3.cc
+    context_bar4.cc
+    context_barrier.cc
+    context.cc
+    context_sched.cc
+    credit_scheduler.cc
+    device_bar1.cc
+    device_bar3.cc
+    device.cc
+    device_table.cc
+    direct_scheduler.cc
+    fifo_scheduler.cc
+    flags.cc
+    instruments.cc
+    main.cc
+    page.cc
+    playlist.cc
+    pmem.cc
+    poll_area.cc
+    registers.cc
+    scheduler.cc
+    session.cc
+    shadow_page_table.cc
+    software_page_table.cc
+    vram.cc
+    xen.c
     )
 
 target_link_libraries(a3
