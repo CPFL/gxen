@@ -32,7 +32,7 @@ bool poll_area_t::in_poll_area(context* ctx, uint64_t offset) {
     return area <= offset && offset < area + (A3_DOMAIN_CHANNELS * 0x1000);
 }
 
-poll_area_t::channel_and_offset_t poll_area::extract_channel_and_offset(context* ctx, uint64_t offset) {
+poll_area_t::channel_and_offset_t poll_area_t::extract_channel_and_offset(context* ctx, uint64_t offset) {
     channel_and_offset_t result = {};
     const uint64_t area = ctx->poll_area();
     const uint64_t sub = offset - area;

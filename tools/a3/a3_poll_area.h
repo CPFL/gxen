@@ -8,6 +8,8 @@ class context;
 
 class poll_area_t {
  public:
+    static const int kMaxSize = A3_CHANNELS * 0x1000UL;
+
     struct channel_and_offset_t {
         uint32_t channel;
         uint32_t offset;

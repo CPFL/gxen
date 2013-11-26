@@ -1,11 +1,13 @@
 #ifndef A3_DEVICE_BAR1_H_
 #define A3_DEVICE_BAR1_H_
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "a3_page.h"
 #include "a3_page_table.h"
 #include "a3_device.h"
 #include "a3_size.h"
+#include "a3_poll_area.h"
 namespace a3 {
 
 class context;
@@ -27,6 +29,7 @@ class device_bar1 : private boost::noncopyable {
     uint32_t read(context* ctx, const command& cmd);
     void pv_scan(context* ctx);
     void pv_reflect_entry(context* ctx, bool big, uint32_t index, uint64_t entry);
+    poll_area_t* poll_area() { return poll_area_.get(); }
 
  private:
     void map(uint64_t virt, const struct page_entry& entry);
@@ -34,6 +37,7 @@ class device_bar1 : private boost::noncopyable {
     page ramin_;
     page directory_;
     page entry_;
+    std::unique_ptr<poll_area_t> poll_area_;
 };
 
 }  // namespace a3

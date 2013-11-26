@@ -37,7 +37,9 @@ namespace a3 {
 device_bar1::device_bar1(device::bar_t bar)
     : ramin_(1)
     , directory_(8)
-    , entry_() {
+    , entry_()
+    , poll_area_(new poll_area_t())
+    {
     const uint64_t vm_size = (0x1000 * 128) - 1;
     ramin_.clear();
     directory_.clear();
