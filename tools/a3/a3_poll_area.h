@@ -6,7 +6,7 @@ namespace a3 {
 
 class context;
 
-class poll_area {
+class poll_area_t {
  public:
     struct channel_and_offset_t {
         uint32_t channel;

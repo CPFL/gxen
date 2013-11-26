@@ -52,7 +52,10 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
         return 0;
     } else if (pgt == pv_bar1_large_pgt_) {
         bar1_channel()->table()->pv_reflect_entry(this, 0, true, index, guest);
-        A3_UNREACHABLE();
+        A3_SYNCHRONIZED(device::instance()->mutex()) {
+            device::instance()->bar1()->pv_reflect_entry(this, true, index, host);
+        }
+        // A3_UNREACHABLE();
         // TODO(Yusuke Suzuki) sync
 //                 A3_SYNCHRONIZED(device::instance()->mutex()) {
 //                     device::instance()->bar1()->pv_reflect_entry(this, true, index, slot->u64[2]);

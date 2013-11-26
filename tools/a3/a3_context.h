@@ -21,7 +21,7 @@ namespace a3 {
 namespace barrier {
 class table;
 }  // namespace barrier
-class poll_area;
+class poll_area_t;
 
 template<class T>
 struct unique_ptr {

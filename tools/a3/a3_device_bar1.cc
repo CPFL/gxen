@@ -34,14 +34,6 @@
 #include "a3_registers.h"
 namespace a3 {
 
-#if 0
-static uint64_t encode(uint64_t phys) {
-    phys >>= 8;
-    phys |= 0x00000001; /* present */
-    return phys;
-}
-#endif
-
 device_bar1::device_bar1(device::bar_t bar)
     : ramin_(1)
     , directory_(8)
@@ -141,7 +133,6 @@ void device_bar1::pv_scan(context* ctx) {
         }
     }
 }
-
 
 void device_bar1::pv_reflect_entry(context* ctx, bool big, uint32_t index, uint64_t host) {
     A3_LOG("%" PRIu32 " BAR1 reflect entry %" PRIx32 "\n", ctx->id(), index);
