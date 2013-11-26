@@ -1,7 +1,6 @@
 #ifndef A3_PAGE_TABLE_H_
 #define A3_PAGE_TABLE_H_
 #include <stdint.h>
-#include <boost/static_assert.hpp>
 #include "a3_pmem.h"
 namespace a3 {
 
@@ -11,17 +10,17 @@ static const unsigned kPAGE_SHIFT = 12;
 static const unsigned kSMALL_PAGE_SHIFT = 12;
 static const unsigned kLARGE_PAGE_SHIFT = 17;
 static const unsigned kPAGE_TABLE_BITS = 27 - 12;
-static const unsigned kPAGE_SIZE = 0x1000;
+static const unsigned kPAGE_SIZE = 0x1000;  // 4KB
 static const unsigned kPAGE_TABLE_SIZE = 0x8000;
 
-static const unsigned kPAGE_DIRECTORY_COVERED_SIZE = 0x8000000;
+static const unsigned kPAGE_DIRECTORY_COVERED_SIZE = 0x8000000;  // 128MB
 static const unsigned kMAX_PAGE_DIRECTORIES = 0x2000;
 
-static const unsigned kSMALL_PAGE_SIZE = 0x1 << kSMALL_PAGE_SHIFT;
-static const unsigned kLARGE_PAGE_SIZE = 0x1 << kLARGE_PAGE_SHIFT;
+static const unsigned kSMALL_PAGE_SIZE = 0x1 << kSMALL_PAGE_SHIFT;  // 4KB
+static const unsigned kLARGE_PAGE_SIZE = 0x1 << kLARGE_PAGE_SHIFT;  // 128KB
 
-static const unsigned kSMALL_PAGE_COUNT = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;
-static const unsigned kLARGE_PAGE_COUNT = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;
+static const unsigned kSMALL_PAGE_COUNT = kPAGE_DIRECTORY_COVERED_SIZE >> kSMALL_PAGE_SHIFT;  // 32768
+static const unsigned kLARGE_PAGE_COUNT = kPAGE_DIRECTORY_COVERED_SIZE >> kLARGE_PAGE_SHIFT;  // 1024
 
 struct page_descriptor {
     union {
@@ -46,7 +45,7 @@ struct page_descriptor {
     };
 };
 
-BOOST_STATIC_ASSERT(sizeof(struct page_descriptor) == (sizeof(uint64_t) * 2));
+static_assert(sizeof(struct page_descriptor) == (sizeof(uint64_t) * 2), "page descriptor size is u64 * 2");
 
 struct page_entry {
     enum target_type_t {
@@ -93,7 +92,7 @@ struct page_entry {
     }
 };
 
-BOOST_STATIC_ASSERT(sizeof(struct page_entry) == sizeof(uint64_t));
+static_assert(sizeof(struct page_entry) == sizeof(uint64_t), "page entry size is u64");
 
 struct page_directory {
     enum size_type_t {
@@ -152,7 +151,7 @@ struct page_directory {
     }
 };
 
-BOOST_STATIC_ASSERT(sizeof(struct page_directory) == sizeof(uint64_t));
+static_assert(sizeof(struct page_directory) == sizeof(uint64_t), "page directory size is u64");
 
 }  // namespace a3
 #endif  // A3_PAGE_TABLE_H_
