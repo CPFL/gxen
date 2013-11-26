@@ -8,8 +8,6 @@ class context;
 
 class poll_area_t {
  public:
-    static const int kMaxSize = A3_CHANNELS * 0x1000UL;
-
     struct channel_and_offset_t {
         uint32_t channel;
         uint32_t offset;
@@ -17,6 +15,11 @@ class poll_area_t {
 
     static bool in_poll_area(context* ctx, uint64_t offset);
     static channel_and_offset_t extract_channel_and_offset(context* ctx, uint64_t offset);
+
+    std::size_t size() const { return A3_BAR1_POLL_AREA_SIZE; }
+
+    void write(context* ctx, const command& cmd);
+    uint32_t read(context* ctx, const command& cmd);
 };
 
 }  // namespace a3

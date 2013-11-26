@@ -41,5 +41,17 @@ poll_area_t::channel_and_offset_t poll_area_t::extract_channel_and_offset(contex
     return result;
 }
 
+void poll_area_t::write(context* ctx, const command& cmd) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
+        device::instance()->bar1()->write(ctx, cmd);
+    }
+}
+
+uint32_t poll_area_t::read(context* ctx, const command& cmd) {
+    A3_SYNCHRONIZED(device::instance()->mutex()) {
+        return device::instance()->bar1()->read(ctx, cmd);
+    }
+}
+
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */
