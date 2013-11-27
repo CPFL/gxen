@@ -1,5 +1,6 @@
 #ifndef A3_PV_PAGE_H_
 #define A3_PV_PAGE_H_
+#include <cstdint>
 #include <bitset>
 #include "page.h"
 namespace a3 {
@@ -26,6 +27,11 @@ class pv_page : public page {
     void set_page_type(page_type_t type) { page_type_ = type; }
     page_type_t page_type() const { return page_type_; }
     bitset_t* channel_bitset() { return &channel_bitset_; }
+
+    uint32_t id() const {
+        const uint32_t seed = address() >> 12;
+        return seed | (1UL << 28);
+    }
 
  private:
     page_type_t page_type_;

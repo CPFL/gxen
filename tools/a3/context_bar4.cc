@@ -297,7 +297,8 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             pv_page* p(new pv_page(round_up(size, kPAGE_SIZE) / kPAGE_SIZE));
             p->clear();
             // address is 40bits => shift 12 & get 28bit page frame number
-            uint32_t id = p->address() >> 12;
+            // And we use 0 as special id, so we set 29 bit.
+            uint32_t id = p->id();
             slot->u32[1] = id;
             allocated_.insert(id, p);
         }
