@@ -13,9 +13,9 @@ class pv_page : public page {
     static const int kBAR3 = A3_DOMAIN_CHANNELS + 1;
 
     enum page_type_t {
-	TYPE_NONE,
-	TYPE_PGT,
-	TYPE_PGD
+        TYPE_NONE,
+        TYPE_PGT,
+        TYPE_PGD
     };
 
     pv_page(std::size_t n)

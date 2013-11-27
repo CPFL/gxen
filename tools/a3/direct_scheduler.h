@@ -1,7 +1,5 @@
 #ifndef A3_DIRECT_SCHEDULER_H_
 #define A3_DIRECT_SCHEDULER_H_
-#include <queue>
-#include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "scheduler.h"
 namespace a3 {

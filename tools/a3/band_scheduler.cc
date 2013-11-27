@@ -24,12 +24,10 @@
 #include <cstdint>
 #include "a3.h"
 #include "lock.h"
-#include "band_scheduler.h"
 #include "context.h"
-#include "registers.h"
 #include "device.h"
 #include "device_bar1.h"
-#include "ignore_unused_variable_warning.h"
+#include "band_scheduler.h"
 namespace a3 {
 
 band_scheduler_t::band_scheduler_t(const duration_t& period, const duration_t& sample)

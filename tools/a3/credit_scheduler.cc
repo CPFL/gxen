@@ -22,14 +22,11 @@
  * THE SOFTWARE.
  */
 #include <cstdint>
-#include <memory>
 #include "a3.h"
-#include "credit_scheduler.h"
 #include "context.h"
-#include "registers.h"
 #include "device.h"
 #include "device_bar1.h"
-#include "ignore_unused_variable_warning.h"
+#include "credit_scheduler.h"
 namespace a3 {
 
 credit_scheduler_t::credit_scheduler_t(const duration_t& period, const duration_t& sample)

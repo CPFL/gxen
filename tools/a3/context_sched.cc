@@ -21,20 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <cstdlib>
-#include <iostream>
-#include <boost/asio.hpp>
-#include <unistd.h>
 #include "a3.h"
+#include "lock.h"
 #include "context.h"
-#include "registers.h"
-#include "barrier.h"
-#include "bit_mask.h"
-#include "pmem.h"
-#include "device_bar1.h"
-#include "device_bar3.h"
-#include "shadow_page_table.h"
-#include "ignore_unused_variable_warning.h"
 namespace a3 {
 
 bool context::enqueue(const command& cmd) {

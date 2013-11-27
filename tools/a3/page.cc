@@ -32,8 +32,6 @@ page::page(std::size_t n)
     A3_SYNCHRONIZED(device::instance()->mutex()) {
         vram_ = device::instance()->malloc(n);
     }
-    // A3_LOG("page allocated 0x%" PRIx64 "\n", address());
-    // clear();
 }
 
 page::~page() {
