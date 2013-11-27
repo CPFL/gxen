@@ -84,7 +84,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
             const int cid = static_cast<int32_t>(slot->u32[2]);
@@ -105,7 +105,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MAP_PGT: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
 
@@ -113,7 +113,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             if (slot->u32[2]) {
                 pgt0 = lookup_by_pv_id(slot->u32[2]);
                 if (!pgt0) {
-                    A3_LOG("INVALID...\n");
+                    A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[2]));
                     return -EINVAL;
                 }
                 assert(pgt0);
@@ -123,7 +123,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             if (slot->u32[3]) {
                 pgt1 = lookup_by_pv_id(slot->u32[3]);
                 if (!pgt1) {
-                    A3_LOG("INVALID...\n");
+                    A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[3]));
                     return -EINVAL;
                 }
                 assert(pgt1);
@@ -167,7 +167,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MAP: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
             // TODO(Yusuke Suzuki): validation
@@ -214,7 +214,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MAP_SG_BATCH: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
             // TODO(Yusuke Suzuki): validation
@@ -236,7 +236,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_UNMAP_BATCH: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
             // TODO(Yusuke Suzuki): validation
@@ -255,7 +255,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_VM_FLUSH: {
             page* pgd = lookup_by_pv_id(slot->u32[1]);
             if (!pgd) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
 
@@ -312,7 +312,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_BAR3_PGT: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
             pv_bar3_pgt_ = pgt;
