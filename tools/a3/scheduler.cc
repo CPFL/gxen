@@ -25,7 +25,6 @@
 #include "a3.h"
 #include "scheduler.h"
 #include "context.h"
-#include "registers.h"
 namespace a3 {
 
 void scheduler_t::register_context(context* ctx) {

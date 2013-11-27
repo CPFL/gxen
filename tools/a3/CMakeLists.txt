@@ -101,6 +101,7 @@ add_executable(a3
     pmem.cc
     poll_area.cc
     registers.cc
+    sampler.cc
     scheduler.cc
     session.cc
     shadow_page_table.cc
