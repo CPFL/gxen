@@ -161,10 +161,10 @@ context* band_scheduler_t::select_next_context(bool idle) {
         }
     }
 
-    context* band = NULL;
-    context* under = NULL;
-    context* over = NULL;
-    context* next = NULL;
+    context* band = nullptr;
+    context* under = nullptr;
+    context* over = nullptr;
+    context* next = nullptr;
     for (context& ctx : contexts_) {
         if (ctx.is_suspended()) {
             if (ctx.budget() < boost::posix_time::microseconds(0)) {

@@ -56,11 +56,11 @@ void context::write_bar1(const command& cmd) {
         return;
     }
 
-    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, NULL);
+    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, nullptr);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         pmem.write(gphys, cmd.value, cmd.size());
-        barrier::page_entry* entry = NULL;
+        barrier::page_entry* entry = nullptr;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             write_barrier(gphys, cmd);
@@ -78,12 +78,12 @@ void context::read_bar1(const command& cmd) {
         return;
     }
 
-    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, NULL);
+    const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, nullptr);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         const uint32_t ret = pmem.read(gphys, cmd.size());
         buffer()->value = ret;
-        barrier::page_entry* entry = NULL;
+        barrier::page_entry* entry = nullptr;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             read_barrier(gphys, cmd);

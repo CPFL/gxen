@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 
     c::bdf bdf = { { { 0, 0, 0 } } };
 
-    if (rest.empty() || ((bdf.raw = strtol(rest.front().c_str(), NULL, 16)) == 0)) {
+    if (rest.empty() || ((bdf.raw = strtol(rest.front().c_str(), nullptr, 16)) == 0)) {
         A3_FPRINTF(stderr, "Usage: a3 bdf\n");
         return 1;
     }

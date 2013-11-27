@@ -32,11 +32,11 @@
 namespace a3 {
 
 void context::write_bar3(const command& cmd) {
-    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, NULL);
+    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, nullptr);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         pmem.write(gphys, cmd.value, cmd.size());
-        barrier::page_entry* entry = NULL;
+        barrier::page_entry* entry = nullptr;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             write_barrier(gphys, cmd);
@@ -47,12 +47,12 @@ void context::write_bar3(const command& cmd) {
 }
 
 void context::read_bar3(const command& cmd) {
-    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, NULL);
+    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, nullptr);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         const uint32_t ret = pmem.read(gphys, cmd.size());
         buffer()->value = ret;
-        barrier::page_entry* entry = NULL;
+        barrier::page_entry* entry = nullptr;
         if (barrier()->lookup(gphys, &entry, false)) {
             // found
             read_barrier(gphys, cmd);

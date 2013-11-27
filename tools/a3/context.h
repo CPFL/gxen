@@ -127,7 +127,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     pv_page* lookup_by_pv_id(uint32_t id) {
         auto it = allocated_.find(id);
         if (it == allocated_.end()) {
-            return NULL;
+            return nullptr;
         }
         return it->second;
     }

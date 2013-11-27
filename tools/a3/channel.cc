@@ -196,7 +196,7 @@ void channel::flush(context* ctx) {
     // A3_FATAL(stdout, "shadowing times %" PRIu64 "\n", ctx->increment_shadowing_times());
 
     // clear dirty flags
-    channel* origin = NULL;
+    channel* origin = nullptr;
     for (page_table_reuse_t::size_type pos = derived_->find_first(); pos != derived_->npos; pos = derived_->find_next(pos)) {
         channel* channel = ctx->channels(pos);
         channel->clear_tlb_flush_needed();

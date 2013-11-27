@@ -1,6 +1,6 @@
 #ifndef A3_CHANNEL_H_
 #define A3_CHANNEL_H_
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include "a3.h"
@@ -50,8 +50,8 @@ class channel : private boost::noncopyable {
     bool tlb_flush_needed_;
     uint64_t ramin_address_;
     uint64_t shared_address_;
-    boost::scoped_ptr<shadow_page_table> table_;
-    boost::scoped_ptr<page> shadow_ramin_;
+    std::unique_ptr<shadow_page_table> table_;
+    std::unique_ptr<page> shadow_ramin_;
 
     page_table_reuse_t original_;
     page_table_reuse_t* derived_;

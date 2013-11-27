@@ -2,7 +2,7 @@
 #define A3_SOFTWARE_PAGE_TABLE_H_
 #include <cstdint>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 #include "page_table.h"
 namespace a3 {

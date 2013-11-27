@@ -44,7 +44,7 @@ bool table::in_range(uint64_t address) const {
 }
 
 bool table::map(uint64_t page_start_address) {
-    page_entry* entry = NULL;
+    page_entry* entry = nullptr;
     const bool result = lookup(page_start_address, &entry, true);
     if (entry) {
         entry->retain();
@@ -53,7 +53,7 @@ bool table::map(uint64_t page_start_address) {
 }
 
 bool table::unmap(uint64_t page_start_address) {
-    page_entry* entry = NULL;
+    page_entry* entry = nullptr;
     lookup(page_start_address, &entry, false);
     if (entry) {
         entry->release();
@@ -85,14 +85,14 @@ bool table::lookup(uint64_t address, page_entry** entry, bool force_create) {
 }
 
 bool page_directory::map(uint64_t page_start_address) {
-    page_entry* entry = NULL;
+    page_entry* entry = nullptr;
     const bool result = lookup(page_start_address, &entry);
     entry->retain();
     return result;
 }
 
 void page_directory::unmap(uint64_t page_start_address) {
-    page_entry* entry = NULL;
+    page_entry* entry = nullptr;
     if (lookup(page_start_address, &entry)) {
         entry->release();
     }

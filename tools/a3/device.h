@@ -1,10 +1,11 @@
 #ifndef A3_DEVICE_H_
 #define A3_DEVICE_H_
 #include <vector>
+#include <array>
+#include <memory>
 #include <pciaccess.h>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 #include "a3.h"
 #include "xen.h"
 #include "lock.h"
@@ -13,7 +14,7 @@ namespace a3 {
 
 class device_bar1;
 class device_bar3;
-class vram;
+class vram_manager_t;
 class vram_t;
 class context;
 class playlist_t;
@@ -67,12 +68,12 @@ class device : private boost::noncopyable {
     std::vector<context*> contexts_;
     mutex_t mutex_;
     uint32_t pmem_;
-    boost::array<bar_t, 5> bars_;
-    boost::scoped_ptr<device_bar1> bar1_;
-    boost::scoped_ptr<device_bar3> bar3_;
-    boost::scoped_ptr<vram> vram_;
-    boost::scoped_ptr<playlist_t> playlist_;
-    boost::scoped_ptr<scheduler_t> scheduler_;
+    std::array<bar_t, 5> bars_;
+    std::unique_ptr<device_bar1> bar1_;
+    std::unique_ptr<device_bar3> bar3_;
+    std::unique_ptr<vram_manager_t> vram_;
+    std::unique_ptr<playlist_t> playlist_;
+    std::unique_ptr<scheduler_t> scheduler_;
     int domid_;
 
     // libxl

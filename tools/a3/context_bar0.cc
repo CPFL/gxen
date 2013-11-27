@@ -241,7 +241,7 @@ void context::write_bar0(const command& cmd) {
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
         pmem.write(addr, cmd.value, cmd.size());
-        barrier::page_entry* entry = NULL;
+        barrier::page_entry* entry = nullptr;
         // A3_LOG("write to PMEM 0x%" PRIX64 " 0x%" PRIX32 " 0x%" PRIX64 " 0x%" PRIx32 "\n", base, cmd.offset - 0x700000, addr, cmd.value);
         if (barrier()->lookup(addr, &entry, false)) {
             // found
@@ -409,7 +409,7 @@ void context::read_bar0(const command& cmd) {
         const uint64_t addr = base + (cmd.offset - 0x700000);
         pmem::accessor pmem;
         buffer()->value = pmem.read(addr, cmd.size());
-        barrier::page_entry* entry = NULL;
+        barrier::page_entry* entry = nullptr;
         // A3_LOG("read from PMEM 0x%" PRIX64 " 0x%" PRIX32 " 0x%" PRIX64 "\n", base, cmd.offset - 0x700000, addr);
         if (barrier()->lookup(addr, &entry, false)) {
             // found

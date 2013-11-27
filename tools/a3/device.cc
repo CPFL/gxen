@@ -69,13 +69,13 @@ static inline unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
 device::device()
     : device_()
     , virts_(A3_VM_NUM, -1)
-    , contexts_(A3_VM_NUM, NULL)
+    , contexts_(A3_VM_NUM, nullptr)
     , mutex_()
     , pmem_()
     , bars_()
     , bar1_()
     , bar3_()
-    , vram_(new vram(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+    , vram_(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
     , scheduler_()
     , domid_(-1)
@@ -141,7 +141,7 @@ void device::initialize(const bdf& bdf) {
     assert(it);
 
     struct pci_device* dev;
-    while ((dev = pci_device_next(it)) != NULL) {
+    while ((dev = pci_device_next(it)) != nullptr) {
         // search by BDF
         if (dev->bus == bdf.bus && dev->dev == bdf.dev && dev->func == bdf.func) {
             break;
@@ -225,7 +225,7 @@ void device::release_virt(uint32_t virt, context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     virts_.set(virt, 1);
     scheduler_->unregister_context(ctx);
-    contexts_[virt] = NULL;
+    contexts_[virt] = nullptr;
 }
 
 uint32_t device::read(int bar, uint32_t offset, std::size_t size) {

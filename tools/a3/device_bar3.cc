@@ -124,7 +124,7 @@ void device_bar3::shadow(context* ctx, uint64_t phys) {
         const uint64_t index = virt / kPAGE_SIZE;
         if (gphys != UINT64_MAX) {
             // check this is not ramin
-            barrier::page_entry* barrier_entry = NULL;
+            barrier::page_entry* barrier_entry = nullptr;
             map(index, entry.phys());
             if (ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
                 // unmap_xen_page(ctx, address);
@@ -214,7 +214,7 @@ void device_bar3::pv_reflect(context* ctx, uint32_t index, uint64_t guest, uint6
 
     if (host) {
         // check this is not ramin
-        barrier::page_entry* barrier_entry = NULL;
+        barrier::page_entry* barrier_entry = nullptr;
         const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
         map(hindex, entry);
         if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
@@ -244,7 +244,7 @@ void device_bar3::pv_reflect_batch(context* ctx, uint32_t index, uint64_t guest,
         const struct page_entry entry = ctx->guest_to_host(gentry);
         map(hindex, entry);
         if (entry.raw) {
-            barrier::page_entry* barrier_entry = NULL;
+            barrier::page_entry* barrier_entry = nullptr;
             const uint64_t gphys = static_cast<uint64_t>(entry.address) << 12;
             if (!ctx->barrier()->lookup(gphys, &barrier_entry, false)) {
                 // map

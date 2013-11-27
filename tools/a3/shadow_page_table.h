@@ -2,7 +2,7 @@
 #define A3_SHADOW_PAGE_TABLE_H_
 #include <cstdint>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <memory>
@@ -50,7 +50,7 @@ class shadow_page_table {
     };
     uint64_t page_directory_address_;
     uint32_t channel_id_;
-    boost::scoped_ptr<page> phys_;
+    std::unique_ptr<page> phys_;
     boost::ptr_vector<page> large_pages_pool_;
     boost::ptr_vector<page> small_pages_pool_;
     std::size_t large_pages_pool_cursor_;

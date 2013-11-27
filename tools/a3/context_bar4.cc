@@ -109,7 +109,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 return -EINVAL;
             }
 
-            pv_page* pgt0 = NULL;
+            pv_page* pgt0 = nullptr;
             if (slot->u32[2]) {
                 pgt0 = lookup_by_pv_id(slot->u32[2]);
                 if (!pgt0) {
@@ -119,7 +119,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                 assert(pgt0);
             }
 
-            pv_page* pgt1 = NULL;
+            pv_page* pgt1 = nullptr;
             if (slot->u32[3]) {
                 pgt1 = lookup_by_pv_id(slot->u32[3]);
                 if (!pgt1) {
@@ -369,7 +369,7 @@ void context::read_bar4(const command& cmd) {
             A3_LOG("Guest physical call data address %" PRIx64 "\n", gp);
             if (guest_) {
                 munmap(guest_, NOUVEAU_PV_SLOT_TOTAL);
-                guest_ = NULL;
+                guest_ = nullptr;
             }
             A3_SYNCHRONIZED(device::instance()->mutex()) {
                 guest_ = reinterpret_cast<uint8_t*>(a3_xen_map_foreign_range(device::instance()->xl_ctx(), domid(), NOUVEAU_PV_SLOT_TOTAL, PROT_READ | PROT_WRITE, gp >> 12));

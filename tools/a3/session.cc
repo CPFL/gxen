@@ -28,10 +28,10 @@ namespace a3 {
 
 session::session(boost::asio::io_service& io_service)
     : socket_(io_service)
-    , context_(NULL)
-    , thread_(NULL)
-    , req_queue_(NULL)
-    , res_queue_(NULL)
+    , context_(nullptr)
+    , thread_(nullptr)
+    , req_queue_(nullptr)
+    , res_queue_(nullptr)
 {
 }
 
@@ -71,7 +71,7 @@ void session::initialize(uint32_t id) {
     {
         const int ret = std::snprintf(name.data(), name.size() - 1, "a3_shared_req_queue_%u", id);
         if (ret < 0) {
-            std::perror(NULL);
+            std::perror(nullptr);
             std::exit(1);
         }
         name[ret] = '\0';
@@ -87,7 +87,7 @@ void session::initialize(uint32_t id) {
     {
         const int ret = std::snprintf(name.data(), name.size() - 1, "a3_shared_res_queue_%u", id);
         if (ret < 0) {
-            std::perror(NULL);
+            std::perror(nullptr);
             std::exit(1);
         }
         name[ret] = '\0';

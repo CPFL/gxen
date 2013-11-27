@@ -1,6 +1,6 @@
 #ifndef A3_BAR1_CHANNEL_H_
 #define A3_BAR1_CHANNEL_H_
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 namespace a3 {
@@ -24,7 +24,7 @@ class bar1_channel_t : private boost::noncopyable {
     int id_;
     bool enabled_;
     uint64_t ramin_address_;
-    boost::scoped_ptr<software_page_table> table_;
+    std::unique_ptr<software_page_table> table_;
 };
 
 }  // namespace a3

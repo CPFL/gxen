@@ -1,9 +1,9 @@
 #ifndef A3_FIFO_SCHEDULER_H_
 #define A3_FIFO_SCHEDULER_H_
 #include <queue>
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/intrusive/list.hpp>
 #include "a3.h"
@@ -35,9 +35,9 @@ class fifo_scheduler_t : public scheduler_t {
     boost::posix_time::time_duration period_;
     boost::posix_time::time_duration sample_;
     boost::posix_time::time_duration gpu_idle_;
-    boost::scoped_ptr<boost::thread> thread_;
-    boost::scoped_ptr<boost::thread> replenisher_;
-    boost::scoped_ptr<boost::thread> sampler_;
+    std::unique_ptr<boost::thread> thread_;
+    std::unique_ptr<boost::thread> replenisher_;
+    std::unique_ptr<boost::thread> sampler_;
     boost::mutex mutex_;
     boost::condition_variable cond_;
     std::queue<fire_t> queue_;

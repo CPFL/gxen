@@ -24,7 +24,7 @@
 #include "vram.h"
 namespace a3 {
 
-vram::vram(uint64_t mem, uint64_t size)
+vram_manager_t::vram_manager_t(uint64_t mem, uint64_t size)
     : mem_(mem)
     , size_(size)
     , cursor_(0) {
@@ -32,7 +32,7 @@ vram::vram(uint64_t mem, uint64_t size)
 
 // K&R malloc
 
-bool vram::more(std::size_t n) {
+bool vram_manager_t::more(std::size_t n) {
     // round with 32
     const std::size_t pages = ((n + 32 - 1) / 32) * 32;
     const uint64_t address = mem_ + cursor_ * kPAGE_SIZE;
@@ -45,7 +45,7 @@ bool vram::more(std::size_t n) {
     return true;
 }
 
-vram_t* vram::malloc(std::size_t n) {
+vram_t* vram_manager_t::malloc(std::size_t n) {
     do {
         for (auto& entry : free_list_) {
             if (entry.units_ >= n) {
@@ -63,7 +63,7 @@ vram_t* vram::malloc(std::size_t n) {
     } while (true);
 }
 
-void vram::free(vram_t* entry) {
+void vram_manager_t::free(vram_t* entry) {
     const auto range = std::equal_range(free_list_.begin(), free_list_.end(), *entry, [](const vram_t& i, const vram_t& j) {
         return i.address_ < j.address_;
     });

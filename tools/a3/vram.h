@@ -9,14 +9,14 @@
 #include "page_table.h"
 namespace a3 {
 
-class vram;
+class vram_manager_t;
 
 class vram_t
     : public boost::intrusive::list_base_hook<>
     , public boost::noncopyable
     {
  public:
-    friend class vram;
+    friend class vram_manager_t;
     uint64_t address() const { return address_; }
     std::size_t n() const { return units_; }
 
@@ -29,10 +29,10 @@ class vram_t
     std::size_t units_;
 };
 
-class vram {
+class vram_manager_t : private boost::noncopyable {
  public:
     typedef boost::intrusive::list<vram_t> free_list_t;
-    vram(uint64_t mem, uint64_t size);
+    vram_manager_t(uint64_t mem, uint64_t size);
 
     vram_t* malloc(std::size_t n = 1);  // n is the number of pages
     void free(vram_t* mem);

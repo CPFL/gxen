@@ -1,6 +1,6 @@
 #ifndef A3_BAR3_CHANNEL_H_
 #define A3_BAR3_CHANNEL_H_
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 namespace a3 {

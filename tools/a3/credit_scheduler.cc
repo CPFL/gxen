@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 #include <cstdint>
+#include <memory>
 #include "a3.h"
 #include "credit_scheduler.h"
 #include "context.h"
@@ -147,7 +148,7 @@ context* credit_scheduler_t::select_next_context(bool idle) {
             return &ctx;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 void credit_scheduler_t::submit(context* ctx) {
