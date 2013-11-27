@@ -183,7 +183,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
     case NOUVEAU_PV_OP_MAP_BATCH: {
             pv_page* pgt = lookup_by_pv_id(slot->u32[1]);
             if (!pgt) {
-                A3_LOG("INVALID...\n");
+                A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[1]));
                 return -EINVAL;
             }
             // TODO(Yusuke Suzuki): validation
