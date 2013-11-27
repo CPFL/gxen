@@ -15,8 +15,6 @@ namespace a3 {
 
 class fifo_scheduler_t : public scheduler_t {
  public:
-    typedef boost::intrusive::list<context> contexts_t;
-
     fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~fifo_scheduler_t();
     virtual void start();

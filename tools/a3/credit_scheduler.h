@@ -18,8 +18,6 @@ class context;
 
 class credit_scheduler_t : public scheduler_t {
  public:
-    typedef boost::intrusive::list<context> contexts_t;
-
     credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~credit_scheduler_t();
     virtual void start();
@@ -45,14 +43,10 @@ class credit_scheduler_t : public scheduler_t {
     std::unique_ptr<boost::thread> thread_;
     std::unique_ptr<boost::thread> replenisher_;
     std::unique_ptr<boost::thread> sampler_;
-    boost::mutex mutex_;
-    boost::mutex contexts_mutex_;
     boost::mutex fire_mutex_;
     boost::mutex sched_mutex_;
     boost::mutex counter_mutex_;
     boost::condition_variable cond_;
-    contexts_t active_;
-    contexts_t inactive_;
     contexts_t contexts_;
     context* current_;
     timer_t utilization_;

@@ -3,12 +3,13 @@
 #include <queue>
 #include <boost/noncopyable.hpp>
 #include "a3.h"
+#include "context.h"
 namespace a3 {
-
-class context;
 
 class scheduler_t : private boost::noncopyable {
  public:
+    typedef boost::intrusive::list<context> contexts_t;
+
     virtual ~scheduler_t() { }
     virtual void start() { }
     virtual void stop() { }
