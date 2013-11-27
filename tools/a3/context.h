@@ -7,7 +7,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 #include <boost/intrusive/list_hook.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
 #include "lock.h"
 #include "channel.h"
@@ -16,6 +15,7 @@
 #include "session.h"
 #include "page_table.h"
 #include "instruments.h"
+#include "duration.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -94,15 +94,15 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     bool enqueue(const command& cmd);
     bool dequeue(command* cmd);
     bool is_suspended();
-    boost::posix_time::time_duration budget() const { return budget_; }
-    boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
-    boost::posix_time::time_duration bandwidth_used() const { return bandwidth_used_; }
-    boost::posix_time::time_duration sampling_bandwidth_used() const { return sampling_bandwidth_used_; }
-    boost::posix_time::time_duration sampling_bandwidth_used_100() const { return sampling_bandwidth_used_100_; }
-    void replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle);
+    duration_t budget() const { return budget_; }
+    duration_t bandwidth() const { return bandwidth_; }
+    duration_t bandwidth_used() const { return bandwidth_used_; }
+    duration_t sampling_bandwidth_used() const { return sampling_bandwidth_used_; }
+    duration_t sampling_bandwidth_used_100() const { return sampling_bandwidth_used_100_; }
+    void replenish(const duration_t& credit, const duration_t& threshold, const duration_t& bandwidth, bool idle);
     void clear_sampling_bandwidth_used(uint64_t point);
     mutex_t& band_mutex() { return band_mutex_; }
-    void update_budget(const boost::posix_time::time_duration& credit);
+    void update_budget(const duration_t& credit);
 
  private:
     void initialize(int domid, bool para);
@@ -158,11 +158,11 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
 
     // only touched by BAND scheduler
     mutex_t band_mutex_;
-    boost::posix_time::time_duration budget_;
-    boost::posix_time::time_duration bandwidth_;
-    boost::posix_time::time_duration bandwidth_used_;
-    boost::posix_time::time_duration sampling_bandwidth_used_;
-    boost::posix_time::time_duration sampling_bandwidth_used_100_;
+    duration_t budget_;
+    duration_t bandwidth_;
+    duration_t bandwidth_used_;
+    duration_t sampling_bandwidth_used_;
+    duration_t sampling_bandwidth_used_100_;
     std::queue<command> suspended_;
 };
 

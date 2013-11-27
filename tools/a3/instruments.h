@@ -2,6 +2,7 @@
 #define A3_INSTRUMENTS_H_
 #include <boost/noncopyable.hpp>
 #include "a3.h"
+#include "duration.h"
 #include "pv_slot.h"
 namespace a3 {
 
@@ -19,7 +20,7 @@ class instruments_t : private boost::noncopyable {
         return ++shadowing_times_;
     }
 
-    boost::posix_time::time_duration increment_shadowing(const boost::posix_time::time_duration& time) {
+    duration_t increment_shadowing(const duration_t& time) {
         shadowing_ += time;
         return shadowing_;
     }
@@ -38,7 +39,7 @@ class instruments_t : private boost::noncopyable {
     // shadowing utilization
     uint64_t flush_times_;
     uint64_t shadowing_times_;
-    boost::posix_time::time_duration shadowing_;
+    duration_t shadowing_;
 
     // hypercalls
     uint64_t hypercalls_;

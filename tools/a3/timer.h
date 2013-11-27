@@ -1,9 +1,8 @@
 #ifndef A3_TIMER_H_
 #define A3_TIMER_H_
 #include <boost/noncopyable.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
-#include "lock.h"
+#include "duration.h"
 namespace a3 {
 
 class timer_t : private boost::noncopyable {
@@ -12,7 +11,7 @@ class timer_t : private boost::noncopyable {
         start_ = boost::posix_time::microsec_clock::local_time();
     }
 
-    boost::posix_time::time_duration elapsed() const {
+    duration_t elapsed() const {
         auto now = boost::posix_time::microsec_clock::local_time();
         return now - start_;
     }

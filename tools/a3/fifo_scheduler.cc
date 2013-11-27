@@ -31,7 +31,7 @@
 #include "ignore_unused_variable_warning.h"
 namespace a3 {
 
-fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
+fifo_scheduler_t::fifo_scheduler_t(const duration_t& wait, const duration_t& period, const duration_t& sample)
     : wait_(wait)
     , period_(period)
     , thread_()
@@ -71,8 +71,8 @@ void fifo_scheduler_t::replenish() {
         A3_SYNCHRONIZED(sched_mutex()) {
             if (!contexts().empty()) {
                 A3_SYNCHRONIZED(fire_mutex()) {
-                    boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                    boost::posix_time::time_duration defaults = period_ / contexts().size();
+                    duration_t period = bandwidth_ + gpu_idle_;
+                    duration_t defaults = period_ / contexts().size();
                     if (period != boost::posix_time::microseconds(0)) {
                         const auto budget = period / contexts().size();
                         for (context& ctx: contexts()) {

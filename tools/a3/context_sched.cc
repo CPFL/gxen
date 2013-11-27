@@ -66,14 +66,14 @@ bool context::is_suspended() {
 }
 
 
-void context::update_budget(const boost::posix_time::time_duration& credit) {
+void context::update_budget(const duration_t& credit) {
     budget_ -= credit;
     bandwidth_used_ += credit;
     sampling_bandwidth_used_ += credit;
     sampling_bandwidth_used_100_ += credit;
 }
 
-void context::replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle) {
+void context::replenish(const duration_t& credit, const duration_t& threshold, const duration_t& bandwidth, bool idle) {
     A3_SYNCHRONIZED(band_mutex()) {
         budget_ += credit;
 

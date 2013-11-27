@@ -32,7 +32,7 @@
 #include "ignore_unused_variable_warning.h"
 namespace a3 {
 
-credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
+credit_scheduler_t::credit_scheduler_t(const duration_t& period, const duration_t& sample)
     : period_(period)
     , gpu_idle_()
     , thread_()
@@ -85,10 +85,10 @@ void credit_scheduler_t::replenish() {
         A3_SYNCHRONIZED(sched_mutex()) {
             if (!contexts().empty()) {
                 A3_SYNCHRONIZED(fire_mutex()) {
-                    boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                    boost::posix_time::time_duration defaults = period_ / contexts().size();
+                    duration_t period = bandwidth_ + gpu_idle_;
+                    duration_t defaults = period_ / contexts().size();
                     previous_bandwidth_ = period;
-                    // boost::posix_time::time_duration period = bandwidth_;
+                    // duration_t period = bandwidth_;
                     if (period != boost::posix_time::microseconds(0)) {
                         const auto budget = period / contexts().size();
                         for (context& ctx : contexts()) {

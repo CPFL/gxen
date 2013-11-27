@@ -3,15 +3,13 @@
 #include <memory>
 #include <boost/thread.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include "duration.h"
 namespace a3 {
 
 class scheduler_t;
 
 class sampler_t : private boost::noncopyable {
  public:
-    typedef boost::posix_time::time_duration duration_t;
-
     sampler_t(scheduler_t* scheduler, duration_t sample);
     void add(const duration_t& time);
     void start();

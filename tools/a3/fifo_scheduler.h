@@ -3,17 +3,17 @@
 #include <queue>
 #include <memory>
 #include <boost/thread.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
+#include "context.h"
 #include "sampler.h"
 #include "scheduler.h"
+#include "duration.h"
 #include "timer.h"
-#include "context.h"
 namespace a3 {
 
 class fifo_scheduler_t : public scheduler_t {
  public:
-    fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
+    fifo_scheduler_t(const duration_t& wait, const duration_t& period, const duration_t& sample);
     virtual ~fifo_scheduler_t();
     virtual void start();
     virtual void stop();
@@ -25,9 +25,9 @@ class fifo_scheduler_t : public scheduler_t {
     void replenish();
     void sampling();
 
-    boost::posix_time::time_duration wait_;
-    boost::posix_time::time_duration period_;
-    boost::posix_time::time_duration gpu_idle_;
+    duration_t wait_;
+    duration_t period_;
+    duration_t gpu_idle_;
     std::unique_ptr<boost::thread> thread_;
     std::unique_ptr<boost::thread> replenisher_;
     std::unique_ptr<sampler_t> sampler_;
@@ -35,7 +35,7 @@ class fifo_scheduler_t : public scheduler_t {
     std::queue<fire_t> queue_;
     timer_t utilization_;
     contexts_t contexts_;
-    boost::posix_time::time_duration bandwidth_;
+    duration_t bandwidth_;
 };
 
 }  // namespace a3
