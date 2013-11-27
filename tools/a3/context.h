@@ -148,7 +148,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     bool para_virtualized_;
     std::unique_ptr<uint32_t[]> pv32_;
     uint8_t* guest_;
-    boost::ptr_unordered_map<uint32_t, pv_page> allocated_;
+    boost::ptr_unordered_map<const uint32_t, pv_page> allocated_;
     std::array<pv_page*, A3_DOMAIN_CHANNELS> pgds_;
     pv_page* pv_bar1_pgd_;
     pv_page* pv_bar1_large_pgt_;

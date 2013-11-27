@@ -29,6 +29,8 @@ class pv_page : public page {
     bitset_t* channel_bitset() { return &channel_bitset_; }
 
     uint32_t id() const {
+        // address is 40bits => shift 12 & get 28bit page frame number
+        // And we use 0 as special id, so we set 29 bit.
         const uint32_t seed = address() >> 12;
         return seed | (1UL << 28);
     }
