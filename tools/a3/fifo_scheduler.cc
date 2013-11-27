@@ -47,15 +47,17 @@ fifo_scheduler_t::~fifo_scheduler_t() {
 }
 
 void fifo_scheduler_t::register_context(context* ctx) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    contexts_.push_back(*ctx);
+    A3_SYNCHRONIZED(mutex_) {
+        contexts_.push_back(*ctx);
+    }
 }
 
 void fifo_scheduler_t::unregister_context(context* ctx) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    contexts_.remove_if([ctx](const context& target) {
-        return &target == ctx;
-    });
+    A3_SYNCHRONIZED(mutex_) {
+        contexts_.remove_if([ctx](const context& target) {
+            return &target == ctx;
+        });
+    }
 }
 
 void fifo_scheduler_t::start() {
@@ -82,8 +84,7 @@ void fifo_scheduler_t::replenish() {
     // uint64_t count = 0;
     while (true) {
         // replenish
-        {
-            boost::unique_lock<boost::mutex> lock(mutex_);
+        A3_SYNCHRONIZED(mutex_) {
             if (contexts_.size()) {
                 boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
                 boost::posix_time::time_duration defaults = period_ / contexts_.size();
@@ -104,8 +105,7 @@ void fifo_scheduler_t::replenish() {
 }
 
 void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
-    {
-        boost::unique_lock<boost::mutex> lock(mutex_);
+    A3_SYNCHRONIZED(mutex_) {
         queue_.push(fire_t(ctx, cmd));
     }
     cond_.notify_one();
@@ -148,8 +148,7 @@ void fifo_scheduler_t::sampling() {
     uint64_t points = 0;
     while (true) {
         // sampling
-        {
-            boost::unique_lock<boost::mutex> lock(mutex_);
+        A3_SYNCHRONIZED(mutex_) {
             if (!contexts_.empty()) {
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
