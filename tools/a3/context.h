@@ -3,8 +3,6 @@
 #include <array>
 #include <memory>
 #include <queue>
-#include <boost/checked_delete.hpp>
-#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
@@ -23,11 +21,6 @@ namespace barrier {
 class table;
 }  // namespace barrier
 class poll_area_t;
-
-template<class T>
-struct unique_ptr {
-  typedef boost::interprocess::unique_ptr< T, boost::checked_deleter<T> > type;
-};
 
 struct slot_t;
 class pv_page;
@@ -139,17 +132,17 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     bool initialized_;
     int domid_;
     uint32_t id_;  // virtualized GPU id
-    unique_ptr<bar1_channel_t>::type bar1_channel_;
-    unique_ptr<bar3_channel_t>::type bar3_channel_;
-    std::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
-    unique_ptr<barrier::table>::type barrier_;
+    std::unique_ptr<bar1_channel_t> bar1_channel_;
+    std::unique_ptr<bar3_channel_t> bar3_channel_;
+    std::array<std::unique_ptr<channel>, A3_DOMAIN_CHANNELS> channels_;
+    std::unique_ptr<barrier::table> barrier_;
     uint64_t poll_area_;
     std::unique_ptr<uint32_t[]> reg32_;
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
 
     // instruments_t
-    unique_ptr<instruments_t>::type instruments_;
+    std::unique_ptr<instruments_t> instruments_;
 
     // PV
     bool para_virtualized_;
