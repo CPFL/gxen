@@ -34,8 +34,8 @@ namespace a3 {
 fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
     : wait_(wait)
     , period_(period)
-    , sample_(sample)
     , thread_()
+    , sampler_(new sampler_t(this, sample))
     , cond_()
     , queue_()
 {
@@ -49,19 +49,18 @@ void fifo_scheduler_t::start() {
     if (thread_) {
         stop();
     }
+    sampler_->start();
     thread_.reset(new boost::thread(&fifo_scheduler_t::run, this));
     replenisher_.reset(new boost::thread(&fifo_scheduler_t::replenish, this));
-    sampler_.reset(new boost::thread(&fifo_scheduler_t::sampling, this));
 }
 
 void fifo_scheduler_t::stop() {
     if (thread_) {
+        sampler_->stop();
         thread_->interrupt();
         thread_.reset();
         replenisher_->interrupt();
         replenisher_.reset();
-        sampler_->interrupt();
-        sampler_.reset();
     }
 }
 
@@ -124,41 +123,8 @@ void fifo_scheduler_t::run() {
 
         const auto duration = utilization_.elapsed();
         bandwidth_ += duration;
-        sampling_bandwidth_ += duration;
-        sampling_bandwidth_100_ += duration;
+        sampler_->add(duration);
         handle.first->update_budget(duration);
-    }
-}
-
-void fifo_scheduler_t::sampling() {
-    uint64_t count = 0;
-    uint64_t points = 0;
-    while (true) {
-        // sampling
-        A3_SYNCHRONIZED(sched_mutex()) {
-            if (!contexts().empty()) {
-                A3_SYNCHRONIZED(fire_mutex()) {
-                    if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
-                        // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                        for (context& ctx : contexts()) {
-                            // A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
-                            if (points % 5 == 4) {
-                                // A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
-                            }
-                            ctx.clear_sampling_bandwidth_used(points);
-                        }
-                        ++count;
-                        points = (points + 1) % 5;
-                    }
-                    sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
-                    if (points % 5 == 4) {
-                        sampling_bandwidth_ = boost::posix_time::microseconds(0);
-                    }
-                }
-            }
-        }
-        boost::this_thread::sleep(sample_);
-        boost::this_thread::yield();
     }
 }
 

@@ -1,14 +1,12 @@
 #ifndef A3_CREDIT_SCHEDULER_H_
 #define A3_CREDIT_SCHEDULER_H_
-#include <queue>
 #include <atomic>
 #include <memory>
-#include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
-#include "lock.h"
 #include "context.h"
+#include "sampler.h"
 #include "scheduler.h"
 #include "timer.h"
 namespace a3 {
@@ -17,7 +15,7 @@ class context;
 
 class credit_scheduler_t : public scheduler_t {
  public:
-    credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
+    credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~credit_scheduler_t();
     virtual void start();
     virtual void stop();
@@ -33,13 +31,11 @@ class credit_scheduler_t : public scheduler_t {
     void submit(context* ctx);
 
     boost::posix_time::time_duration wait_;
-    boost::posix_time::time_duration designed_;
     boost::posix_time::time_duration period_;
-    boost::posix_time::time_duration sample_;
     boost::posix_time::time_duration gpu_idle_;
     std::unique_ptr<boost::thread> thread_;
     std::unique_ptr<boost::thread> replenisher_;
-    std::unique_ptr<boost::thread> sampler_;
+    std::unique_ptr<sampler_t> sampler_;
     boost::mutex counter_mutex_;
     boost::condition_variable cond_;
     contexts_t contexts_;
@@ -47,8 +43,6 @@ class credit_scheduler_t : public scheduler_t {
     timer_t utilization_;
     timer_t gpu_idle_timer_;
     boost::posix_time::time_duration bandwidth_;
-    boost::posix_time::time_duration sampling_bandwidth_;
-    boost::posix_time::time_duration sampling_bandwidth_100_;
     boost::posix_time::time_duration previous_bandwidth_;
     uint64_t counter_;
 };

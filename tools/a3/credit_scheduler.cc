@@ -32,21 +32,17 @@
 #include "ignore_unused_variable_warning.h"
 namespace a3 {
 
-credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
+credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
     : wait_(wait)
-    , designed_(designed)
     , period_(period)
-    , sample_(sample)
     , gpu_idle_()
     , thread_()
     , replenisher_()
-    , sampler_()
+    , sampler_(new sampler_t(this, sample))
     , cond_()
     , current_()
     , utilization_()
     , bandwidth_()
-    , sampling_bandwidth_()
-    , sampling_bandwidth_100_()
     , counter_()
 {
 }
@@ -56,22 +52,21 @@ credit_scheduler_t::~credit_scheduler_t() {
 }
 
 void credit_scheduler_t::start() {
-    if (thread_ || replenisher_ || sampler_) {
+    if (thread_) {
         stop();
     }
+    sampler_->start();
     thread_.reset(new boost::thread(&credit_scheduler_t::run, this));
     replenisher_.reset(new boost::thread(&credit_scheduler_t::replenish, this));
-    sampler_.reset(new boost::thread(&credit_scheduler_t::sampling, this));
 }
 
 void credit_scheduler_t::stop() {
     if (thread_) {
+        sampler_->stop();
         thread_->interrupt();
         thread_.reset();
         replenisher_->interrupt();
         replenisher_.reset();
-        sampler_->interrupt();
-        sampler_.reset();
     }
 }
 
@@ -153,8 +148,7 @@ void credit_scheduler_t::submit(context* ctx) {
 
         const auto duration = utilization_.elapsed();
         bandwidth_ += duration;
-        sampling_bandwidth_ += duration;
-        sampling_bandwidth_100_ += duration;
+        sampler_->add(duration);
         ctx->update_budget(duration);
     }
 }
@@ -177,46 +171,6 @@ void credit_scheduler_t::run() {
             }
             submit(current());
         }
-    }
-}
-
-void credit_scheduler_t::sampling() {
-    uint64_t count = 0;
-    uint64_t points = 0;
-    while (true) {
-        // sampling
-        A3_SYNCHRONIZED(sched_mutex()) {
-            if (!contexts().empty()) {
-                A3_SYNCHRONIZED(fire_mutex()) {
-                    uint64_t next_points = points;
-                    const bool use100 = sampling_bandwidth_100_ != boost::posix_time::microseconds(0);
-                    const bool use500 = sampling_bandwidth_ != boost::posix_time::microseconds(0);
-                    if (use100 || use500) {
-                        // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                        for (context& ctx : contexts()) {
-                            if (use100) {
-                                // A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
-                            }
-                            if (use500) {
-                                if (points % 5 == 4) {
-                                    // A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
-                                }
-                            }
-                            ctx.clear_sampling_bandwidth_used(points);
-                        }
-                        ++count;
-                        next_points = (points + 1) % 5;
-                    }
-                    sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
-                    if (points % 5 == 4) {
-                        sampling_bandwidth_ = boost::posix_time::microseconds(0);
-                    }
-                    points = next_points;
-                }
-            }
-        }
-        boost::this_thread::sleep(sample_);
-        boost::this_thread::yield();
     }
 }
 

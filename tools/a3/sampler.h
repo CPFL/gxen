@@ -1,10 +1,14 @@
 #ifndef A3_SAMPLER_H_
 #define A3_SAMPLER_H_
+#include <memory>
 #include <boost/thread.hpp>
+#include <boost/noncopyable.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 namespace a3 {
 
-class sampler_t {
+class scheduler_t;
+
+class sampler_t : private boost::noncopyable {
  public:
     typedef boost::posix_time::time_duration duration_t;
 
