@@ -1,9 +1,9 @@
 #ifndef A3_DEVICE_BAR3_H_
 #define A3_DEVICE_BAR3_H_
-#include <boost/noncopyable.hpp>
-#include <boost/array.hpp>
-#include <vector>
 #include <cinttypes>
+#include <vector>
+#include <array>
+#include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "page.h"
 #include "device.h"
@@ -47,8 +47,8 @@ class device_bar3 : private boost::noncopyable {
     page directory_;
     page entries_;
     std::vector<uint64_t> software_;
-    boost::array<software_page_entry, A3_BAR3_TOTAL_SIZE / kLARGE_PAGE_SIZE> large_;
-    boost::array<software_page_entry, A3_BAR3_TOTAL_SIZE / kSMALL_PAGE_SIZE> small_;
+    std::array<software_page_entry, A3_BAR3_TOTAL_SIZE / kLARGE_PAGE_SIZE> large_;
+    std::array<software_page_entry, A3_BAR3_TOTAL_SIZE / kSMALL_PAGE_SIZE> small_;
 };
 
 }  // namespace a3

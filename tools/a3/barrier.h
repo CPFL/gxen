@@ -1,10 +1,10 @@
 #ifndef A3_BARRIER_H_
 #define A3_BARRIER_H_
 #include <cstdint>
-#include <vector>
 #include <cstdio>
+#include <vector>
+#include <array>
 #include <boost/shared_ptr.hpp>
-#include <boost/array.hpp>
 #include <boost/static_assert.hpp>
 namespace a3 {
 namespace barrier {
@@ -47,7 +47,7 @@ class page_directory {
     bool lookup(uint64_t address, page_entry** entry);
 
  private:
-    boost::array<page_entry, 0x1 << kPAGE_ENTRY_BITS> entries_;
+    std::array<page_entry, 0x1 << kPAGE_ENTRY_BITS> entries_;
 };
 
 class table {

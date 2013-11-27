@@ -25,7 +25,6 @@
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
-#include <boost/array.hpp>
 #include <unistd.h>
 #include "../a3.h"
 #include "../a3_cmdline.h"

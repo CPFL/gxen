@@ -1,7 +1,8 @@
 #ifndef A3_CONTEXT_H_
 #define A3_CONTEXT_H_
+#include <array>
+#include <memory>
 #include <queue>
-#include <boost/scoped_array.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -140,10 +141,10 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     uint32_t id_;  // virtualized GPU id
     unique_ptr<bar1_channel_t>::type bar1_channel_;
     unique_ptr<bar3_channel_t>::type bar3_channel_;
-    boost::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
+    std::array<unique_ptr<channel>::type, A3_DOMAIN_CHANNELS> channels_;
     unique_ptr<barrier::table>::type barrier_;
     uint64_t poll_area_;
-    boost::scoped_array<uint32_t> reg32_;
+    std::unique_ptr<uint32_t[]> reg32_;
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
 
@@ -152,10 +153,10 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
 
     // PV
     bool para_virtualized_;
-    boost::scoped_array<uint32_t> pv32_;
+    std::unique_ptr<uint32_t[]> pv32_;
     uint8_t* guest_;
     boost::ptr_unordered_map<uint32_t, pv_page> allocated_;
-    boost::array<pv_page*, A3_DOMAIN_CHANNELS> pgds_;
+    std::array<pv_page*, A3_DOMAIN_CHANNELS> pgds_;
     pv_page* pv_bar1_pgd_;
     pv_page* pv_bar1_large_pgt_;
     pv_page* pv_bar1_small_pgt_;

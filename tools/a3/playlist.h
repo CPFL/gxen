@@ -1,8 +1,7 @@
 #ifndef A3_PLAYLIST_H_
 #define A3_PLAYLIST_H_
-#include <boost/noncopyable.hpp>
-#include <boost/scoped_array.hpp>
 #include <bitset>
+#include <boost/noncopyable.hpp>
 #include "a3.h"
 namespace a3 {
 
@@ -17,7 +16,7 @@ class playlist_t : private boost::noncopyable {
  private:
     page* toggle();
 
-    boost::scoped_array<page> pages_;
+    std::unique_ptr<page[]> pages_;
     std::bitset<A3_CHANNELS> channels_;
     int cursor_;
 };
