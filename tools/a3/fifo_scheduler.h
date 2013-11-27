@@ -5,7 +5,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/intrusive/list.hpp>
 #include "a3.h"
 #include "lock.h"
 #include "scheduler.h"
@@ -20,8 +19,6 @@ class fifo_scheduler_t : public scheduler_t {
     virtual void start();
     virtual void stop();
     virtual void enqueue(context* ctx, const command& cmd);
-    virtual void register_context(context* ctx);
-    virtual void unregister_context(context* ctx);
 
  private:
     typedef std::pair<context*, command> fire_t;
@@ -36,7 +33,6 @@ class fifo_scheduler_t : public scheduler_t {
     std::unique_ptr<boost::thread> thread_;
     std::unique_ptr<boost::thread> replenisher_;
     std::unique_ptr<boost::thread> sampler_;
-    boost::mutex mutex_;
     boost::condition_variable cond_;
     std::queue<fire_t> queue_;
     timer_t utilization_;

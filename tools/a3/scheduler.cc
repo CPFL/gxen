@@ -28,5 +28,17 @@
 #include "registers.h"
 namespace a3 {
 
+void scheduler_t::register_context(context* ctx) {
+    A3_SYNCHRONIZED(sched_mutex()) {
+        contexts().push_back(*ctx);
+    }
+}
+
+void scheduler_t::unregister_context(context* ctx) {
+    A3_SYNCHRONIZED(sched_mutex()) {
+        contexts().erase(contexts_t::s_iterator_to(*ctx));
+    }
+}
+
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */

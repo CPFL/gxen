@@ -36,7 +36,6 @@ fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait,
     , period_(period)
     , sample_(sample)
     , thread_()
-    , mutex_()
     , cond_()
     , queue_()
 {
@@ -44,20 +43,6 @@ fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait,
 
 fifo_scheduler_t::~fifo_scheduler_t() {
     stop();
-}
-
-void fifo_scheduler_t::register_context(context* ctx) {
-    A3_SYNCHRONIZED(mutex_) {
-        contexts_.push_back(*ctx);
-    }
-}
-
-void fifo_scheduler_t::unregister_context(context* ctx) {
-    A3_SYNCHRONIZED(mutex_) {
-        contexts_.remove_if([ctx](const context& target) {
-            return &target == ctx;
-        });
-    }
 }
 
 void fifo_scheduler_t::start() {
@@ -84,19 +69,21 @@ void fifo_scheduler_t::replenish() {
     // uint64_t count = 0;
     while (true) {
         // replenish
-        A3_SYNCHRONIZED(mutex_) {
-            if (contexts_.size()) {
-                boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                boost::posix_time::time_duration defaults = period_ / contexts_.size();
-                if (period != boost::posix_time::microseconds(0)) {
-                    const auto budget = period / contexts_.size();
-                    for (context& ctx: contexts_) {
-                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
+        A3_SYNCHRONIZED(sched_mutex()) {
+            if (!contexts().empty()) {
+                A3_SYNCHRONIZED(fire_mutex()) {
+                    boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+                    boost::posix_time::time_duration defaults = period_ / contexts().size();
+                    if (period != boost::posix_time::microseconds(0)) {
+                        const auto budget = period / contexts().size();
+                        for (context& ctx: contexts()) {
+                            ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
+                        }
+                        // ++count;
                     }
-                    // ++count;
+                    bandwidth_ = boost::posix_time::microseconds(0);
+                    gpu_idle_ = boost::posix_time::microseconds(0);
                 }
-                bandwidth_ = boost::posix_time::microseconds(0);
-                gpu_idle_ = boost::posix_time::microseconds(0);
             }
         }
         boost::this_thread::sleep(period_);
@@ -105,7 +92,7 @@ void fifo_scheduler_t::replenish() {
 }
 
 void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(mutex_) {
+    A3_SYNCHRONIZED(fire_mutex()) {
         queue_.push(fire_t(ctx, cmd));
     }
     cond_.notify_one();
@@ -113,7 +100,7 @@ void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
 
 void fifo_scheduler_t::run() {
     boost::condition_variable_any cond;
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::unique_lock<boost::mutex> lock(fire_mutex());
     while (true) {
         fire_t handle;
         while (queue_.empty()) {
@@ -148,23 +135,25 @@ void fifo_scheduler_t::sampling() {
     uint64_t points = 0;
     while (true) {
         // sampling
-        A3_SYNCHRONIZED(mutex_) {
-            if (!contexts_.empty()) {
-                if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
-                    // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                    for (context& ctx : contexts_) {
-                        // A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
-                        if (points % 5 == 4) {
-                            // A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+        A3_SYNCHRONIZED(sched_mutex()) {
+            if (!contexts().empty()) {
+                A3_SYNCHRONIZED(fire_mutex()) {
+                    if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
+                        // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
+                        for (context& ctx : contexts()) {
+                            // A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
+                            if (points % 5 == 4) {
+                                // A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
+                            }
+                            ctx.clear_sampling_bandwidth_used(points);
                         }
-                        ctx.clear_sampling_bandwidth_used(points);
+                        ++count;
+                        points = (points + 1) % 5;
                     }
-                    ++count;
-                    points = (points + 1) % 5;
-                }
-                sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
-                if (points % 5 == 4) {
-                    sampling_bandwidth_ = boost::posix_time::microseconds(0);
+                    sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
+                    if (points % 5 == 4) {
+                        sampling_bandwidth_ = boost::posix_time::microseconds(0);
+                    }
                 }
             }
         }

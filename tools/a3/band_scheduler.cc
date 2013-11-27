@@ -51,19 +51,6 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
 {
 }
 
-
-void band_scheduler_t::register_context(context* ctx) {
-    A3_SYNCHRONIZED(sched_mutex_) {
-        contexts_.push_back(*ctx);
-    }
-}
-
-void band_scheduler_t::unregister_context(context* ctx) {
-    A3_SYNCHRONIZED(sched_mutex_) {
-        contexts_.erase(contexts_t::s_iterator_to(*ctx));
-    }
-}
-
 band_scheduler_t::~band_scheduler_t() {
     stop();
 }
@@ -110,16 +97,16 @@ void band_scheduler_t::replenish() {
     // uint64_t count = 0;
     while (true) {
         // replenish
-        A3_SYNCHRONIZED(sched_mutex_) {
-            if (!contexts_.empty()) {
-                A3_SYNCHRONIZED(fire_mutex_) {
+        A3_SYNCHRONIZED(sched_mutex()) {
+            if (!contexts().empty()) {
+                A3_SYNCHRONIZED(fire_mutex()) {
                     boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
-                    boost::posix_time::time_duration defaults = period_ / contexts_.size();
+                    boost::posix_time::time_duration defaults = period_ / contexts().size();
                     previous_bandwidth_ = period;
                     // boost::posix_time::time_duration period = bandwidth_;
                     if (period != boost::posix_time::microseconds(0)) {
-                        const auto budget = period / contexts_.size();
-                        for (context& ctx : contexts_) {
+                        const auto budget = period / contexts().size();
+                        for (context& ctx : contexts()) {
                             ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
                         }
                         // ++count;
@@ -138,14 +125,14 @@ bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
         return true;
     }
-    if (ctx->bandwidth_used() > (previous_bandwidth_ / contexts_.size())) {
+    if (ctx->bandwidth_used() > (previous_bandwidth_ / contexts().size())) {
         return true;
     }
-    return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts_.size());
+    return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts().size());
 }
 
 context* band_scheduler_t::select_next_context(bool idle) {
-    A3_SYNCHRONIZED(sched_mutex_) {
+    A3_SYNCHRONIZED(sched_mutex()) {
         if (idle) {
             gpu_idle_ += gpu_idle_timer_.elapsed();
         }
@@ -154,8 +141,8 @@ context* band_scheduler_t::select_next_context(bool idle) {
             // lowering priority
             context* ctx = current();
             if (ctx->budget() < boost::posix_time::microseconds(0) && utilization_over_bandwidth(ctx)) {
-                contexts_.erase(contexts_t::s_iterator_to(*ctx));
-                contexts_.push_back(*ctx);
+                contexts().erase(contexts_t::s_iterator_to(*ctx));
+                contexts().push_back(*ctx);
             }
         }
 
@@ -163,7 +150,7 @@ context* band_scheduler_t::select_next_context(bool idle) {
         context* under = nullptr;
         context* over = nullptr;
         context* next = nullptr;
-        for (context& ctx : contexts_) {
+        for (context& ctx : contexts()) {
             if (ctx.is_suspended()) {
                 if (ctx.budget() < boost::posix_time::microseconds(0)) {
                     if (!over) {
@@ -209,7 +196,7 @@ context* band_scheduler_t::select_next_context(bool idle) {
 }
 
 void band_scheduler_t::submit(context* ctx) {
-    A3_SYNCHRONIZED(fire_mutex_) {
+    A3_SYNCHRONIZED(fire_mutex()) {
         command cmd;
 
         ctx->dequeue(&cmd);
@@ -257,12 +244,12 @@ void band_scheduler_t::sampling() {
     uint64_t points = 0;
     while (true) {
         // sampling
-        A3_SYNCHRONIZED(sched_mutex_) {
-            if (!contexts_.empty()) {
-                A3_SYNCHRONIZED(fire_mutex_) {
+        A3_SYNCHRONIZED(sched_mutex()) {
+            if (!contexts().empty()) {
+                A3_SYNCHRONIZED(fire_mutex()) {
                     if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                         // A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                        for (context& ctx : contexts_) {
+                        for (context& ctx : contexts()) {
                             // A3_FATAL(stdout, "UTIL[100]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used_100().total_microseconds()) / sampling_bandwidth_100_.total_microseconds()));
                             if (points % 5 == 4) {
                                 // A3_FATAL(stdout, "UTIL[500]: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));

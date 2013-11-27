@@ -6,7 +6,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/intrusive/list.hpp>
 #include "a3.h"
 #include "lock.h"
 #include "context.h"
@@ -22,8 +21,6 @@ class band_scheduler_t : public scheduler_t {
     virtual ~band_scheduler_t();
     virtual void start();
     virtual void stop();
-    virtual void register_context(context* ctx);
-    virtual void unregister_context(context* ctx);
     virtual void enqueue(context* ctx, const command& cmd);
 
  private:
@@ -44,11 +41,8 @@ class band_scheduler_t : public scheduler_t {
     std::unique_ptr<boost::thread> thread_;
     std::unique_ptr<boost::thread> replenisher_;
     std::unique_ptr<boost::thread> sampler_;
-    boost::mutex fire_mutex_;
-    boost::mutex sched_mutex_;
     boost::mutex counter_mutex_;
     boost::condition_variable cond_;
-    contexts_t contexts_;
     context* current_;
     timer_t utilization_;
     timer_t gpu_idle_timer_;
