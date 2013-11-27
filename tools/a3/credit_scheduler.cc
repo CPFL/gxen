@@ -32,9 +32,8 @@
 #include "ignore_unused_variable_warning.h"
 namespace a3 {
 
-credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
-    : wait_(wait)
-    , period_(period)
+credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
+    : period_(period)
     , gpu_idle_()
     , thread_()
     , replenisher_()

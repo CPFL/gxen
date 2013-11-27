@@ -15,7 +15,7 @@ class context;
 
 class credit_scheduler_t : public scheduler_t {
  public:
-    credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
+    credit_scheduler_t(const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~credit_scheduler_t();
     virtual void start();
     virtual void stop();
@@ -30,7 +30,6 @@ class credit_scheduler_t : public scheduler_t {
     context* select_next_context(bool idle);
     void submit(context* ctx);
 
-    boost::posix_time::time_duration wait_;
     boost::posix_time::time_duration period_;
     boost::posix_time::time_duration gpu_idle_;
     std::unique_ptr<boost::thread> thread_;
