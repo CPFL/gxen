@@ -71,8 +71,8 @@ void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
     ctx->enqueue(cmd);
     A3_SYNCHRONIZED(counter_mutex_) {
         counter_ += 1;
+        cond_.notify_one();
     }
-    cond_.notify_one();
 }
 
 void credit_scheduler_t::replenish() {

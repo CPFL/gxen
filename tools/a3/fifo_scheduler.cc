@@ -93,8 +93,8 @@ void fifo_scheduler_t::replenish() {
 void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
     A3_SYNCHRONIZED(fire_mutex()) {
         queue_.push(fire_t(ctx, cmd));
+        cond_.notify_one();
     }
-    cond_.notify_one();
 }
 
 void fifo_scheduler_t::run() {
