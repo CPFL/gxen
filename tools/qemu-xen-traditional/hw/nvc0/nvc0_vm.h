@@ -14,7 +14,7 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR1, N }
     };
     return ctx->message(cmd, true).value;
@@ -26,7 +26,7 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         value,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR1, N }
     };
     ctx->message(cmd, false);
@@ -38,7 +38,7 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR3, N }
     };
     return ctx->message(cmd, true).value;
@@ -50,7 +50,7 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         value,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR3, N }
     };
     ctx->message(cmd, false);
@@ -62,7 +62,7 @@ uint32_t vm_bar4_read(nvc0_state_t* state, target_phys_addr_t offset) {
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR4, N }
     };
     return ctx->message(cmd, true).value;
@@ -74,7 +74,7 @@ void vm_bar4_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         value,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR4, N }
     };
     ctx->message(cmd, true  /* specialized */);

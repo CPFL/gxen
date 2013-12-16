@@ -19,4 +19,4 @@ OBJS += nvc0_context.o
 LIBS += -lpciaccess -lboost_thread -lboost_system -lboost_date_time
 
 # for a3.h
-CPPFLAGS += -I$(XEN_ROOT)/tools/a3
+CPPFLAGS += -I$(XEN_ROOT)/tools

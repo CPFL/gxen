@@ -5,7 +5,7 @@
 #include <boost/thread.hpp>
 #include <boost/scoped_ptr.hpp>
 #include "nvc0.h"
-#include "a3.h"
+#include "a3/a3.h"
 namespace nvc0 {
 
 class context {

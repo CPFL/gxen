@@ -75,7 +75,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) 
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0xdeadface,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR0, sizeof(uint8_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
@@ -91,7 +91,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0xdeadface,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR0, sizeof(uint16_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
@@ -107,7 +107,7 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         val,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR0, sizeof(uint8_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
@@ -124,7 +124,7 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         val,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR0, sizeof(uint16_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
@@ -164,7 +164,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         const a3::command cmd = {
             a3::command::TYPE_READ,
             0xdeadface,
-            offset,
+            static_cast<uint32_t>(offset),
             { a3::command::BAR0, sizeof(uint32_t) }
         };
 
@@ -219,7 +219,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         val,
-        offset,
+        static_cast<uint32_t>(offset),
         { a3::command::BAR0, sizeof(uint32_t) }
     };
 
