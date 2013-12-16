@@ -53,9 +53,6 @@ channel::channel(int id)
 {
 }
 
-channel::~channel() {
-}
-
 bool channel::detach(context* ctx, uint64_t addr) {
     A3_LOG("detach from 0x%" PRIX64 " to 0x%" PRIX64 "\n", ramin_address(), addr);
     const bool old_exists = ctx->barrier()->unmap(ramin_address());
