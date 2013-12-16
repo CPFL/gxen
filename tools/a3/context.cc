@@ -321,12 +321,12 @@ struct page_entry context::guest_to_host(const struct page_entry& entry) {
             // rewrite address
             const uint32_t gfn = (uint32_t)(result.address);
             uint32_t mfn = 0;
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), gfn);
+            A3_SYNCHRONIZED(device()->mutex()) {
+                mfn = a3_xen_gfn_to_mfn(device()->xl_ctx(), domid(), gfn);
             }
             // const uint64_t h_address = ctx->get_phys_address(g_address);
             result.address = (uint32_t)(mfn);
-            A3_LOG("  changing to sys addr 0x%" PRIx64 " to 0x%" PRIx64 "\n", gfn, mfn);
+            A3_LOG("  changing to sys addr 0x%" PRIx32 " to 0x%" PRIx32 "\n", gfn, mfn);
         }
     }
     return result;
