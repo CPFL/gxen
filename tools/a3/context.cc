@@ -77,13 +77,13 @@ context::context(session* s, bool through)
 
 context::~context() {
     if (initialized_) {
-        device::instance()->release_virt(id_, this);
+        device()->release_virt(id_, this);
         A3_LOG("END and release GPU id %u\n", id_);
     }
 }
 
 void context::initialize(int dom, bool para) {
-    id_ = device::instance()->acquire_virt(this);
+    id_ = device()->acquire_virt(this);
     domid_ = dom;
     para_virtualized_ = para;
     if (para_virtualized()) {
@@ -140,8 +140,8 @@ bool context::handle(const command& cmd) {
             break;
 
         case command::UTILITY_CLEAR_SHADOWING_UTILIZATION: {
-                A3_SYNCHRONIZED(device::instance()->mutex()) {
-                    for (context* ctx : device::instance()->contexts()) {
+                A3_SYNCHRONIZED(device()->mutex()) {
+                    for (context* ctx : device()->contexts()) {
                         if (ctx) {
                             ctx->instruments()->clear_shadowing_utilization();
                         }
@@ -155,14 +155,14 @@ bool context::handle(const command& cmd) {
     }
 
     if (through()) {
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
+        A3_SYNCHRONIZED(device()->mutex()) {
             // through mode. direct access
             const uint32_t bar = cmd.bar();
             if (cmd.type == command::TYPE_WRITE) {
-                device::instance()->write(bar, cmd.offset, cmd.value, cmd.size());
+                device()->write(bar, cmd.offset, cmd.value, cmd.size());
                 return false;
             } else if (cmd.type == command::TYPE_READ) {
-                buffer()->value = device::instance()->read(bar, cmd.offset, cmd.size());
+                buffer()->value = device()->read(bar, cmd.offset, cmd.size());
                 return true;
             }
         }
@@ -216,7 +216,7 @@ bool context::handle(const command& cmd) {
 
 void context::playlist_update(uint32_t reg_addr, uint32_t cmd) {
     const uint64_t address = get_phys_address(bit_mask<28, uint64_t>(reg_addr) << 12);
-    device::instance()->playlist_update(this, address, cmd);
+    device()->playlist_update(this, address, cmd);
 }
 
 static bool flush_without_check(uint64_t pd, uint32_t engine) {
@@ -259,18 +259,18 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     if (bar1_channel()->table()->page_directory_address() == page_directory) {
         // BAR1
         bar1_channel()->table()->refresh_page_directories(this, page_directory);
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar1()->shadow(this);
-            device::instance()->bar1()->flush();
+        A3_SYNCHRONIZED(device()->mutex()) {
+            device()->bar1()->shadow(this);
+            device()->bar1()->flush();
         }
     }
 
     if (bar3_channel()->page_directory_address() == page_directory) {
         // BAR3
         bar3_channel()->refresh_table(this, page_directory);
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar3()->shadow(this, page_directory);
-            device::instance()->bar3()->flush();
+        A3_SYNCHRONIZED(device()->mutex()) {
+            device()->bar3()->shadow(this, page_directory);
+            device()->bar3()->flush();
         }
     }
 

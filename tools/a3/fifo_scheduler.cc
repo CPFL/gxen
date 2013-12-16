@@ -111,13 +111,13 @@ void fifo_scheduler_t::run() {
         lock.unlock();
         utilization_.start();
 
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar1()->write(handle.first, handle.second);
+        A3_SYNCHRONIZED(device()->mutex()) {
+            device()->bar1()->write(handle.first, handle.second);
         }
 
         lock.lock();
 
-        while (device::instance()->is_active(handle.first)) {
+        while (device()->is_active(handle.first)) {
             cond.timed_wait(lock, wait_);
         }
 

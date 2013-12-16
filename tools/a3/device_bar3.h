@@ -18,7 +18,7 @@ class device_bar3 : private boost::noncopyable {
  public:
     friend class device;
 
-    device_bar3(device::bar_t bar);
+    device_bar3(device_t::bar_t bar);
     void refresh();
     void refresh_table(context* ctx, uint64_t phys);
     void shadow(context* ctx, uint64_t phys);

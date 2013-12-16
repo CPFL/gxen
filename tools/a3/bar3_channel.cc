@@ -65,8 +65,8 @@ void bar3_channel_t::shadow(context* ctx) {
 
 void bar3_channel_t::refresh_table(context* ctx, uint64_t addr) {
     page_directory_address_ = addr;
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->bar3()->refresh_table(ctx, addr);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        device()->bar3()->refresh_table(ctx, addr);
     }
 }
 

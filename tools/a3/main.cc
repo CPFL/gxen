@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
     a3::flags::lazy_shadowing = cmd.Exist("lazy-shadowing");
     a3::flags::bar3_remapping = cmd.Exist("bar3-remapping");
 
-    c::device::instance()->initialize(bdf);
+    c::device()->initialize(bdf);
 
     ::unlink(A3_ENDPOINT);
     try {

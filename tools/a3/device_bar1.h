@@ -19,7 +19,7 @@ static const uint64_t kBAR1_ARENA_SIZE = 128 * size::MB;
 // Only considers first 0x1000 tables
 class device_bar1 : private boost::noncopyable {
  public:
-    device_bar1(device::bar_t bar);
+    device_bar1(device_t::bar_t bar);
     uint64_t address() const { return directory_.address(); }
     void refresh();
     void refresh_poll_area();

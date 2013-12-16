@@ -44,12 +44,12 @@ void context::write_bar1(const command& cmd) {
                         channels(res.channel)->flush(this);
                     }
                 }
-                device::instance()->fire(this, cmd);
+                device()->fire(this, cmd);
             }
             break;
         default:
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                device::instance()->bar1()->write(this, cmd);
+            A3_SYNCHRONIZED(device()->mutex()) {
+                device()->bar1()->write(this, cmd);
             }
             break;
         }
@@ -72,8 +72,8 @@ void context::write_bar1(const command& cmd) {
 
 void context::read_bar1(const command& cmd) {
     if (poll_area_t::in_poll_area(this, cmd.offset)) {
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            buffer()->value = device::instance()->bar1()->read(this, cmd);
+        A3_SYNCHRONIZED(device()->mutex()) {
+            buffer()->value = device()->bar1()->read(this, cmd);
         }
         return;
     }

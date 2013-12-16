@@ -30,8 +30,8 @@
 namespace a3 {
 
 void direct_scheduler_t::enqueue(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->bar1()->write(ctx, cmd);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        device()->bar1()->write(ctx, cmd);
     }
 }
 

@@ -36,7 +36,7 @@
 #include "registers.h"
 namespace a3 {
 
-device_bar3::device_bar3(device::bar_t bar)
+device_bar3::device_bar3(device_t::bar_t bar)
     : address_(bar.base_addr)
     , size_(bar.size)
     , ramin_(1)
@@ -73,7 +73,7 @@ void device_bar3::map_xen_page(context* ctx, uint64_t offset) {
     const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("mapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     if (a3::flags::bar3_remapping) {
-        a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
+        a3_xen_add_memory_mapping(device()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
     }
 }
 
@@ -82,7 +82,7 @@ void device_bar3::unmap_xen_page(context* ctx, uint64_t offset) {
     const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("unmapping %" PRIx64 " to %" PRIx64 "\n", guest, host);
     if (a3::flags::bar3_remapping) {
-        a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
+        a3_xen_remove_memory_mapping(device()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, 1);
     }
 }
 
@@ -91,7 +91,7 @@ void device_bar3::map_xen_page_batch(context* ctx, uint64_t offset, uint32_t cou
     const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("batch mapping %" PRIx64 " to %" PRIx64 " %" PRIu32 "\n", guest, host, count);
     if (a3::flags::bar3_remapping) {
-        a3_xen_add_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
+        a3_xen_add_memory_mapping(device()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
     }
 }
 
@@ -100,7 +100,7 @@ void device_bar3::unmap_xen_page_batch(context* ctx, uint64_t offset, uint32_t c
     const uint64_t host = address() + ctx->id() * A3_BAR3_ARENA_SIZE + offset;
     A3_LOG("batch unmapping %" PRIx64 " to %" PRIx64 " %" PRIu32 "\n", guest, host, count);
     if (a3::flags::bar3_remapping) {
-        a3_xen_remove_memory_mapping(device::instance()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
+        a3_xen_remove_memory_mapping(device()->xl_ctx(), ctx->domid(), guest >> kPAGE_SHIFT, host >> kPAGE_SHIFT, count);
     }
 }
 
@@ -153,7 +153,7 @@ void device_bar3::reset_barrier(context* ctx, uint64_t old, uint64_t addr, bool 
 }
 
 void device_bar3::flush() {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
+    A3_SYNCHRONIZED(device()->mutex()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;
         registers.write32(0x100cb8, directory_.address() >> 8);

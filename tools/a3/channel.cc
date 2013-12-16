@@ -159,8 +159,8 @@ uint64_t channel::refresh(context* ctx, uint64_t addr) {
     const uint64_t old = ramin_address_;
     ramin_address_ = addr;
     attach(ctx, addr);
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->bar3()->reset_barrier(ctx, old, addr, old_remap);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        device()->bar3()->reset_barrier(ctx, old, addr, old_remap);
     }
     return shadow_ramin()->address();
 }

@@ -53,8 +53,8 @@ void context::write_bar0(const command& cmd) {
             ignore_unused_variable_warning(value);
             A3_LOG("0x1704 => 0x%" PRIX32 "\n", value);
             bar1_channel()->refresh(this, phys);
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                device::instance()->bar1()->refresh();
+            A3_SYNCHRONIZED(device()->mutex()) {
+                device()->bar1()->refresh();
             }
             return;
         }
@@ -67,8 +67,8 @@ void context::write_bar0(const command& cmd) {
             ignore_unused_variable_warning(value);
             A3_LOG("0x1714 => 0x%" PRIX32 "\n", value);
             bar3_channel()->refresh(this, phys);
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                device::instance()->bar3()->refresh();
+            A3_SYNCHRONIZED(device()->mutex()) {
+                device()->bar3()->refresh();
             }
             return;
         }
@@ -76,8 +76,8 @@ void context::write_bar0(const command& cmd) {
             // POLL_AREA
             poll_area_ = bit_mask<28, uint64_t>(cmd.value) << 12;
             reg32(cmd.offset) = cmd.value;
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                device::instance()->bar1()->refresh_poll_area();
+            A3_SYNCHRONIZED(device()->mutex()) {
+                device()->bar1()->refresh_poll_area();
             }
             A3_LOG("POLL_AREA %" PRIX32 "\n", cmd.value);
             return;
@@ -173,7 +173,7 @@ void context::write_bar0(const command& cmd) {
                     // channel ramin shift
                     // FIXME(Yusuke Suzuki): do FIRE like code
                     A3_LOG("WRCMD start cmd %" PRIX32 "\n", cmd.value);
-                    A3_SYNCHRONIZED(device::instance()->mutex()) {
+                    A3_SYNCHRONIZED(device()->mutex()) {
                         for (iter_t it = range.first; it != range.second; ++it) {
                             const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
                             if (a3::flags::lazy_shadowing) {
@@ -195,7 +195,7 @@ void context::write_bar0(const command& cmd) {
 
             // fire cmd
             // TODO(Yusuke Suzuki): queued system needed
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
+            A3_SYNCHRONIZED(device()->mutex()) {
                 registers::write32(0x409500, data);
                 registers::write32(0x409504, cmd.value);
             }

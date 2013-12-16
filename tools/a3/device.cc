@@ -66,7 +66,7 @@ static inline unsigned int pcidev_encode_bdf(libxl_device_pci *pcidev) {
     return value;
 }
 
-device::device()
+device_t::device_t()
     : device_()
     , virts_(A3_VM_NUM, -1)
     , contexts_(A3_VM_NUM, nullptr)
@@ -108,7 +108,7 @@ device::device()
     A3_LOG("device environment setup\n");
 }
 
-device::~device() {
+device_t::~device_t() {
     if (xl_ctx_) {
         libxl_ctx_free(xl_ctx_);
     }
@@ -121,7 +121,7 @@ device::~device() {
 }
 
 // not thread safe
-void device::initialize(const bdf& bdf) {
+void device_t::initialize(const bdf& bdf) {
     struct pci_id_match nvc0_match = {
         NVC0_VENDOR,
         PCI_MATCH_ANY,
@@ -210,7 +210,7 @@ void device::initialize(const bdf& bdf) {
     A3_LOG("device initialized\n");
 }
 
-uint32_t device::acquire_virt(context* ctx) {
+uint32_t device_t::acquire_virt(context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     const boost::dynamic_bitset<>::size_type pos = virts_.find_first();
     if (pos != virts_.npos) {
@@ -221,14 +221,14 @@ uint32_t device::acquire_virt(context* ctx) {
     return pos;
 }
 
-void device::release_virt(uint32_t virt, context* ctx) {
+void device_t::release_virt(uint32_t virt, context* ctx) {
     mutex_t::scoped_lock lock(mutex());
     virts_.set(virt, 1);
     scheduler_->unregister_context(ctx);
     contexts_[virt] = nullptr;
 }
 
-uint32_t device::read(int bar, uint32_t offset, std::size_t size) {
+uint32_t device_t::read(int bar, uint32_t offset, std::size_t size) {
     switch (size) {
     case sizeof(uint8_t):
         return mmio::read8(bars_[bar].addr, offset);
@@ -242,7 +242,7 @@ uint32_t device::read(int bar, uint32_t offset, std::size_t size) {
     return 0;
 }
 
-void device::write(int bar, uint32_t offset, uint32_t val, std::size_t size) {
+void device_t::write(int bar, uint32_t offset, uint32_t val, std::size_t size) {
     switch (size) {
     case sizeof(uint8_t):
         mmio::write8(bars_[bar].addr, offset, val);
@@ -259,33 +259,29 @@ void device::write(int bar, uint32_t offset, uint32_t val, std::size_t size) {
     return;
 }
 
-device* device::instance() {
-    return &boost::details::pool::singleton_default<device>::instance();
-}
-
-vram_t* device::malloc(std::size_t n) {
+vram_t* device_t::malloc(std::size_t n) {
     return vram_->malloc(n);
 }
 
-void device::free(vram_t* mem) {
+void device_t::free(vram_t* mem) {
     vram_->free(mem);
 }
 
-bool device::is_active(context* ctx) {
+bool device_t::is_active(context* ctx) {
     return registers::read32(0x400700);
 }
 
-void device::fire(context* ctx, const command& cmd) {
+void device_t::fire(context* ctx, const command& cmd) {
     scheduler_->enqueue(ctx, cmd);
 }
 
-void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
+void device_t::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
     A3_SYNCHRONIZED(mutex()) {
         playlist_->update(ctx, address, cmd);
     }
 }
 
-uint32_t device::read_pmem(uint64_t addr, std::size_t size) {
+uint32_t device_t::read_pmem(uint64_t addr, std::size_t size) {
     A3_SYNCHRONIZED(mutex()) {
         const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
         if (shifted != pmem_) {
@@ -298,7 +294,7 @@ uint32_t device::read_pmem(uint64_t addr, std::size_t size) {
     return 0;  // make compiler happy
 }
 
-void device::write_pmem(uint64_t addr, uint32_t val, std::size_t size) {
+void device_t::write_pmem(uint64_t addr, uint32_t val, std::size_t size) {
     A3_SYNCHRONIZED(mutex()) {
         const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
         if (shifted != pmem_) {
@@ -308,6 +304,10 @@ void device::write_pmem(uint64_t addr, uint32_t val, std::size_t size) {
         }
         write(0, 0x700000 + (addr & 0x000000fffffULL), val, size);
     }
+}
+
+device_t* device() {
+    return &boost::details::pool::singleton_default<device_t>::instance();
 }
 
 }  // namespace a3

@@ -34,7 +34,7 @@
 #include "registers.h"
 namespace a3 {
 
-device_bar1::device_bar1(device::bar_t bar)
+device_bar1::device_bar1(device_t::bar_t bar)
     : ramin_(1)
     , directory_(8)
     , entry_()
@@ -100,7 +100,7 @@ void device_bar1::map(uint64_t virt, const struct page_entry& entry) {
 }
 
 void device_bar1::flush() {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
+    A3_SYNCHRONIZED(device()->mutex()) {
         const uint32_t engine = 1 | 4;
         registers::accessor registers;
         registers.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
@@ -113,13 +113,13 @@ void device_bar1::flush() {
 void device_bar1::write(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;
-    device::instance()->write(1, offset, cmd.value, cmd.size());
+    device()->write(1, offset, cmd.value, cmd.size());
 }
 
 uint32_t device_bar1::read(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;
-    return device::instance()->read(1, offset, cmd.size());
+    return device()->read(1, offset, cmd.size());
 }
 
 void device_bar1::pv_scan(context* ctx) {

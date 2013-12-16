@@ -28,15 +28,15 @@ namespace a3 {
 namespace registers {
 
 accessor::accessor()
-    : lock_(a3::device::instance()->mutex()) {
+    : lock_(a3::device()->mutex()) {
 }
 
 uint32_t accessor::read(uint32_t offset, std::size_t size) {
-    return a3::device::instance()->read(0, offset, size);
+    return a3::device()->read(0, offset, size);
 }
 
 void accessor::write(uint32_t offset, uint32_t val, std::size_t size) {
-    a3::device::instance()->write(0, offset, val, size);
+    a3::device()->write(0, offset, val, size);
 }
 
 uint32_t accessor::read32(uint32_t offset) {

@@ -8,7 +8,7 @@ namespace pmem {
 class accessor : private boost::noncopyable {
  public:
     accessor()
-        : lock_(a3::device::instance()->mutex())
+        : lock_(a3::device()->mutex())
     {
     }
 

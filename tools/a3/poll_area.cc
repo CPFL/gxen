@@ -43,14 +43,14 @@ poll_area_t::channel_and_offset_t poll_area_t::extract_channel_and_offset(contex
 }
 
 void poll_area_t::write(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->bar1()->write(ctx, cmd);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        device()->bar1()->write(ctx, cmd);
     }
 }
 
 uint32_t poll_area_t::read(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        return device::instance()->bar1()->read(ctx, cmd);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        return device()->bar1()->read(ctx, cmd);
     }
     return 0;
 }

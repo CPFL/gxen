@@ -29,14 +29,14 @@ namespace a3 {
 
 page::page(std::size_t n)
     : vram_() {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        vram_ = device::instance()->malloc(n);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        vram_ = device()->malloc(n);
     }
 }
 
 page::~page() {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->free(vram_);
+    A3_SYNCHRONIZED(device()->mutex()) {
+        device()->free(vram_);
     }
 }
 

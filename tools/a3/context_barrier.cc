@@ -42,7 +42,7 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
     // TODO(Yusuke Suzuki): BAR1 & BAR3 shadow sync
     typedef context::channel_map::iterator iter_t;
     const std::pair<iter_t, iter_t> range = ramin_channel_map()->equal_range(page);
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
+    A3_SYNCHRONIZED(device()->mutex()) {
         for (iter_t it = range.first; it != range.second; ++it) {
             A3_LOG("write reflect shadow 0x%" PRIX64 " : rest 0x%" PRIX64 "\n", it->second->shadow_ramin()->address(), rest);
             if (cmd.value) {

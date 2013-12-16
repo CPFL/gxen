@@ -32,7 +32,7 @@
 namespace a3 {
 
 void context::write_bar3(const command& cmd) {
-    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, nullptr);
+    const uint64_t gphys = device()->bar3()->resolve(this, cmd.offset, nullptr);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         pmem.write(gphys, cmd.value, cmd.size());
@@ -47,7 +47,7 @@ void context::write_bar3(const command& cmd) {
 }
 
 void context::read_bar3(const command& cmd) {
-    const uint64_t gphys = device::instance()->bar3()->resolve(this, cmd.offset, nullptr);
+    const uint64_t gphys = device()->bar3()->resolve(this, cmd.offset, nullptr);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         const uint32_t ret = pmem.read(gphys, cmd.size());

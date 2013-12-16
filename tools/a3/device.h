@@ -20,7 +20,7 @@ class context;
 class playlist_t;
 class scheduler_t;
 
-class device : private boost::noncopyable {
+class device_t : private boost::noncopyable {
  public:
     struct bar_t {
         void* addr;
@@ -31,10 +31,10 @@ class device : private boost::noncopyable {
     friend class device_bar1;
     friend class device_bar3;
 
-    device();
-    ~device();
+    device_t();
+    ~device_t();
     void initialize(const bdf& bdf);
-    static device* instance();
+    static device_t* instance();
     bool initialized() const { return device_; }
     uint32_t acquire_virt(context* ctx);
     void release_virt(uint32_t virt, context* ctx);
@@ -81,6 +81,8 @@ class device : private boost::noncopyable {
     xentoollog_logger_stdiostream* xl_logger_;
     libxl_device_pci xl_device_pci_;
 };
+
+device_t* device();
 
 }  // namespace a3
 #endif  // A3_DEVICE_H_

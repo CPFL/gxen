@@ -134,11 +134,11 @@ void credit_scheduler_t::submit(context* ctx) {
         ctx->dequeue(&cmd);
 
         utilization_.start();
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar1()->write(ctx, cmd);
+        A3_SYNCHRONIZED(device()->mutex()) {
+            device()->bar1()->write(ctx, cmd);
         }
 
-        while (device::instance()->is_active(ctx)) {
+        while (device()->is_active(ctx)) {
             boost::this_thread::yield();
         }
 

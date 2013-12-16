@@ -28,11 +28,11 @@ namespace a3 {
 namespace pmem {
 
 uint32_t accessor::read(uint64_t addr, std::size_t size) {
-    return device::instance()->read_pmem(addr, size);
+    return device()->read_pmem(addr, size);
 }
 
 void accessor::write(uint64_t addr, uint32_t val, std::size_t size) {
-    device::instance()->write_pmem(addr, val, size);
+    device()->write_pmem(addr, val, size);
 }
 
 } }  // namespace a3::pmem
