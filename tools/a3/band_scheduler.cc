@@ -163,13 +163,7 @@ context* band_scheduler_t::select_next_context(bool idle) {
             }
         }
 
-        if (under) {
-            next = under;
-        } else if (band) {
-            next = band;
-        } else {
-            next = over;
-        }
+        next = under || band || over;
 
         if (!current()) {
             return next;
