@@ -7,6 +7,7 @@ extern "C" {
 #endif
 
 void nvc0_mmio_init(nvc0_state_t* state);
+void nvc0_api_paravirt_mmio_init(nvc0_state_t* state);
 void nvc0_mmio_bar3_notify(nvc0_state_t* state);
 
 // wrappers

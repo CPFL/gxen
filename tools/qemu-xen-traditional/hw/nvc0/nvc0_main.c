@@ -212,14 +212,19 @@ struct pt_dev * pci_nvc0_init(PCIBus *bus, const char *e_dev_name) {
     pch->class = 0xff; /* Unclassified device class */
 #endif
 
-    // init MMIO
-    nvc0_mmio_init(state);
+    // API call based ParaVirt
+    if (nvc0_guest_id == 42) {
+        nvc0_api_paravirt_mmio_init(state);
+    } else {
+        // init MMIO
+        nvc0_mmio_init(state);
 
-    // init I/O ports
-    nvc0_ioport_init(state);
+        // init I/O ports
+        nvc0_ioport_init(state);
 
-    // init C++ nvc0 context
-    nvc0_context_init(state);
+        // init C++ nvc0 context
+        nvc0_context_init(state);
+    }
 
     instance = pci_bus_num(bus) << 8 | state->device->dev.devfn;
     NVC0_PRINTF("register device model: %x with guest id %u\n", instance, state->guest);

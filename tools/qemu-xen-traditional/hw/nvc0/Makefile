@@ -14,6 +14,7 @@ OBJS += nvc0_mmio_bar3.o
 OBJS += nvc0_mmio_bar4.o
 OBJS += nvc0_mmio_rom.o
 OBJS += nvc0_context.o
+OBJS += api/bar4.o
 
 # link pciaccess and boost libraries
 LIBS += -lpciaccess -lboost_thread -lboost_system -lboost_date_time
