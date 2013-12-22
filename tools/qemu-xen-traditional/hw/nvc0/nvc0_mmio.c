@@ -33,6 +33,7 @@
 #include "pass-through.h"
 #include "a3/config.h"
 #include "api/bar4.h"
+#include "api/bar5.h"
 
 // function to access byte (index 0), word (index 1) and dword (index 2)
 typedef CPUReadMemoryFunc* CPUReadMemoryFuncBlock[3];
@@ -115,16 +116,64 @@ static CPUWriteMemoryFuncBlock mmio_write_table[7] = {
     }
 };
 
-static CPUReadMemoryFuncBlock api_mmio_read_table = {
-    nvc0_api_mmio_bar4_readb,
-    nvc0_api_mmio_bar4_readw,
-    nvc0_api_mmio_bar4_readd
+static CPUReadMemoryFuncBlock api_mmio_read_table[7] = {
+    {
+        // bar0
+    },
+    {
+        // bar1
+    },
+    {
+        // bar2
+    },
+    {
+        // bar3
+    },
+    {
+        // bar4
+        nvc0_api_mmio_bar4_readb,
+        nvc0_api_mmio_bar4_readw,
+        nvc0_api_mmio_bar4_readd
+    },
+    {
+        // bar5
+        nvc0_api_mmio_bar5_readb,
+        nvc0_api_mmio_bar5_readw,
+        nvc0_api_mmio_bar5_readd
+    },
+    {
+        // bar6
+    }
 };
 
-static CPUWriteMemoryFuncBlock api_mmio_write_table = {
-    nvc0_api_mmio_bar4_writeb,
-    nvc0_api_mmio_bar4_writew,
-    nvc0_api_mmio_bar4_writed
+static CPUWriteMemoryFuncBlock api_mmio_write_table[7] = {
+    {
+        // bar0
+    },
+    {
+        // bar1
+    },
+    {
+        // bar2
+    },
+    {
+        // bar3
+    },
+    {
+        // bar4
+        nvc0_api_mmio_bar4_writeb,
+        nvc0_api_mmio_bar4_writew,
+        nvc0_api_mmio_bar4_writed
+    },
+    {
+        // bar5
+        nvc0_api_mmio_bar5_writeb,
+        nvc0_api_mmio_bar5_writew,
+        nvc0_api_mmio_bar5_writed
+    },
+    {
+        // bar6
+    }
 };
 
 static void nvc0_mmio_map(PCIDevice *dev, int region_num, uint32_t addr, uint32_t size, int type) {
@@ -207,6 +256,10 @@ void nvc0_api_paravirt_mmio_init(nvc0_state_t* state) {
     // para virtualized
     // BAR4 4KB (1 page)
     pci_register_io_region(&state->device->dev, 4, NOUVEAU_PV_SLOT_SIZE, PCI_ADDRESS_SPACE_MEM, nvc0_mmio_map);
+
+    // para virtualized
+    // BAR5 128MB
+    pci_register_io_region(&state->device->dev, 5, 0x8000000, PCI_ADDRESS_SPACE_MEM_PREFETCH, nvc0_mmio_map);
 }
 
 /* vim: set sw=4 ts=4 et tw=80 : */
