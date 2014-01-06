@@ -354,12 +354,13 @@ void context::read_bar0(const command& cmd) {
         return;
 
     case 0x100cb8:
-        // TLB vspace
+        // cmd vspace
         buffer()->value = reg32(cmd.offset);
         return;
 
     case 0x100cbc:
-        // TLB flush trigger
+        // cmd trigger
+        // In this case, TLB flush cmd
         buffer()->value = reg32(cmd.offset);
         return;
 

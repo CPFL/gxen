@@ -247,7 +247,7 @@ bool context::flush(uint64_t pd, bool bar) {
 }
 
 void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
-    const uint64_t page_directory = get_phys_address(bit_mask<28, uint64_t>(vspace >> 4) << 12);
+    const uint64_t page_directory = get_phys_address(bit_mask<40, uint64_t>(static_cast<uint64_t>(vspace) << 8));
 
     uint64_t already = 0;
     channel::page_table_reuse_t* reuse;
