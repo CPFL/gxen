@@ -46,6 +46,7 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     // at first, clear ctx channel enables
     for (uint32_t i = 0; i < A3_DOMAIN_CHANNELS; ++i) {
         const uint32_t cid = ctx->get_phys_channel_id(i);
+        A3_LOG("1: playlist update id %u\n", cid);
         channels_.set(cid, 0);
     }
 
@@ -57,7 +58,9 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     }
 
     for (uint32_t i = 0; i < count; ++i) {
-        const uint32_t cid = ctx->get_phys_channel_id(pmem.read32(address + i * 0x8));
+        const uint32_t vid = pmem.read32(address + i * 0x8);
+        const uint32_t cid = ctx->get_phys_channel_id(vid);
+        A3_LOG("2: playlist update id %u => %u / %u\n", i, cid, vid);
         channels_.set(cid, 1);
     }
 
@@ -76,11 +79,10 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     registers::accessor regs;
     regs.write32(0x2270, shadow >> 12);
     regs.write32(0x2274, phys_cmd);
-#if 0
+
     if (!regs.wait_eq(0x00227c, 0x00100000, 0x00000000)) {
         A3_LOG("playlist update failed\n");
     }
-#endif
     A3_LOG("playlist cmd from %u to %u\n", cmd, phys_cmd);
 }
 

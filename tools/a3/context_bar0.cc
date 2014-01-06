@@ -90,7 +90,11 @@ void context::write_bar0(const command& cmd) {
     case 0x002274: {
             // playlist update
             reg32(cmd.offset) = cmd.value;
-            playlist_update(reg32(0x2270), cmd.value);
+            return;
+        }
+    case 0x00227c: {
+            // playlist update
+            playlist_update(reg32(0x2270), reg32(0x2274));
             return;
         }
     case 0x002634: {
