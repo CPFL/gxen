@@ -302,8 +302,10 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
         const uint32_t vsp = static_cast<uint32_t>(already >> 8);
         A3_LOG("flush %" PRIx64 "\n", already);
         registers::accessor regs;
+        // regs.wait_ne(0x100c80, 0x00ff0000, 0x00000000);
         regs.write32(0x100cb8, vsp);
         regs.write32(0x100cbc, trigger);
+        // regs.wait_eq(0x100c80, 0x00008000, 0x00008000);
     }
 }
 

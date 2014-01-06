@@ -121,15 +121,23 @@ void context::write_bar0(const command& cmd) {
         return;
 
     case 0x100cb8:
-        // TLB vspace
+        // cmd vspace
         reg32(cmd.offset) = cmd.value;
         return;
 
     case 0x100cbc:
-        // TLB flush trigger
+        // cmd trigger
+        // In this case, TLB flush cmd
         reg32(cmd.offset) = cmd.value;
-        flush_tlb(reg32(0x100cb8), cmd.value);
+        flush_tlb(reg32(0x100cb8), reg32(0x100cbc));
         return;
+
+    case 0x100c80: {
+            // TLB flush
+            // flush_tlb(reg32(0x100cb8), reg32(0x100cbc));
+            // return;
+            break;
+        }
 
     case 0x104050:
     case 0x104054:
