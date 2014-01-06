@@ -470,14 +470,16 @@ void context::read_bar0(const command& cmd) {
     }
 
     // memomry controller
-    if (0x110200 <= cmd.offset && cmd.offset < 0x110200 + 0x1000 * 6) {
+    if ((0x110200 <= cmd.offset && cmd.offset < 0x110200 + 0x1000 * 6) || cmd.offset == 0x10f20c) {
         switch (cmd.offset) {
-            case 0x11020c:
+            case 0x11020c:  // psize
             case 0x11120c:
             case 0x11220c:
             case 0x11320c:
             case 0x11420c:
             case 0x11520c:
+            case 0x11620c:
+            case 0x10f20c:  // bsize (it should be equal to psize for uniform memory layout)
                 buffer()->value = A3_MEMORY_CTL_PART >> 20;
                 return;
         }
