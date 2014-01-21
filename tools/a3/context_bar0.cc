@@ -83,19 +83,20 @@ void context::write_bar0(const command& cmd) {
             return;
         }
     case 0x002270: {
-            // playlist
+            // PLAYLIST_WR
             reg32(cmd.offset) = cmd.value;
             return;
         }
     case 0x002274: {
-            // playlist update
+            // PLAYLIST_WR_LEN
             reg32(cmd.offset) = cmd.value;
+            // Update playlist.
+            playlist_update(reg32(0x2270), reg32(0x2274));
             return;
         }
     case 0x00227c: {
-            // playlist update
-            playlist_update(reg32(0x2270), reg32(0x2274));
-            return;
+            // PLAYLIST_RD_LEN
+            break;
         }
     case 0x002634: {
             // channel kill
