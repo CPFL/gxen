@@ -1,6 +1,7 @@
 #ifndef A3_REGISTERS_H_
 #define A3_REGISTERS_H_
 #include <boost/noncopyable.hpp>
+#include <backward.hpp>
 #include "device.h"
 namespace a3 {
 namespace registers {
@@ -28,6 +29,12 @@ class accessor : private boost::noncopyable {
             ++counter;
             if ((counter % 100000000ULL) == 0) {
                 A3_LOG("wait stop count %" PRIX64 "\n", counter);
+                backward::StackTrace st;
+                backward::Printer printer;
+                st.load_here(32);
+                printer.address = true;
+                printer.print(st, stderr);
+                return false;
             }
 #endif
         } while (true);
