@@ -8,10 +8,22 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0015 NEW)  # convert relative link paths to absolute
 endif(COMMAND cmake_policy)
 
+add_definitions(
+    # for backward
+    "-DBACKWARD_HAS_DW=1"
+    "-DBACKWARD_HAS_BFD=1"
+    )
+add_subdirectory(third_party/backward)
+
 include_directories(
     .
     /usr/local/include
     /opt/local/include
+    )
+
+# Include third_party libraries
+include_directories(
+    ./third_party/backward/
     )
 
 macro(include_if_exists directory)
@@ -42,6 +54,8 @@ add_definitions(
     "-Wwrite-strings"
     "-Wno-long-long"
     "-Wno-missing-field-initializers"
+     "-g3"
+    "-rdynamic"
     )
 add_definitions(
     "-D__STDC_LIMIT_MACROS"
@@ -54,7 +68,7 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    add_definitions("-Werror" "-g3")
+    add_definitions("-Werror")
 endif()
 
 set(CMAKE_C_FLAGS_RELEASE "")
@@ -111,6 +125,13 @@ add_executable(a3
     )
 
 target_link_libraries(a3
+    # backward dependencies
+    backward
+    dw
+    bfd
+    dl
+
+    # a3 dependencies
     pciaccess
     rt
     boost_system
