@@ -27,7 +27,7 @@ class accessor : private boost::noncopyable {
             }
 #if !defined(NDEBUG)
             ++counter;
-            if ((counter % 100000000ULL) == 0) {
+            if ((counter % 10000000ULL) == 0) {
                 A3_LOG("wait stop count %" PRIX64 "\n", counter);
                 backward::StackTrace st;
                 backward::Printer printer;

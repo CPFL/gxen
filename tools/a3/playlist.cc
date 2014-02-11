@@ -40,7 +40,6 @@ playlist_t::playlist_t()
 
 void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     // scan fifo and update values
-    page* page = toggle();
     pmem::accessor pmem;
 
     // at first, clear ctx channel enables
@@ -56,6 +55,8 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     if (!count) {
         return;
     }
+
+    page* page = toggle();
 
     for (uint32_t i = 0; i < count; ++i) {
         const uint32_t vid = pmem.read32(address + i * 0x8);
