@@ -90,6 +90,16 @@ struct page_entry {
         entry->word1 = pmem->read32(address + 0x4);
         return true;
     }
+
+    friend inline constexpr bool operator==(const struct page_entry& rhs,
+                                            const struct page_entry& lhs) {
+        return rhs.raw == lhs.raw;
+    }
+
+    friend inline constexpr bool operator!=(const struct page_entry& rhs,
+                                            const struct page_entry& lhs) {
+        return !(rhs == lhs);
+    }
 };
 
 static_assert(sizeof(struct page_entry) == sizeof(uint64_t), "page entry size is u64");
@@ -148,6 +158,16 @@ struct page_directory {
             return kLARGE_PAGE_COUNT / 8;
         }
         return 0;
+    }
+
+    friend inline constexpr bool operator==(const struct page_directory& rhs,
+                                            const struct page_directory& lhs) {
+        return rhs.raw == lhs.raw;
+    }
+
+    friend inline constexpr bool operator!=(const struct page_directory& rhs,
+                                            const struct page_directory& lhs) {
+        return !(rhs == lhs);
     }
 };
 
