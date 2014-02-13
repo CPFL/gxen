@@ -30,6 +30,7 @@
 #include "pv_page.h"
 #include "context.h"
 #include "ignore_unused_variable_warning.h"
+#include "radix_tree.h"
 namespace a3 {
 
 software_page_table::software_page_table(uint32_t channel_id, bool para, uint64_t predefined_max)
@@ -285,6 +286,10 @@ void software_page_table::software_page_directory::pv_scan(context* ctx, bool bi
 void software_page_table::pv_scan(context* ctx, uint32_t d, bool big, pv_page* pgt) {
     struct software_page_directory& dir = directories_[d];
     dir.pv_scan(ctx, big, pgt, predefined_max_);
+}
+
+void software_page_entry::refresh(context* ctx, const struct page_entry& entry) {
+    phys_ = ctx->guest_to_host(entry);
 }
 
 }  // namespace a3

@@ -16,7 +16,7 @@ class software_page_entry {
     friend class software_page_table;
     const struct page_entry& phys() const { return phys_; }
     bool present() const { return phys_.present; }
-    inline void refresh(context* ctx, const struct page_entry& entry);
+    void refresh(context* ctx, const struct page_entry& entry);
     inline void assign(const struct page_entry& entry);
     inline void clear() {
         struct page_entry result = {};
@@ -83,7 +83,10 @@ class software_page_table {
     uint64_t predefined_max_;
 };
 
+inline void software_page_entry::assign(const struct page_entry& entry) {
+    phys_ = entry;
+}
+
 }  // namespace a3
-#include "software_page_table-inl.h"
 #endif  // A3_SOFTWARE_PAGE_TABLE_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

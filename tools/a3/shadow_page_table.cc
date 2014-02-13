@@ -155,5 +155,9 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
     return result;
 }
 
+struct page_entry shadow_page_table::refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry) {
+    return ctx->guest_to_host(entry);
+}
+
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */

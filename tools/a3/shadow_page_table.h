@@ -32,7 +32,7 @@ class shadow_page_table {
 
  private:
     struct page_directory refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
-    inline struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
+    struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }
@@ -57,7 +57,24 @@ class shadow_page_table {
     std::size_t small_pages_pool_cursor_;
 };
 
+inline page* shadow_page_table::allocate_large_page() {
+    if (large_pages_pool_cursor_ == large_pages_pool_.size()) {
+        page* ptr(new page(kLARGE_PAGE_COUNT * 0x8 / kPAGE_SIZE));
+        large_pages_pool_.push_back(ptr);
+        return ptr;
+    }
+    return &large_pages_pool_[large_pages_pool_cursor_++];
+}
+
+inline page* shadow_page_table::allocate_small_page() {
+    if (small_pages_pool_cursor_ == small_pages_pool_.size()) {
+        page* ptr = new page(kSMALL_PAGE_COUNT * 0x8 / kPAGE_SIZE);
+        small_pages_pool_.push_back(ptr);
+        return ptr;
+    }
+    return &small_pages_pool_[small_pages_pool_cursor_++];
+}
+
 }  // namespace a3
-#include "shadow_page_table-inl.h"
 #endif  // A3_SHADOW_PAGE_TABLE_H_
 /* vim: set sw=4 ts=4 et tw=80 : */
