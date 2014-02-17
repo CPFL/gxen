@@ -32,8 +32,8 @@
 #include "nvc0_para_virt.h"
 #include "pass-through.h"
 #include "a3/config.h"
-#include "api/bar4.h"
-#include "api/bar5.h"
+#include "nvc0_api_bar4.h"
+#include "nvc0_api_bar5.h"
 
 // function to access byte (index 0), word (index 1) and dword (index 2)
 typedef CPUReadMemoryFunc* CPUReadMemoryFuncBlock[3];

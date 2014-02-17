@@ -1,6 +1,6 @@
 #ifndef HW_NVC0_API_BAR4_H_
 #define HW_NVC0_API_BAR4_H_
-#include "../nvc0.h"
+#include "nvc0.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -27,10 +27,10 @@
 #include <string.h>
 #include <cstdint>
 #include <cinttypes>
-#include "../nvc0_vm.h"
-#include "../nvc0_mmio.h"
-#include "../nvc0_context.h"
-#include "bar5.h"
+#include "nvc0_vm.h"
+#include "nvc0_mmio.h"
+#include "nvc0_context.h"
+#include "nvc0_api_bar5.h"
 
 extern "C" uint32_t nvc0_api_mmio_bar5_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
