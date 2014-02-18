@@ -45,7 +45,7 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     // at first, clear ctx channel enables
     for (uint32_t i = 0; i < A3_DOMAIN_CHANNELS; ++i) {
         const uint32_t cid = ctx->get_phys_channel_id(i);
-        A3_LOG("1: playlist update id %u\n", cid);
+        // A3_LOG("1: playlist update id %u\n", cid);
         channels_.set(cid, 0);
     }
 
