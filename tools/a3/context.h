@@ -16,6 +16,7 @@
 #include "page_table.h"
 #include "instruments.h"
 #include "duration.h"
+#include "pfifo.h"
 namespace a3 {
 namespace barrier {
 class table;
@@ -104,6 +105,10 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     mutex_t& band_mutex() { return band_mutex_; }
     void update_budget(const duration_t& credit);
 
+    uint32_t& reg32(uint64_t offset) {
+        return reg32_[offset / sizeof(uint32_t)];
+    }
+
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -112,9 +117,6 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     uint32_t encode_to_shadow_ramin(uint32_t value);
     bool shadow_ramin_to_phys(uint64_t shadow, uint64_t* phys);
     int a3_call(const command& command, slot_t* slot);
-    uint32_t& reg32(uint64_t offset) {
-        return reg32_[offset / sizeof(uint32_t)];
-    }
     uint32_t& pv32(uint64_t offset) {
         return pv32_[offset / sizeof(uint32_t)];
     }
@@ -140,6 +142,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     std::unique_ptr<uint32_t[]> reg32_;
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;
+    pfifo_t pfifo_;
 
     // instruments_t
     std::unique_ptr<instruments_t> instruments_;

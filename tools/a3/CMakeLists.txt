@@ -112,6 +112,7 @@ add_executable(a3
     instruments.cc
     main.cc
     page.cc
+    pfifo.cc
     playlist.cc
     pmem.cc
     poll_area.cc
