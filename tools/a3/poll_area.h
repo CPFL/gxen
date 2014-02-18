@@ -13,13 +13,20 @@ class poll_area_t {
         uint32_t offset;
     };
 
-    static bool in_poll_area(context* ctx, uint64_t offset);
-    static channel_and_offset_t extract_channel_and_offset(context* ctx, uint64_t offset);
+    poll_area_t();
 
-    std::size_t size() const { return A3_BAR1_POLL_AREA_SIZE; }
+    bool in_range(context* ctx, uint64_t offset) const;
+    channel_and_offset_t extract_channel_and_offset(context* ctx, uint64_t offset) const;
 
     void write(context* ctx, const command& cmd);
     uint32_t read(context* ctx, const command& cmd);
+
+    void set_area(uint64_t area) { area_ = area; }
+    uint64_t area() const { return area_; }
+
+ private:
+    uint32_t per_size_;
+    uint64_t area_;
 };
 
 }  // namespace a3

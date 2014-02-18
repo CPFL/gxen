@@ -75,7 +75,7 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x002254: {
             // POLL_AREA
-            poll_area_ = bit_mask<28, uint64_t>(cmd.value) << 12;
+            poll_area_.set_area(bit_mask<28, uint64_t>(cmd.value) << 12);
             reg32(cmd.offset) = cmd.value;
             A3_SYNCHRONIZED(device()->mutex()) {
                 device()->bar1()->refresh_poll_area();

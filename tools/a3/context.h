@@ -17,11 +17,11 @@
 #include "instruments.h"
 #include "duration.h"
 #include "pfifo.h"
+#include "poll_area.h"
 namespace a3 {
 namespace barrier {
 class table;
 }  // namespace barrier
-class poll_area_t;
 
 struct slot_t;
 class pv_page;
@@ -72,7 +72,6 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     }
     uint32_t id() const { return id_; }
     int domid() const { return domid_; }
-    uint64_t poll_area() const { return poll_area_; }
     bool flush(uint64_t pd, bool bar = false);
     command* buffer() { return session_->buffer(); }
     uint64_t bar3_address() const { return bar3_address_; }
@@ -108,6 +107,9 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     uint32_t& reg32(uint64_t offset) {
         return reg32_[offset / sizeof(uint32_t)];
     }
+    pfifo_t* pfifo() { return &pfifo_; }
+    const pfifo_t* pfifo() const { return &pfifo_; }
+    const poll_area_t* poll_area() const { return &poll_area_; }
 
  private:
     void initialize(int domid, bool para);
@@ -138,7 +140,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     std::unique_ptr<bar3_channel_t> bar3_channel_;
     std::array<std::unique_ptr<channel>, A3_DOMAIN_CHANNELS> channels_;
     std::unique_ptr<barrier::table> barrier_;
-    uint64_t poll_area_;
+    poll_area_t poll_area_;
     std::unique_ptr<uint32_t[]> reg32_;
     channel_map ramin_channel_map_;
     uint64_t bar3_address_;

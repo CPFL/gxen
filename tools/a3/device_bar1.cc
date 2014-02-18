@@ -38,7 +38,6 @@ device_bar1::device_bar1(device_t::bar_t bar)
     : ramin_(1)
     , directory_(8)
     , entry_()
-    , poll_area_(new poll_area_t())
     {
     const uint64_t vm_size = (0x1000 * 128) - 1;
     ramin_.clear();
@@ -77,7 +76,7 @@ void device_bar1::refresh_poll_area() {
 void device_bar1::shadow(context* ctx) {
     A3_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
     for (uint32_t vcid = 0; vcid < A3_DOMAIN_CHANNELS; ++vcid) {
-        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area();
+        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area()->area();
         const uint32_t pcid = ctx->get_phys_channel_id(vcid);
         const uint64_t virt = pcid * 0x1000ULL;
         struct software_page_entry entry;
@@ -111,13 +110,13 @@ void device_bar1::flush() {
 }
 
 void device_bar1::write(context* ctx, const command& cmd) {
-    uint64_t offset = cmd.offset - ctx->poll_area();
+    uint64_t offset = cmd.offset - ctx->poll_area()->area();
     offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;
     device()->write(1, offset, cmd.value, cmd.size());
 }
 
 uint32_t device_bar1::read(context* ctx, const command& cmd) {
-    uint64_t offset = cmd.offset - ctx->poll_area();
+    uint64_t offset = cmd.offset - ctx->poll_area()->area();
     offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;
     return device()->read(1, offset, cmd.size());
 }
@@ -125,7 +124,7 @@ uint32_t device_bar1::read(context* ctx, const command& cmd) {
 void device_bar1::pv_scan(context* ctx) {
     A3_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
     for (uint32_t vcid = 0; vcid < A3_DOMAIN_CHANNELS; ++vcid) {
-        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area();
+        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area()->area();
         const uint32_t pcid = ctx->get_phys_channel_id(vcid);
         const uint64_t virt = pcid * 0x1000ULL;
         struct software_page_entry entry;

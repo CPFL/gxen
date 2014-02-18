@@ -28,17 +28,22 @@
 #include "device_bar1.h"
 namespace a3 {
 
-bool poll_area_t::in_poll_area(context* ctx, uint64_t offset) {
-    const uint64_t area = ctx->poll_area();
-    return area <= offset && offset < area + (A3_DOMAIN_CHANNELS * 0x1000);
+poll_area_t::poll_area_t()
+    : per_size_(device()->chipset().type() == card::NVC0 ? 0x1000 : 0x200)
+    , area_()
+{
 }
 
-poll_area_t::channel_and_offset_t poll_area_t::extract_channel_and_offset(context* ctx, uint64_t offset) {
+bool poll_area_t::in_range(context* ctx, uint64_t offset) const {
+    return area_ <= offset &&
+        offset < area_ + (ctx->pfifo()->channels() * per_size_);
+}
+
+poll_area_t::channel_and_offset_t poll_area_t::extract_channel_and_offset(context* ctx, uint64_t offset) const {
     channel_and_offset_t result = {};
-    const uint64_t area = ctx->poll_area();
-    const uint64_t sub = offset - area;
-    result.channel = sub / 0x1000;
-    result.offset = sub % 0x1000;
+    const uint64_t sub = offset - area_;
+    result.channel = sub / per_size_;
+    result.offset = sub % per_size_;
     return result;
 }
 

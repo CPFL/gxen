@@ -33,8 +33,9 @@
 namespace a3 {
 
 void context::write_bar1(const command& cmd) {
-    if (poll_area_t::in_poll_area(this, cmd.offset)) {
-        const poll_area_t::channel_and_offset_t res = poll_area_t::extract_channel_and_offset(this, cmd.offset);
+    if (poll_area_.in_range(this, cmd.offset)) {
+        const poll_area_t::channel_and_offset_t res =
+            poll_area_.extract_channel_and_offset(this, cmd.offset);
         switch (res.offset) {
         case 0x8C: {
                 if (!para_virtualized()) {
@@ -71,7 +72,7 @@ void context::write_bar1(const command& cmd) {
 }
 
 void context::read_bar1(const command& cmd) {
-    if (poll_area_t::in_poll_area(this, cmd.offset)) {
+    if (poll_area_.in_range(this, cmd.offset)) {
         A3_SYNCHRONIZED(device()->mutex()) {
             buffer()->value = device()->bar1()->read(this, cmd);
         }
