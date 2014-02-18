@@ -14,6 +14,7 @@ class chipset_t {
     chipset_t();
     chipset_t(uint32_t boot0);
     inline card_type_t type() const { return type_; }
+    inline uint32_t detail() const { return value_ & 0xff; }
 
  private:
     uint32_t value_;

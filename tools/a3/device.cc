@@ -209,7 +209,7 @@ void device_t::initialize(const bdf& bdf) {
     pmem_ = read(0, 0x1700, sizeof(uint32_t));
     chipset_ = chipset_t(read(0, 0x0000, sizeof(uint32_t)));
 
-    A3_LOG("device initialized\n");
+    A3_LOG("NV%02X device initialized\n", chipset_.detail());
 }
 
 uint32_t device_t::acquire_virt(context* ctx) {
