@@ -93,6 +93,7 @@ add_executable(a3
     bar3_channel.cc
     barrier.cc
     channel.cc
+    chipset.cc
     context_bar0.cc
     context_bar1.cc
     context_bar3.cc

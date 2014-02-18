@@ -79,6 +79,7 @@ device_t::device_t()
     , playlist_()
     , scheduler_()
     , domid_(-1)
+    , chipset_()
     , xl_ctx_()
     , xl_logger_()
     , xl_device_pci_()
@@ -206,6 +207,7 @@ void device_t::initialize(const bdf& bdf) {
     playlist_.reset(new playlist_t());
 
     pmem_ = read(0, 0x1700, sizeof(uint32_t));
+    chipset_ = chipset_t(read(0, 0x0000, sizeof(uint32_t)));
 
     A3_LOG("device initialized\n");
 }

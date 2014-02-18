@@ -10,6 +10,7 @@
 #include "xen.h"
 #include "lock.h"
 #include "session.h"
+#include "chipset.h"
 namespace a3 {
 
 class device_bar1;
@@ -52,6 +53,7 @@ class device_t : private boost::noncopyable {
     vram_t* malloc(std::size_t n);
     void free(vram_t* mem);
     const std::vector<context*>& contexts() const { return contexts_; }
+    const chipset_t& chipset() const { return chipset_; }
 
     // VT-d
     int domid() const { return domid_; }
@@ -75,6 +77,7 @@ class device_t : private boost::noncopyable {
     std::unique_ptr<playlist_t> playlist_;
     std::unique_ptr<scheduler_t> scheduler_;
     int domid_;
+    chipset_t chipset_;
 
     // libxl
     libxl_ctx* xl_ctx_;
