@@ -122,6 +122,7 @@ add_executable(a3
     session.cc
     shadow_page_table.cc
     software_page_table.cc
+    utility.cc
     vram.cc
     xen.c
     )

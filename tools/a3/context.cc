@@ -39,6 +39,7 @@
 #include "software_page_table.h"
 #include "page_table.h"
 #include "pv_page.h"
+#include "utility.h"
 #include "ignore_unused_variable_warning.h"
 namespace a3 {
 
@@ -170,6 +171,7 @@ bool context::handle(const command& cmd) {
         return false;
     }
 
+    bool wait = false;
     if (cmd.type == command::TYPE_WRITE) {
         switch (cmd.bar()) {
         case command::BAR0:
@@ -186,12 +188,13 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR4:
             write_bar4(cmd);
-            return true; // speicialized
+            wait = true; // speicialized
+            break;
         }
-        return false;
     }
 
     if (cmd.type == command::TYPE_READ) {
+        wait = true;
         switch (cmd.bar()) {
         case command::BAR0:
             read_bar0(cmd);
@@ -207,12 +210,13 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR4:
             read_bar4(cmd);
-            return true;
+            break;
         }
-        return true;
     }
 
-    return false;
+    inspect(cmd, buffer()->value);
+
+    return wait;
 }
 
 void context::playlist_update(uint32_t reg_addr, uint32_t cmd) {

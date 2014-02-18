@@ -10,13 +10,16 @@
 namespace a3 {
 
 #if defined(NDEBUG)
-    #define A3_FPRINTF(stream, fmt, args...) do { } while (0)
+    #define A3_RAW_FPRINTF(stream, fmt, args...) do { } while (0)
 #else
-    #define A3_FPRINTF(stream, fmt, args...) do {\
-            std::fprintf(stream, "[A3] %s:%d - " fmt, __func__, __LINE__, ##args);\
+    #define A3_RAW_FPRINTF(stream, fmt, args...) do {\
+            std::fprintf(stream, "[A3] " fmt, ##args);\
             std::fflush(stream);\
         } while (0)
 #endif
+
+#define A3_FPRINTF(stream, fmt, args...) \
+    A3_RAW_FPRINTF(stream, "%s:%d - " fmt, __func__, __LINE__, ##args)
 
 #define A3_FATAL(stream, fmt, args...) do {\
         std::fprintf(stream, "[A3] %s:%d - " fmt, __func__, __LINE__, ##args);\
