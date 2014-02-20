@@ -156,22 +156,24 @@ bool context::handle(const command& cmd) {
         return false;
     }
 
+    bool wait = false;
+
     if (through()) {
         A3_SYNCHRONIZED(device()->mutex()) {
             // through mode. direct access
             const uint32_t bar = cmd.bar();
             if (cmd.type == command::TYPE_WRITE) {
                 device()->write(bar, cmd.offset, cmd.value, cmd.size());
-                return false;
+                wait = false;
             } else if (cmd.type == command::TYPE_READ) {
                 buffer()->value = device()->read(bar, cmd.offset, cmd.size());
-                return true;
+                wait = true;
             }
         }
-        return false;
+        inspect(cmd, buffer()->value);
+        return wait;
     }
 
-    bool wait = false;
     if (cmd.type == command::TYPE_WRITE) {
         switch (cmd.bar()) {
         case command::BAR0:
@@ -213,7 +215,6 @@ bool context::handle(const command& cmd) {
             break;
         }
     }
-
     inspect(cmd, buffer()->value);
 
     return wait;
