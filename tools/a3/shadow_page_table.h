@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
-#include <array>
+#include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <memory>
 #include "page_table.h"
@@ -12,37 +12,14 @@ namespace a3 {
 class context;
 class page;
 
-struct shadow_page_entry_t {
-    page_directory value;
-    std::shared_ptr<std::array<page_entry, kLARGE_PAGE_COUNT>> large;
-    std::shared_ptr<std::array<page_entry, kSMALL_PAGE_COUNT>> small;
-
-    void ensure_large_page_table() {
-        typedef std::array<page_entry, kLARGE_PAGE_COUNT> large_t;
-        if (!large) {
-            large = std::shared_ptr<large_t>(new large_t());
-        }
-    }
-    void ensure_small_page_table() {
-        typedef std::array<page_entry, kSMALL_PAGE_COUNT> small_t;
-        if (!small) {
-            small = std::shared_ptr<small_t>(new small_t());
-        }
-    }
-};
-
-struct shadow_page_directory_t {
-    std::array<shadow_page_entry_t, 8192> entries;
-};
-
 class shadow_page_table {
  public:
     shadow_page_table(uint32_t channel_id);
     bool refresh(context* ctx, uint64_t page_directory_address, uint64_t page_limit);
     void refresh_page_directories(context* ctx, uint64_t address);
     void temporary_replace(context* ctx, uint64_t shadow);
-    void set_low_size(uint32_t value) { low_size_ = value; }
-    void set_high_size(uint32_t value) { high_size_ = value; }
+    void set_low_size(uint32_t value);
+    void set_high_size(uint32_t value);
     uint64_t size() const { return size_; }
     uint32_t page_directory_size() const {
         //return 0x10000 / 0x8;
@@ -54,7 +31,8 @@ class shadow_page_table {
     uint64_t shadow_address() const { return phys() ? phys()->address() : 0; }
 
  private:
-    struct page_directory refresh_directory(context* ctx, pmem::accessor* pmem, uint32_t index);
+    struct page_directory refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
+    struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
     }
@@ -77,7 +55,6 @@ class shadow_page_table {
     boost::ptr_vector<page> small_pages_pool_;
     std::size_t large_pages_pool_cursor_;
     std::size_t small_pages_pool_cursor_;
-    shadow_page_directory_t directory_;
 };
 
 inline page* shadow_page_table::allocate_large_page() {
