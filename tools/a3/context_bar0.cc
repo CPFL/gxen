@@ -80,7 +80,6 @@ void context::write_bar0(const command& cmd) {
             A3_SYNCHRONIZED(device()->mutex()) {
                 device()->bar1()->refresh_poll_area();
             }
-            A3_LOG("POLL_AREA %" PRIX32 "\n", cmd.value);
             return;
         }
     case 0x002270: {

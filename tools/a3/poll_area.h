@@ -21,7 +21,10 @@ class poll_area_t {
     void write(context* ctx, const command& cmd);
     uint32_t read(context* ctx, const command& cmd);
 
-    void set_area(uint64_t area) { area_ = area; }
+    void set_area(uint64_t area) {
+        A3_LOG("POLL_AREA 0x%" PRIX64 "\n", area);
+        area_ = area;
+    }
     uint64_t area() const { return area_; }
 
  private:

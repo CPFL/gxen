@@ -170,7 +170,7 @@ bool context::handle(const command& cmd) {
                 wait = true;
             }
         }
-        inspect(cmd, buffer()->value);
+        // inspect(cmd, buffer()->value);
         return wait;
     }
 
@@ -215,7 +215,7 @@ bool context::handle(const command& cmd) {
             break;
         }
     }
-    inspect(cmd, buffer()->value);
+    // inspect(cmd, buffer()->value);
 
     return wait;
 }
