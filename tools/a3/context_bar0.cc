@@ -266,51 +266,9 @@ void context::write_bar0(const command& cmd) {
 
     // PFIFO
     // Since NVE0 has different range, we need to create 2 pathes.
-    if (device()->chipset().type() == card::NVC0) {
-        if (0x002000 <= cmd.offset && cmd.offset <= 0x004000) {
-            // see pscnv/nvc0_fifo.c
-            // 0x003000 + id * 8
-            if (cmd.offset >= 0x003000 && (cmd.offset - 0x003000) <= A3_CHANNELS * 8) {
-                // channel status access
-                // we should shift access target by guest VM
-                const bool ramin_area = ((cmd.offset - 0x003000) % 0x8) == 0;
-                const uint32_t virt_channel_id = (cmd.offset - 0x003000) / 0x8;
-                if (virt_channel_id >= A3_DOMAIN_CHANNELS) {
-                    // these channels cannot be used
-
-                    if (ramin_area) {
-                        // channel ramin
-                    } else {
-                        // status
-                    }
-
-                    // FIXME(Yusuke Suzuki)
-                    // write better value
-                    return;
-                }
-
-                const uint32_t phys_channel_id = get_phys_channel_id(virt_channel_id);
-                const uint32_t adjusted_offset = (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
-
-                if (ramin_area) {
-                    // channel ramin
-                    // VRAM shift
-                    reg32(cmd.offset) = cmd.value;
-                    const uint64_t virt = (bit_mask<28, uint64_t>(cmd.value) << 12);
-                    const uint64_t phys = get_phys_address(virt);
-                    const uint64_t shadow = channels(virt_channel_id)->refresh(this, phys);
-                    const uint32_t value = bit_clear<28>(cmd.value) | (shadow >> 12);
-                    A3_LOG("channel shift from 0x%" PRIX64 " to 0x%" PRIX64 " mem 0x%" PRIX64 " to 0x%" PRIX64 "\n", (uint64_t)virt_channel_id, (uint64_t)phys_channel_id, phys, shadow);
-                    registers::write32(adjusted_offset, value);
-                } else {
-                    // status
-                    registers::write32(adjusted_offset, cmd.value);
-                }
-                return;
-            }
-        }
-    } else if (device()->chipset().type() == card::NVE0) {
-
+    if (pfifo_.in_range(cmd.offset)) {
+        pfifo_.write(this, cmd);
+        return;
     }
 
     registers::accessor regs;
