@@ -1,6 +1,7 @@
 #ifndef A3_POLL_AREA_H_
 #define A3_POLL_AREA_H_
 #include <cstdint>
+#include <cinttypes>
 #include "a3.h"
 namespace a3 {
 
