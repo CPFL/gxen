@@ -108,7 +108,7 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
             large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
         }
         const std::size_t count = std::min(remain / kLARGE_PAGE_SIZE, page_directory::large_size_count(dir));
-        assert(count <= kLARGE_PAGE_COUNT);
+        ASSERT(count <= kLARGE_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
@@ -128,7 +128,7 @@ void software_page_table::software_page_directory::refresh(context* ctx, pmem::a
             small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
         }
         const std::size_t count = remain / kSMALL_PAGE_SIZE;
-        assert(count <= kSMALL_PAGE_COUNT);
+        ASSERT(count <= kSMALL_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
@@ -255,7 +255,7 @@ void software_page_table::software_page_directory::pv_scan(context* ctx, bool bi
             large_entries_.reset(new software_page_entries(kLARGE_PAGE_COUNT));
         }
         const std::size_t count = remain / kLARGE_PAGE_SIZE;
-        assert(count <= kLARGE_PAGE_COUNT);
+        ASSERT(count <= kLARGE_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;
@@ -270,7 +270,7 @@ void software_page_table::software_page_directory::pv_scan(context* ctx, bool bi
             small_entries_.reset(new software_page_entries(kSMALL_PAGE_COUNT));
         }
         const std::size_t count = remain / kSMALL_PAGE_SIZE;
-        assert(count <= kSMALL_PAGE_COUNT);
+        ASSERT(count <= kSMALL_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t item = 0x8 * i;
             struct page_entry entry;

@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 #include <cstdlib>
-#include <cassert>
 #include <iostream>
 #include <unistd.h>
 #include <sched.h>
@@ -46,6 +45,7 @@
 #include "band_scheduler.h"
 #include "credit_scheduler.h"
 #include "direct_scheduler.h"
+#include "assertion.h"
 
 #define NVC0_VENDOR 0x10DE
 #define NVC0_DEVICE 0x6D8
@@ -136,11 +136,11 @@ void device_t::initialize(const bdf& bdf) {
     int ret;
 
     ret = pci_system_init();
-    assert(!ret);
+    ASSERT(!ret);
     ignore_unused_variable_warning(ret);
 
     struct pci_device_iterator* it = pci_id_match_iterator_create(&nvc0_match);
-    assert(it);
+    ASSERT(it);
 
     struct pci_device* dev;
     while ((dev = pci_device_next(it)) != nullptr) {
@@ -151,10 +151,10 @@ void device_t::initialize(const bdf& bdf) {
     }
     pci_iterator_destroy(it);
 
-    assert(dev);
+    ASSERT(dev);
     pci_device_enable(dev);
     ret = pci_device_probe(dev);
-    assert(!ret);
+    ASSERT(!ret);
 
     // And enable memory and io port.
     // FIXME(Yusuke Suzuki)

@@ -1,9 +1,9 @@
 #ifndef A3_PV_SLOT_H_
 #define A3_PV_SLOT_H_
 #include <cstdio>
-#include <cassert>
 #include <cstdint>
 #include "a3.h"
+#include "assertion.h"
 namespace a3 {
 
 /* PV OPS */

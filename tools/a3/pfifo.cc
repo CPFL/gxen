@@ -81,7 +81,7 @@ void pfifo_t::write(context* ctx, command cmd) {
 }
 
 uint32_t pfifo_t::read(context* ctx, command cmd) {
-    assert(in_range(cmd.offset));
+    ASSERT(in_range(cmd.offset));
     // channel status access
     // we should shift access target by guest VM
     const bool ramin_area = ((cmd.offset - range()) % 0x8) == 0;

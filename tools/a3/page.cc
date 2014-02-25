@@ -48,23 +48,23 @@ void page::clear() {
 }
 
 void page::write32(uint64_t offset, uint32_t value) {
-    assert(offset < size());
+    ASSERT(offset < size());
     pmem::write32(address() + offset, value);
 }
 
 uint32_t page::read32(uint64_t offset) {
-    assert(offset < size());
+    ASSERT(offset < size());
     return pmem::read32(address() + offset);
 }
 
 void page::write(uint64_t offset, uint32_t value, std::size_t s) {
-    assert(offset < size());
+    ASSERT(offset < size());
     pmem::accessor pmem;
     pmem.write(address() + offset, value, s);
 }
 
 uint32_t page::read(uint64_t offset, std::size_t s) {
-    assert(offset < size());
+    ASSERT(offset < size());
     pmem::accessor pmem;
     return pmem.read(address() + offset, s);
 }

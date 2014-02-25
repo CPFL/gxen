@@ -92,7 +92,7 @@ void device_bar1::map(uint64_t virt, const struct page_entry& entry) {
         return;
     }
     const uint64_t index = virt / kSMALL_PAGE_SIZE;
-    assert((virt % kSMALL_PAGE_SIZE) == 0);
+    // ASSERT((virt % kSMALL_PAGE_SIZE) == 0);
     entry_.write32(0x8 * index, entry.word0);
     entry_.write32(0x8 * index + 0x4, entry.word1);
     A3_LOG("  BAR1 table %" PRIX64 " mapped to %" PRIX64 "\n", virt, entry.raw);

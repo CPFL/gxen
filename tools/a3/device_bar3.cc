@@ -298,7 +298,7 @@ void device_bar3::refresh_table(context* ctx, uint64_t phys) {
     if (dir.large_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
         const std::size_t count = std::min<std::size_t>(A3_BAR3_ARENA_SIZE/ kLARGE_PAGE_SIZE, page_directory::large_size_count(dir));
-        assert(count <= kLARGE_PAGE_COUNT);
+        ASSERT(count <= kLARGE_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t hindex = i + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kLARGE_PAGE_SIZE);
             const uint64_t item = 0x8 * i;
@@ -318,7 +318,7 @@ void device_bar3::refresh_table(context* ctx, uint64_t phys) {
     if (dir.small_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.small_page_table_address) << 12);
         const std::size_t count = A3_BAR3_ARENA_SIZE / kSMALL_PAGE_SIZE;
-        assert(count <= kSMALL_PAGE_COUNT);
+        ASSERT(count <= kSMALL_PAGE_COUNT);
         for (std::size_t i = 0; i < count; ++i) {
             const uint64_t hindex = i + ((ctx->id() * A3_BAR3_ARENA_SIZE) / kSMALL_PAGE_SIZE);
             const uint64_t item = 0x8 * i;

@@ -33,7 +33,7 @@ class radix_tree_t {
 
   void insert(uint64_t address, uint64_t value) {
     entries_t* stage = lookup_entries(address, true);
-    assert(stage);
+    ASSERT(stage);
     const uint32_t index = address & MASK;
     static_cast<entries_t*>(stage)->array[index] = value;
   }

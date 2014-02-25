@@ -22,9 +22,9 @@
  * THE SOFTWARE.
  */
 
-#include <assert.h>
 #include "barrier.h"
 #include "bit_mask.h"
+#include "assertion.h"
 namespace a3 {
 namespace barrier {
 
@@ -80,7 +80,7 @@ bool table::lookup(uint64_t address, page_entry** entry, bool force_create) {
 
         dir.reset(new page_directory);
     }
-    assert(dir);
+    ASSERT(dir);
     return dir->lookup(address, entry);
 }
 

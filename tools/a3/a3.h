@@ -1,12 +1,12 @@
-#ifndef A3_H_
-#define A3_H_
+#ifndef A3_A3_H_
+#define A3_A3_H_
 #include <cstdio>
-#include <cassert>
 #include <cstdint>
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/static_assert.hpp>
 #include "config.h"
 #include "flags.h"
+#include "assertion.h"
 namespace a3 {
 
 #if defined(NDEBUG)
@@ -27,8 +27,6 @@ namespace a3 {
     } while (0)
 
 #define A3_LOG(fmt, args...) A3_FPRINTF(stdout, fmt, ##args)
-
-#define A3_UNREACHABLE() assert(0)
 
 BOOST_STATIC_ASSERT(A3_MEMORY_CTL_NUM != 0);
 
@@ -79,5 +77,5 @@ struct bdf {
 };
 
 }  // namespace a3
-#endif  // A3_H_
+#endif  // A3_A3_H_
 /* vim: set sw=4 ts=4 et tw=80 : */

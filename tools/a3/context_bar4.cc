@@ -116,7 +116,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                     A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[2]));
                     return -EINVAL;
                 }
-                assert(pgt0);
+                ASSERT(pgt0);
             }
 
             pv_page* pgt1 = nullptr;
@@ -126,7 +126,7 @@ int context::a3_call(const command& cmd, slot_t* slot) {
                     A3_LOG("INVALID... [%u]\n", static_cast<unsigned>(slot->u32[3]));
                     return -EINVAL;
                 }
-                assert(pgt1);
+                ASSERT(pgt1);
             }
 
 
@@ -297,9 +297,9 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             pv_page* p(new pv_page(round_up(size, kPAGE_SIZE) / kPAGE_SIZE));
             p->clear();
             const uint32_t id = p->id();
-            assert(id != 0 && "id should not equal to 0");
+            ASSERT(id != 0 && "id should not equal to 0");
             slot->u32[1] = id;
-            assert(allocated_.find(id) == allocated_.end());
+            ASSERT(allocated_.find(id) == allocated_.end());
             allocated_.insert(id, p);
         }
         return 0;
