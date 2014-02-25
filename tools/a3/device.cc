@@ -76,7 +76,8 @@ device_t::device_t()
     , bar1_()
     , bar3_()
     // , vram_(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
-    , vram_(new vram_manager_t((0x1ULL << 30) + (0x1ULL << 30) / 2, (0x1ULL << 30) / 2))
+    // , vram_(new vram_manager_t((0x1ULL << 30) + (0x1ULL << 30) / 2, (0x1ULL << 30) / 2))
+    , vram_(new vram_manager_t((0x1ULL << 30), (0x1ULL << 30)))
     , playlist_()
     , scheduler_()
     , domid_(-1)
@@ -185,6 +186,8 @@ void device_t::initialize(const bdf& bdf) {
 
     A3_LOG("PCI device catch\n");
 
+    chipset_ = chipset_t(read(0, 0x0000, sizeof(uint32_t)));
+
     // init bar1 device
     bar1_.reset(new device_bar1(bars_[1]));
 
@@ -205,10 +208,13 @@ void device_t::initialize(const bdf& bdf) {
     }
 
     // init playlist
-    playlist_.reset(new playlist_t());
+    if (device()->chipset().type() == card::NVC0) {
+        playlist_.reset(new nvc0_playlist_t());
+    } else {
+        playlist_.reset(new nve0_playlist_t());
+    }
 
     pmem_ = read(0, 0x1700, sizeof(uint32_t));
-    chipset_ = chipset_t(read(0, 0x0000, sizeof(uint32_t)));
 
     A3_LOG("NV%02X device initialized\n", chipset_.detail());
 }
