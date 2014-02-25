@@ -38,8 +38,9 @@ device_bar1::device_bar1(device_t::bar_t bar)
     : ramin_(1)
     , directory_(8)
     , entry_()
+    , range_(device()->chipset().type() == card::NVC0 ? 0x001000 : 0x000200)
     {
-    const uint64_t vm_size = (0x1000 * 128) - 1;
+    const uint64_t vm_size = (range_ * 128) - 1;
     ramin_.clear();
     directory_.clear();
 
@@ -69,16 +70,18 @@ void device_bar1::refresh() {
 void device_bar1::refresh_poll_area() {
     // set 0 as POLL_AREA
     registers::accessor registers;
-    registers.mask32(0x002200, 0x00000001, 0x00000001);
+    if (device()->chipset().type() == card::NVC0) {
+        registers.mask32(0x002200, 0x00000001, 0x00000001);
+    }
     registers.write32(0x2254, 0x10000000 | 0x0);
 }
 
 void device_bar1::shadow(context* ctx) {
     A3_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
     for (uint32_t vcid = 0; vcid < A3_DOMAIN_CHANNELS; ++vcid) {
-        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area()->area();
+        const uint64_t offset = vcid * range_ + ctx->poll_area()->area();
         const uint32_t pcid = ctx->get_phys_channel_id(vcid);
-        const uint64_t virt = pcid * 0x1000ULL;
+        const uint64_t virt = pcid * range_;
         struct software_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
@@ -111,22 +114,22 @@ void device_bar1::flush() {
 
 void device_bar1::write(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area()->area();
-    offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;
+    offset += range_ * ctx->id() * A3_DOMAIN_CHANNELS;
     device()->write(1, offset, cmd.value, cmd.size());
 }
 
 uint32_t device_bar1::read(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area()->area();
-    offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;
+    offset += range_ * ctx->id() * A3_DOMAIN_CHANNELS;
     return device()->read(1, offset, cmd.size());
 }
 
 void device_bar1::pv_scan(context* ctx) {
     A3_LOG("%" PRIu32 " BAR1 shadowed\n", ctx->id());
     for (uint32_t vcid = 0; vcid < A3_DOMAIN_CHANNELS; ++vcid) {
-        const uint64_t offset = vcid * 0x1000ULL + ctx->poll_area()->area();
+        const uint64_t offset = vcid * range_ + ctx->poll_area()->area();
         const uint32_t pcid = ctx->get_phys_channel_id(vcid);
-        const uint64_t virt = pcid * 0x1000ULL;
+        const uint64_t virt = pcid * range_;
         struct software_page_entry entry;
         const uint64_t gphys = ctx->bar1_channel()->table()->resolve(offset, &entry);
         if (gphys != UINT64_MAX) {
@@ -141,7 +144,7 @@ void device_bar1::pv_reflect_entry(context* ctx, bool big, uint32_t index, uint6
     entry.raw = host;
     if (big) {
     } else {
-        map(((ctx->id() * A3_DOMAIN_CHANNELS) + index) * kSMALL_PAGE_SIZE, entry);
+        map(((ctx->id() * A3_DOMAIN_CHANNELS) + index) * range_, entry);
     }
 }
 

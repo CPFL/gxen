@@ -35,6 +35,7 @@ class device_bar1 : private boost::noncopyable {
     page ramin_;
     page directory_;
     page entry_;
+    uint64_t range_;
 };
 
 }  // namespace a3
