@@ -103,6 +103,9 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
 
     for (uint64_t offset = 0, index = 0; offset < 0x10000; offset += 0x8, ++index) {
         const struct page_directory res = page_directory::create(&pmem, page_directory_address() + offset);
+        if (res.large_page_table_present || res.small_page_table_present) {
+            // A3_LOG("  dir 0x%010" PRIx64 "\n", index * kPAGE_DIRECTORY_COVERED_SIZE);
+        }
         struct page_directory result = refresh_directory(ctx, &pmem, res);
         phys()->write32(offset, result.word0);
         phys()->write32(offset + 0x4, result.word1);
@@ -122,6 +125,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
                 struct page_entry res = refresh_entry(ctx, pmem, entry);
                 large_page->write32(item, res.word0);
                 large_page->write32(item + 0x4, res.word1);
+                // A3_LOG("    large 0x%010" PRIx64 " => 0x%010" PRIx64 "\n", i * kLARGE_PAGE_SIZE, res.address);
             } else {
                 large_page->write32(item, 0);
             }
@@ -142,6 +146,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, pmem::a
                 struct page_entry res = refresh_entry(ctx, pmem, entry);
                 small_page->write32(item, res.word0);
                 small_page->write32(item + 0x4, res.word1);
+                // A3_LOG("    small 0x%010" PRIx64 " => 0x%010" PRIx64 "\n", i * kSMALL_PAGE_SIZE, res.address);
             } else {
                 small_page->write32(item, 0);
             }
