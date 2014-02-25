@@ -29,16 +29,20 @@
 #include "pmem.h"
 #include "bit_mask.h"
 #include "registers.h"
+#include "make_unique.h"
 namespace a3 {
 
-playlist_t::playlist_t()
-    : pages_(new page[2])
-    , channels_()
-    , cursor_(0)
-{
+void flush_bar() {
+    // flush
+    registers::accessor regs;
+    regs.write32(0x070000, 0x00000001);
+    if (!regs.wait_eq(0x070000, 0x00000002, 0x00000000)) {
+        A3_LOG("flush timeout\n");
+    }
 }
 
-void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
+template<typename engine_t>
+void playlist_update(context* ctx, engine_t* engine, uint64_t address, uint32_t cmd, uint32_t status) {
     // scan fifo and update values
     pmem::accessor pmem;
 
@@ -46,7 +50,7 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
     for (uint32_t i = 0; i < A3_DOMAIN_CHANNELS; ++i) {
         const uint32_t cid = ctx->get_phys_channel_id(i);
         // A3_LOG("1: playlist update id %u\n", cid);
-        channels_.set(cid, 0);
+        engine->set(cid, false);
     }
 
     const uint32_t count = bit_mask<8, uint32_t>(cmd);
@@ -56,40 +60,42 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
         return;
     }
 
-    page* page = toggle();
+    page* page = engine->toggle();
 
     for (uint32_t i = 0; i < count; ++i) {
         const uint32_t vid = pmem.read32(address + i * 0x8);
         const uint32_t cid = ctx->get_phys_channel_id(vid);
         A3_LOG("2: playlist update id %u => %u / %u\n", i, cid, vid);
-        channels_.set(cid, 1);
+        engine->set(cid, true);
     }
 
     uint32_t phys_count = 0;
     for (uint32_t i = 0; i < A3_CHANNELS; ++i) {
-        if (channels_[i]) {
-            A3_LOG("playlist update id %u\n", i);
+        if (engine->get(i)) {
             page->write32(phys_count * 0x8 + 0x0, i);
-            page->write32(phys_count * 0x8 + 0x4, 0x4);
+            page->write32(phys_count * 0x8 + 0x4, status);
             ++phys_count;
         }
     }
 
     const uint64_t shadow = page->address();
-    const uint32_t phys_cmd = bit_clear<8, uint32_t>(cmd) | phys_count;
+    const uint32_t phys_cmd = ((cmd >> 20) << 20) | phys_count;
     registers::accessor regs;
+    A3_LOG("playlist address shadow %x provided %x\n", shadow >> 12, address >> 12);
     regs.write32(0x2270, shadow >> 12);
     regs.write32(0x2274, phys_cmd);
-
-    // if (!regs.wait_eq(0x00227c, 0x00100000, 0x00000000)) {
-    //     A3_LOG("playlist update failed\n");
-    // }
-    A3_LOG("playlist cmd from %u to %u\n", cmd, phys_cmd);
+    A3_LOG("playlist cmd from %x to %x\n", cmd, phys_cmd);
 }
 
-page* playlist_t::toggle() {
-    cursor_ ^= 1;
-    return &pages_[cursor_ & 0x1];
+void nvc0_playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
+    playlist_update(ctx, &engine_, address, cmd, 0x4);
+}
+
+void nve0_playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
+    const uint32_t eng = (cmd >> 20);
+    ASSERT(eng < engines_.size());
+    A3_LOG("playlist engine %u\n",eng);
+    playlist_update(ctx, &engines_[eng], address, cmd, 0x0);
 }
 
 }  // namespace a3
