@@ -81,7 +81,7 @@ void playlist_update(context* ctx, engine_t* engine, uint64_t address, uint32_t 
     const uint64_t shadow = page->address();
     const uint32_t phys_cmd = ((cmd >> 20) << 20) | phys_count;
     registers::accessor regs;
-    A3_LOG("playlist address shadow %x provided %x\n", shadow >> 12, address >> 12);
+    A3_LOG("playlist address shadow %x provided %x\n", static_cast<unsigned>(shadow >> 12), static_cast<unsigned>(address >> 12));
     regs.write32(0x2270, shadow >> 12);
     regs.write32(0x2274, phys_cmd);
     A3_LOG("playlist cmd from %x to %x\n", cmd, phys_cmd);
