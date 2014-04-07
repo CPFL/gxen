@@ -27,4 +27,4 @@ LIBS += \
 	-lboost_date_time \
 
 # for a3.h
-CPPFLAGS += -I$(XEN_ROOT)/tools
+CPPFLAGS += -I$(XEN_ROOT)/tools -DQEMU_DM_NVC0
