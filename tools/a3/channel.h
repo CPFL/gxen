@@ -38,6 +38,12 @@ class channel : private boost::noncopyable {
         return &original_;
     }
 
+    void submit(context* ctx, const command& cmd) {
+        submitted_ = cmd.value;
+    }
+
+    uint32_t submitted() const { return submitted_; }
+
  private:
     void clear_tlb_flush_needed() {
         tlb_flush_needed_ = false;
@@ -49,6 +55,7 @@ class channel : private boost::noncopyable {
     bool tlb_flush_needed_;
     uint64_t ramin_address_;
     uint64_t shared_address_;
+    uint32_t submitted_;
     std::unique_ptr<shadow_page_table> table_;
     std::unique_ptr<page> shadow_ramin_;
 

@@ -182,11 +182,11 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR1:
             write_bar1(cmd);
-            // A3_LOG("BAR1 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
+            A3_LOG("BAR1 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR3:
             write_bar3(cmd);
-            // A3_LOG("BAR3 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
+            A3_LOG("BAR3 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR4:
             write_bar4(cmd);
@@ -208,7 +208,7 @@ bool context::handle(const command& cmd) {
             break;
         case command::BAR3:
             read_bar3(cmd);
-            A3_LOG("BAR3 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
+            // A3_LOG("BAR3 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR4:
             read_bar4(cmd);

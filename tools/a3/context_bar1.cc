@@ -38,16 +38,21 @@ void context::write_bar1(const command& cmd) {
             poll_area_.extract_channel_and_offset(this, cmd.offset);
         switch (res.offset) {
         case 0x8C: {
+                channel* chan = channels(res.channel);
                 if (!para_virtualized()) {
                     // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
                     // When target TLB is not flushed, we should flush it lazily
                     if (a3::flags::lazy_shadowing) {
-                        channels(res.channel)->flush(this);
+                        chan->flush(this);
                     }
                 }
-                device()->fire(this, cmd);
+                chan->submit(this, cmd);
+                A3_SYNCHRONIZED(device()->mutex()) {
+                    device()->fire(this, cmd);
+                }
             }
             break;
+
         default:
             A3_SYNCHRONIZED(device()->mutex()) {
                 device()->bar1()->write(this, cmd);
@@ -73,8 +78,20 @@ void context::write_bar1(const command& cmd) {
 
 void context::read_bar1(const command& cmd) {
     if (poll_area_.in_range(this, cmd.offset)) {
-        A3_SYNCHRONIZED(device()->mutex()) {
-            buffer()->value = device()->bar1()->read(this, cmd);
+        const poll_area_t::channel_and_offset_t res =
+            poll_area_.extract_channel_and_offset(this, cmd.offset);
+        switch (res.offset) {
+        case 0x8C: {
+                buffer()->value = channels(res.channel)->submitted();
+            }
+            break;
+
+        default: {
+                A3_SYNCHRONIZED(device()->mutex()) {
+                    buffer()->value = device()->bar1()->read(this, cmd);
+                }
+            }
+            break;
         }
         return;
     }
