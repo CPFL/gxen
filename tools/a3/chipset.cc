@@ -28,7 +28,7 @@ namespace a3 {
 
 chipset_t::chipset_t()
     : value_()
-    , type_()
+    , type_(card::UNINITIALIZED)
 {
 }
 

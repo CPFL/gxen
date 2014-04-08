@@ -1,9 +1,11 @@
 #ifndef A3_CHIPSET_H_
 #define A3_CHIPSET_H_
 #include <cstdint>
+#include "assertion.h"
 namespace a3 {
 
 enum struct card {
+    UNINITIALIZED = 0,
     NVC0,
     NVE0
 };
@@ -13,8 +15,14 @@ class chipset_t {
  public:
     chipset_t();
     chipset_t(uint32_t boot0);
-    inline card_type_t type() const { return type_; }
-    inline uint32_t detail() const { return value_ & 0xff; }
+    inline card_type_t type() const {
+        ASSERT(type_ != card::UNINITIALIZED);
+        return type_;
+    }
+    inline uint32_t detail() const {
+        ASSERT(type_ != card::UNINITIALIZED);
+        return value_ & 0xff;
+    }
 
  private:
     uint32_t value_;
