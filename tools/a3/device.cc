@@ -75,11 +75,11 @@ device_t::device_t()
     , bars_()
     , bar1_()
     , bar3_()
-    , vram_(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+    , vram_()
     , playlist_()
     , scheduler_()
-    , domid_(-1)
     , chipset_()
+    , domid_(-1)
     , xl_ctx_()
     , xl_logger_()
     , xl_device_pci_()
@@ -93,19 +93,6 @@ device_t::device_t()
         std::exit(1);
     }
 
-    // Direct
-    // scheduler_.reset(new direct_scheduler_t());
-    // FIFO
-    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
-    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
-    // BAND
-    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
-    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(100)));
-    // Credit
-    // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
-    scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(100)));
-
-    scheduler_->start();
     A3_LOG("device environment setup\n");
 }
 
@@ -184,7 +171,12 @@ void device_t::initialize(const bdf& bdf) {
 
     A3_LOG("PCI device catch\n");
 
-    chipset_ = chipset_t(read(0, 0x0000, sizeof(uint32_t)));
+    // init chipset
+    chipset_.reset(new chipset_t(read(0, 0x0000, sizeof(uint32_t))));
+
+    // init vram
+    // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+    vram_.reset(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30));
 
     // init bar1 device
     bar1_.reset(new device_bar1(bars_[1]));
@@ -206,15 +198,31 @@ void device_t::initialize(const bdf& bdf) {
     }
 
     // init playlist
-    if (device()->chipset().type() == card::NVC0) {
+    if (device()->chipset()->type() == card::NVC0) {
         playlist_.reset(new nvc0_playlist_t());
     } else {
         playlist_.reset(new nve0_playlist_t());
     }
 
+    // init pmem
     pmem_ = read(0, 0x1700, sizeof(uint32_t));
 
-    A3_LOG("NV%02X device initialized\n", chipset_.detail());
+    // init scheduler
+
+    // Direct
+    // scheduler_.reset(new direct_scheduler_t());
+    // FIFO
+    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
+    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
+    // BAND
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(100)));
+    // Credit
+    // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500)));
+    scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(100)));
+    scheduler_->start();
+
+    A3_LOG("NV%02X device initialized\n", chipset()->detail());
 }
 
 uint32_t device_t::acquire_virt(context* ctx) {
@@ -267,10 +275,12 @@ void device_t::write(int bar, uint32_t offset, uint32_t val, std::size_t size) {
 }
 
 vram_t* device_t::malloc(std::size_t n) {
+    ASSERT(vram_);
     return vram_->malloc(n);
 }
 
 void device_t::free(vram_t* mem) {
+    ASSERT(vram_);
     vram_->free(mem);
 }
 

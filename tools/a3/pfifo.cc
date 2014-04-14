@@ -32,7 +32,7 @@ namespace a3 {
 pfifo_t::pfifo_t()
     : total_channels_(A3_CHANNELS)
     , channels_(A3_DOMAIN_CHANNELS)
-    , range_(device()->chipset().type() == card::NVC0 ? 0x003000 : 0x800000)
+    , range_(device()->chipset()->type() == card::NVC0 ? 0x003000 : 0x800000)
 {
 }
 

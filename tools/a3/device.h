@@ -53,7 +53,7 @@ class device_t : private boost::noncopyable {
     vram_t* malloc(std::size_t n);
     void free(vram_t* mem);
     const std::vector<context*>& contexts() const { return contexts_; }
-    const chipset_t& chipset() const { return chipset_; }
+    const chipset_t* chipset() const { return chipset_.get(); }
 
     // VT-d
     int domid() const { return domid_; }
@@ -76,8 +76,8 @@ class device_t : private boost::noncopyable {
     std::unique_ptr<vram_manager_t> vram_;
     std::unique_ptr<playlist_t> playlist_;
     std::unique_ptr<scheduler_t> scheduler_;
+    std::unique_ptr<chipset_t> chipset_;
     int domid_;
-    chipset_t chipset_;
 
     // libxl
     libxl_ctx* xl_ctx_;

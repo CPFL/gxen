@@ -26,12 +26,6 @@
 #include "registers.h"
 namespace a3 {
 
-chipset_t::chipset_t()
-    : value_()
-    , type_(card::UNINITIALIZED)
-{
-}
-
 chipset_t::chipset_t(uint32_t boot0)
     : value_()
     , type_()

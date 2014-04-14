@@ -29,7 +29,7 @@
 namespace a3 {
 
 poll_area_t::poll_area_t()
-    : per_size_(device()->chipset().type() == card::NVC0 ? 0x1000 : 0x200)
+    : per_size_(device()->chipset()->type() == card::NVC0 ? 0x1000 : 0x200)
     , area_()
 {
 }

@@ -1,6 +1,7 @@
 #ifndef A3_CHIPSET_H_
 #define A3_CHIPSET_H_
 #include <cstdint>
+#include <boost/noncopyable.hpp>
 #include "assertion.h"
 namespace a3 {
 
@@ -11,9 +12,8 @@ enum struct card {
 };
 typedef card card_type_t;
 
-class chipset_t {
+class chipset_t : private boost::noncopyable {
  public:
-    chipset_t();
     chipset_t(uint32_t boot0);
     inline card_type_t type() const {
         ASSERT(type_ != card::UNINITIALIZED);

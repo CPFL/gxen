@@ -38,7 +38,7 @@ device_bar1::device_bar1(device_t::bar_t bar)
     : ramin_(1)
     , directory_(8)
     , entry_()
-    , range_(device()->chipset().type() == card::NVC0 ? 0x001000 : 0x000200)
+    , range_(device()->chipset()->type() == card::NVC0 ? 0x001000 : 0x000200)
     {
     const uint64_t vm_size = (range_ * 128) - 1;
     ramin_.clear();
@@ -70,7 +70,7 @@ void device_bar1::refresh() {
 void device_bar1::refresh_poll_area() {
     // set 0 as POLL_AREA
     registers::accessor registers;
-    if (device()->chipset().type() == card::NVC0) {
+    if (device()->chipset()->type() == card::NVC0) {
         registers.mask32(0x002200, 0x00000001, 0x00000001);
     }
     registers.write32(0x2254, 0x10000000 | 0x0);
