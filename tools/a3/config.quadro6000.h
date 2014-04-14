@@ -1,0 +1,17 @@
+#ifndef A3_CONFIG_QUADRO6000_H_
+#define A3_CONFIG_QUADRO6000_H_
+
+#define A3_VM_NUM 2
+#define A3_CHANNELS 128
+#define A3_DOMAIN_CHANNELS (A3_CHANNELS / A3_VM_NUM)
+
+#define A3_MEMORY_CTL_PART (A3_1G / 2)
+#define A3_MEMORY_CTL_NUM (((A3_2G * 2) / A3_MEMORY_CTL_PART) / A3_VM_NUM)
+#define A3_MEMORY_SIZE (A3_MEMORY_CTL_PART * A3_MEMORY_CTL_NUM)
+
+// FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
+#define A3_HYPERVISOR_DEVICE_MEM_BASE (A3_2G * 2)
+#define A3_HYPERVISOR_DEVICE_MEM_SIZE A3_2G
+
+#endif  // A3_CONFIG_QUADRO6000_H_
+/* vim: set sw=4 ts=4 et tw=80 : */

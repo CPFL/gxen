@@ -175,8 +175,7 @@ void device_t::initialize(const bdf& bdf) {
     chipset_.reset(new chipset_t(read(0, 0x0000, sizeof(uint32_t))));
 
     // init vram
-    // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
-    vram_.reset(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30));
+    vram_.reset(new vram_manager_t(A3_HYPERVISOR_DEVICE_MEM_BASE, A3_HYPERVISOR_DEVICE_MEM_SIZE));
 
     // init bar1 device
     bar1_.reset(new device_bar1(bars_[1]));
