@@ -75,9 +75,7 @@ device_t::device_t()
     , bars_()
     , bar1_()
     , bar3_()
-    // , vram_(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
-    // , vram_(new vram_manager_t((0x1ULL << 30) + (0x1ULL << 30) / 2, (0x1ULL << 30) / 2))
-    , vram_(new vram_manager_t((0x1ULL << 30), (0x1ULL << 30)))
+    , vram_(new vram_manager_t(0x4ULL << 30, 0x2ULL << 30))  // FIXME(Yusuke Suzuki): pre-defined area, 4GB - 6GB
     , playlist_()
     , scheduler_()
     , domid_(-1)
