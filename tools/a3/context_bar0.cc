@@ -100,12 +100,17 @@ void context::write_bar0(const command& cmd) {
         }
     case 0x002634: {
             // channel kill
-            reg32(cmd.offset) = cmd.value;
             if (cmd.value >= A3_DOMAIN_CHANNELS) {
                 return;
             }
             const uint32_t phys = get_phys_channel_id(cmd.value);
-            registers::write32(cmd.offset, phys);
+            A3_LOG("killing cid %" PRIx32 "\n", phys);
+            registers::accessor regs;
+            regs.write32(cmd.offset, phys);
+            if (!regs.wait_eq(0x002634, 0xffffffff, phys)) {
+                A3_LOG("failed killing cid %" PRIx32 "\n", phys);
+            }
+            reg32(cmd.offset) = cmd.value;
             return;
         }
 
@@ -299,9 +304,15 @@ void context::read_bar0(const command& cmd) {
     case 0x002274:
         break;
 
-    case 0x002634:
-        // channel kill
-        buffer()->value = reg32(cmd.offset);
+    case 0x002634: {
+            // channel kill
+            // registers::accessor regs;
+            // const uint32_t phys = regs.read32(cmd.offset);
+            // const uint32_t virt = get_virt_channel_id(phys);
+            buffer()->value = reg32(cmd.offset);
+            // A3_LOG("killed cid %" PRIx32 " / %" PRIx32 "\n", virt, phys);
+            return;
+        }
         return;
 
     case 0x070000: {

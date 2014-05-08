@@ -46,7 +46,8 @@ device_bar1::device_bar1(device_t::bar_t bar)
 
     // construct channel ramin
     mmio::write64(&ramin_, 0x0200, directory_.address());
-    mmio::write64(&ramin_, 0x0208, vm_size);
+	ramin_.write32(0x0208, 0xffffffff);
+	ramin_.write32(0x020c, 0x000000ff);
 
     // construct minimum page table
     struct page_directory dir = { };
