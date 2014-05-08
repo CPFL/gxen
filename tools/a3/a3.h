@@ -2,6 +2,7 @@
 #define A3_A3_H_
 #include <cstdio>
 #include <cstdint>
+#include <atomic>
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/static_assert.hpp>
 #include "config.h"
@@ -9,11 +10,16 @@
 #include "assertion.h"
 namespace a3 {
 
+inline unsigned long long print_count() {
+    static std::atomic<uint64_t> g_counter(0u);
+    return g_counter.fetch_add(1u);
+}
+
 #if defined(NDEBUG)
     #define A3_RAW_FPRINTF(stream, fmt, args...) do { } while (0)
 #else
     #define A3_RAW_FPRINTF(stream, fmt, args...) do {\
-            std::fprintf(stream, "[A3] " fmt, ##args);\
+            std::fprintf(stream, "[A3][%08llu] " fmt, ::a3::print_count(), ##args);\
             std::fflush(stream);\
         } while (0)
 #endif
@@ -22,7 +28,7 @@ namespace a3 {
     A3_RAW_FPRINTF(stream, "%s:%d - " fmt, __func__, __LINE__, ##args)
 
 #define A3_FATAL(stream, fmt, args...) do {\
-        std::fprintf(stream, "[A3] %s:%d - " fmt, __func__, __LINE__, ##args);\
+        std::fprintf(stream, "[A3][%08llu] %s:%d - " fmt, ::a3::print_count(), __func__, __LINE__, ##args);\
         std::fflush(stream);\
     } while (0)
 
