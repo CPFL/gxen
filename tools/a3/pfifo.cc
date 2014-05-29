@@ -62,6 +62,7 @@ void pfifo_t::write(context* ctx, command cmd) {
     const uint32_t phys_channel_id = ctx->get_phys_channel_id(virt_channel_id);
     const uint32_t adjusted_offset =
         (cmd.offset - virt_channel_id * 8) + (phys_channel_id * 8);
+    A3_LOG("adjusted offset 0x%" PRIX32 "\n", adjusted_offset);
 
     if (ramin_area) {
         // channel ramin

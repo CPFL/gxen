@@ -163,6 +163,32 @@ void context::write_bar0(const command& cmd) {
         // memctrl size (2)
         return;
 
+    // icmd
+    case 0x400204:
+        reg32(cmd.offset) = cmd.value;
+        return;
+
+    case 0x400200: {
+            registers::accessor regs;
+            regs.write32(0x400204, reg32(0x400204));
+            regs.write32(0x400200, cmd.value);
+            A3_LOG("icmd %" PRIX32 "|%" PRIX32 "\n", reg32(0x400204), cmd.value);
+            return;
+        }
+
+    // mthd
+    case 0x40448c:
+        reg32(cmd.offset) = cmd.value;
+        return;
+
+    case 0x404488: {
+            registers::accessor regs;
+            regs.write32(0x40448c, reg32(0x40448c));
+            regs.write32(0x404488, cmd.value);
+            A3_LOG("method %" PRIX32 "|%" PRIX32 "\n", reg32(0x40448c), cmd.value);
+            return;
+        }
+
     case 0x409500:
         // WRCMD_DATA
         reg32(cmd.offset) = cmd.value;
