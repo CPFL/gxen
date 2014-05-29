@@ -15,9 +15,9 @@ We tested & evaluated on the following environments.
 + NVIDIA Quadro6000 GPU
     + We tested with NVIDIA Quadro6000 nvc0 GPU
 + Kernel mode gdev
-    + `605e69e70ce7b4c505be91696612e98649ec383f` is tested
+    + `605e69e70ce7b4c505be91696612e98649ec383f` is tested (In this version, cubin should be built with NVCC 4.2. This is caused by this kernel mode gdev's limitation)
     + `054b48615bb599d9542d0d6552a7c72bdb62c60c` is tested
-      + But reverting `054b48615bb599d9542d0d6552a7c72bdb62c60c` is recommended since it acquires a lot of memory
+      + But reverting `d4a6697583ca3d5606711402be121da0bf9875e2` is recommended since it acquires a lot of memory (since we only support BAR remapping for BAR3 (not BAR1: it is only used for submitting a command request on the NVIDIA driver. Submission requests are trapped by gxen) in this prototype, initializing this memory area takes a lot of time)
 + Rodinia benchmarks
     + https://github.com/shinpei0208/gdev-bench
 
