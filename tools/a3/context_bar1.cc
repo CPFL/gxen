@@ -63,6 +63,7 @@ void context::write_bar1(const command& cmd) {
     }
 
     const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, nullptr);
+    A3_LOG("VM BAR1 write 0x%" PRIX32 " access => 0x%" PRIX64 "\n", cmd.offset, gphys);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         pmem.write(gphys, cmd.value, cmd.size());
@@ -97,6 +98,7 @@ void context::read_bar1(const command& cmd) {
     }
 
     const uint64_t gphys = bar1_channel()->table()->resolve(cmd.offset, nullptr);
+    A3_LOG("VM BAR1 read 0x%" PRIX32 " access => 0x%" PRIX64 "\n", cmd.offset, gphys);
     if (gphys != UINT64_MAX) {
         pmem::accessor pmem;
         const uint32_t ret = pmem.read(gphys, cmd.size());
