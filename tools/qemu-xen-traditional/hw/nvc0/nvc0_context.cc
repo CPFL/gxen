@@ -35,6 +35,7 @@ namespace nvc0 {
 context::context(nvc0_state_t* state, uint64_t memory_size)
     : state_(state)
     , pramin_()
+    , mmio_counter_()
     , io_service_()
     , socket_(io_service_)
     , socket_mutex_()
@@ -118,6 +119,7 @@ a3::command context::message(const a3::command& cmd, bool read) {
         unsigned int priority;
         std::size_t size;
         res_queue_->receive(&result, sizeof(a3::command), size, priority);
+        instrument(result.is_tlb(), result.is_shadowing());
         return result;
     }
     return a3::command();
@@ -135,6 +137,12 @@ void context::notify_bar3_change() {
         static_cast<uint32_t>(address)
     };
     send(cmd);
+}
+
+void context::instrument(bool tlb, bool shadowing) {
+    mmio_counter_ += 1;
+    std::printf("LOG %010" PRIu64 ":TLB:%d SHW:%d\n",  mmio_counter_, tlb ? 1 : 0, shadowing ? 1 : 0);
+    std::fflush(stdout);
 }
 
 }  // namespace nvc0
