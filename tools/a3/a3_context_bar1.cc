@@ -40,6 +40,7 @@ void context::write_bar1(const command& cmd) {
                 if (!para_virtualized()) {
                     // A3_LOG("FIRE for channel %" PRIu32 "\n", res.channel);
                     // When target TLB is not flushed, we should flush it lazily
+                    instrument_maybe_shadowing();
                     if (a3::flags::lazy_shadowing) {
                         channels(res.channel)->flush(this);
                     }

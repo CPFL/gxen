@@ -46,6 +46,7 @@ void context::write_barrier(uint64_t addr, const command& cmd) {
         for (iter_t it = range.first; it != range.second; ++it) {
             A3_LOG("write reflect shadow 0x%" PRIX64 " : rest 0x%" PRIX64 "\n", it->second->shadow_ramin()->address(), rest);
             if (cmd.value) {
+                instrument_maybe_shadowing();
                 if (a3::flags::lazy_shadowing) {
                     it->second->flush(this);
                 }

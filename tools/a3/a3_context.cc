@@ -73,6 +73,7 @@ context::context(session* s, bool through)
     , suspended_()
     , bar3_access_count_(0)
     , shw_access_count_(0)
+    , shw_pending_(false)
 {
 }
 
@@ -347,7 +348,16 @@ void context::instrument_bar3_count() {
 
 void context::instrument_shadowing() {
     ++shw_access_count_;
+    buffer()->check_tlb();
     A3_LOG("SHW count %" PRIu64 "\n", shw_access_count_);
+    shw_pending_ = true;
+}
+
+void context::instrument_maybe_shadowing() {
+    if (shw_pending_) {
+        buffer()->check_shadowing();
+        shw_pending_ = false;
+    }
 }
 
 }  // namespace a3

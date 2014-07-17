@@ -176,6 +176,7 @@ void context::write_bar0(const command& cmd) {
                     A3_SYNCHRONIZED(device::instance()->mutex()) {
                         for (iter_t it = range.first; it != range.second; ++it) {
                             const uint32_t res = bit_clear<28>(data) | (it->second->shadow_ramin()->address() >> 12);
+                            instrument_maybe_shadowing();
                             if (a3::flags::lazy_shadowing) {
                                 it->second->flush(this);
                             }
@@ -523,6 +524,7 @@ uint32_t context::encode_to_shadow_ramin(uint32_t value) {
     } else {
         for (iter_t it = range.first; it != range.second; ++it) {
             A3_LOG("encode: virt %" PRIX64 " to shadow ramin %" PRIX64 "\n", virt, it->second->shadow_ramin()->address());
+            instrument_maybe_shadowing();
             if (a3::flags::lazy_shadowing) {
                 it->second->flush(this);
             }
