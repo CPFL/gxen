@@ -194,6 +194,7 @@ void channel::flush(context* ctx) {
     }
 
     // A3_FATAL(stdout, "shadowing times %" PRIu64 "\n", ctx->increment_shadowing_times());
+    ctx->instrument_shadowing();
 
     // clear dirty flags
     channel* origin = NULL;

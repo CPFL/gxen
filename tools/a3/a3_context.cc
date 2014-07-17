@@ -71,6 +71,8 @@ context::context(session* s, bool through)
     , bandwidth_used_()
     , sampling_bandwidth_used_()
     , suspended_()
+    , bar3_access_count_(0)
+    , shw_access_count_(0)
 {
 }
 
@@ -179,6 +181,7 @@ bool context::handle(const command& cmd) {
             // A3_LOG("BAR1 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
         case command::BAR3:
+            instrument_bar3_count();
             write_bar3(cmd);
             // A3_LOG("BAR3 write 0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, cmd.value);
             break;
@@ -200,8 +203,8 @@ bool context::handle(const command& cmd) {
             // A3_LOG("BAR1 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR3:
+            instrument_bar3_count();
             read_bar3(cmd);
-            A3_LOG("BAR3 read  0x%" PRIx32 " 0x%" PRIx32 "\n", cmd.offset, buffer()->value);
             break;
         case command::BAR4:
             read_bar4(cmd);
@@ -335,6 +338,16 @@ struct page_entry context::guest_to_host(const struct page_entry& entry) {
         }
     }
     return result;
+}
+
+void context::instrument_bar3_count() {
+    ++bar3_access_count_;
+    A3_LOG("BAR3 count %" PRIu64 "\n", bar3_access_count_);
+}
+
+void context::instrument_shadowing() {
+    ++shw_access_count_;
+    A3_LOG("SHW count %" PRIu64 "\n", shw_access_count_);
 }
 
 }  // namespace a3

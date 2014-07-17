@@ -110,6 +110,9 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     mutex_t& band_mutex() { return band_mutex_; }
     void update_budget(const boost::posix_time::time_duration& credit);
 
+    void instrument_bar3_count();
+    void instrument_shadowing();
+
  private:
     void initialize(int domid, bool para);
     void playlist_update(uint32_t reg_addr, uint32_t cmd);
@@ -132,6 +135,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
         return it->second;
     }
     int pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host);
+
 
     session* session_;
     bool through_;
@@ -169,6 +173,9 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::posix_time::time_duration bandwidth_used_;
     boost::posix_time::time_duration sampling_bandwidth_used_;
     std::queue<fire_t> suspended_;
+
+    uint64_t bar3_access_count_;
+    uint64_t shw_access_count_;
 };
 
 }  // namespace a3
