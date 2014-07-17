@@ -55,6 +55,12 @@ class command {
 
     inline bar_t bar() const { return static_cast<bar_t>(u8[0]); }
     inline std::size_t size() const { return u8[1]; }
+
+    // instrumentations
+    void check_tlb() { u8[2] = 0xab; }
+    bool is_tlb() const { return u8[2] == 0xab; }
+    void check_shadowing() { u8[3] = 0xbc; }
+    bool is_shadowing() const { return u8[3] == 0xbc; }
 };
 
 // Assuming little endianess

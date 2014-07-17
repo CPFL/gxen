@@ -15,18 +15,22 @@ class context {
     uint64_t pramin() const { return pramin_; }
     void set_pramin(uint64_t pramin) { pramin_ = pramin; }
     uint32_t id() const { return id_; }
-    // socket based
-    a3::command send(const a3::command& cmd);
     // message passing
     a3::command message(const a3::command& cmd, bool read);
     void notify_bar3_change();
 
     static context* extract(nvc0_state_t* state);
+    void instrument(bool is_tlb, bool is_shadowing);
 
  private:
+    // socket based
+    a3::command send(const a3::command& cmd);
+
     uint32_t id_;
     nvc0_state_t* state_;
     uint64_t pramin_;  // 16bit shifted
+
+    uint64_t mmio_counter_;
 
     // ASIO
     boost::asio::io_service io_service_;

@@ -57,6 +57,7 @@ void session::main() {
     for (;;) {
         command cmd;
         req_queue_->receive(&cmd, sizeof(command), size, priority);
+        std::memset(buffer(), 0, sizeof(command));
         if (ctx()->handle(cmd)) {
             // res queue is needed
             res_queue_->send(buffer(), sizeof(command), 0);

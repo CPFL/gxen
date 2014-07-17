@@ -79,6 +79,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) 
         { a3::command::BAR0, sizeof(uint8_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        ctx->instrument(false, false);
         return nvc0_read8(state->bar[0].space + cmd.offset);
     }
     return ctx->message(cmd, true).value;
@@ -95,6 +96,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
         { a3::command::BAR0, sizeof(uint16_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        ctx->instrument(false, false);
         return nvc0_read16(state->bar[0].space + cmd.offset);
     }
     return ctx->message(cmd, true).value;
@@ -111,10 +113,11 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
         { a3::command::BAR0, sizeof(uint8_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        ctx->instrument(false, false);
         nvc0_write8(cmd.value, state->bar[0].space + cmd.offset);
         return;
     }
-    ctx->message(cmd, false);
+    ctx->message(cmd, true);
 }
 
 extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
@@ -128,10 +131,11 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
         { a3::command::BAR0, sizeof(uint16_t) }
     };
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        ctx->instrument(false, false);
         nvc0_write16(cmd.value, state->bar[0].space + cmd.offset);
         return;
     }
-    ctx->message(cmd, false);
+    ctx->message(cmd, true);
 }
 
 extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
@@ -147,16 +151,20 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
     case NV04_PTIMER_TIME_0:  // 0x9400
         // low
         ret = (uint32_t)timer_now();
+        ctx->instrument(false, false);
         goto end;
     case NV04_PTIMER_TIME_1:  // 0x9410
         // high
         ret = timer_now() >> 32;
+        ctx->instrument(false, false);
         goto end;
     case NV04_PTIMER_NUMERATOR:  // 0x9200
         ret = timer_numerator;
+        ctx->instrument(false, false);
         goto end;
     case NV04_PTIMER_DENOMINATOR:  // 0x9210
         ret = timer_denominator;
+        ctx->instrument(false, false);
         goto end;
     }
 
@@ -169,6 +177,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) 
         };
 
         if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+            ctx->instrument(false, false);
             ret = nvc0_read32(state->bar[0].space + cmd.offset);
             NVC0_LOG(state, "read PROM 0x%"PRIx64" => 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)ret);
             return ret;
@@ -192,6 +201,7 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
 
     switch (offset) {
     case 0x00000000:
+        ctx->instrument(false, false);
         switch (val) {
             case 0xDEADBEEF:
                 state->log = 1;
@@ -208,11 +218,13 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
     case NV04_PTIMER_NUMERATOR:
         timer_numerator = val;
         NVC0_PRINTF("numerator set\n");
+        ctx->instrument(false, false);
         return;
 
     case NV04_PTIMER_DENOMINATOR:
         timer_denominator = val;
         NVC0_PRINTF("denominator set\n");
+        ctx->instrument(false, false);
         return;
     }
 
@@ -224,10 +236,11 @@ extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uin
     };
 
     if (NV_PROM_OFFSET <= cmd.offset && cmd.offset < (NV_PROM_OFFSET + sizeof(nvc0_vbios))) {
+        ctx->instrument(false, false);
         nvc0_write32(cmd.value, state->bar[0].space + cmd.offset);
         return;
     }
-    ctx->message(cmd, false);
+    ctx->message(cmd, true);
     return;
 }
 /* vim: set sw=4 ts=4 et tw=80 : */

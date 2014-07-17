@@ -29,7 +29,7 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         offset,
         { a3::command::BAR1, N }
     };
-    ctx->message(cmd, false);
+    ctx->message(cmd, true);
 }
 
 template<std::size_t N>
@@ -53,7 +53,7 @@ void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
         offset,
         { a3::command::BAR3, N }
     };
-    ctx->message(cmd, false);
+    ctx->message(cmd, true);
 }
 
 template<std::size_t N>

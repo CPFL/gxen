@@ -170,7 +170,7 @@ bool context::handle(const command& cmd) {
             write_bar4(cmd);
             return true; // speicialized
         }
-        return false;
+        return true;
     }
 
     if (cmd.type == command::TYPE_READ) {
@@ -194,7 +194,7 @@ bool context::handle(const command& cmd) {
         return true;
     }
 
-    return false;
+    return true;
 }
 
 void context::playlist_update(uint32_t reg_addr, uint32_t cmd) {
@@ -235,6 +235,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
     uint64_t already = 0;
     channel::page_table_reuse_t* reuse;
 
+    buffer()->check_tlb();
     A3_LOG("TLB flush 0x%" PRIX64 " pd\n", page_directory);
 
     // rescan page tables
@@ -321,6 +322,7 @@ void context::instrument_bar3_count() {
 
 void context::instrument_shadowing() {
     ++shw_access_count_;
+    buffer()->check_shadowing();
     A3_LOG("SHW count %" PRIu64 "\n", shw_access_count_);
 }
 
