@@ -120,6 +120,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
 
     void instrument_bar3_count();
     void instrument_shadowing();
+    void instrument_maybe_shadowing();
 
  private:
     void initialize(int domid, bool para);
@@ -179,6 +180,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
 
     uint64_t bar3_access_count_;
     uint64_t shw_access_count_;
+    bool shw_pending_;
 };
 
 }  // namespace a3
