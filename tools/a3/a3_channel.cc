@@ -191,6 +191,8 @@ void channel::flush(context* ctx) {
         return;
     }
 
+    ctx->instrument_shadowing();
+
     // clear dirty flags
     channel* origin = NULL;
     for (page_table_reuse_t::size_type pos = derived_->find_first(); pos != derived_->npos; pos = derived_->find_next(pos)) {
