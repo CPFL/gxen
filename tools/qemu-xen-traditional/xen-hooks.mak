@@ -32,7 +32,6 @@ OBJS += xenfb.o
 OBJS += xen_console.o
 ifndef CONFIG_STUBDOM
 OBJS += xen_disk.o
-OBJS += xen_drm.o
 endif
 OBJS += xen_machine_fv.o
 OBJS += exec-dm.o
