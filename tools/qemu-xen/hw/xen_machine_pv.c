@@ -79,6 +79,7 @@ static void xen_init_pv(ram_addr_t ram_size,
     xen_be_register("vfb", &xen_framebuffer_ops);
     xen_be_register("qdisk", &xen_blkdev_ops);
     xen_be_register("qnic", &xen_netdev_ops);
+    xen_be_register("vdrm", &xen_drmdev_ops);
 
     /* configure framebuffer */
     if (xenfb_enabled) {
