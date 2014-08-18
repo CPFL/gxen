@@ -77,6 +77,7 @@ static void xen_init_pv(ram_addr_t ram_size, int vga_ram_size,
     if (domid_target)
         xenstore_scan("qdisk", domid_target, &xen_blkdev_ops);
 #endif
+    xen_be_register("vdrm", &xen_drmdev_ops);
 
     /* setup framebuffer */
     xen_init_display(xen_domid);
