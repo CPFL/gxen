@@ -316,6 +316,11 @@ struct page_entry context::guest_to_host(const struct page_entry& entry) {
             const uint64_t h_address = get_phys_address(g_address);
             const uint64_t h_field = h_address >> 12;
             result.address = (uint32_t)(h_field);
+            if (!(get_address_shift() <= h_address && h_address < (get_address_shift() + vram_size()))) {
+                // invalid address
+                A3_LOG("  invalid addr 0x%" PRIx64 " to 0x%" PRIx64 "\n", g_address, h_address);
+                result.present = false;
+            }
         } else if (entry.target == page_entry::TARGET_TYPE_SYSRAM || entry.target == page_entry::TARGET_TYPE_SYSRAM_NO_SNOOP) {
             // rewrite address
             const uint32_t gfn = (uint32_t)(result.address);
@@ -325,7 +330,8 @@ struct page_entry context::guest_to_host(const struct page_entry& entry) {
             }
             // const uint64_t h_address = ctx->get_phys_address(g_address);
             result.address = (uint32_t)(mfn);
-            A3_LOG("  changing to sys addr 0x%" PRIx64 " to 0x%" PRIx64 "\n", gfn, mfn);
+            // TODO(Yusuke Suzuki): Validate host physical address in Xen side
+            A3_LOG("  changing to sys addr 0x%" PRIx32 " to 0x%" PRIx32 "\n", gfn, mfn);
         }
     }
     return result;
