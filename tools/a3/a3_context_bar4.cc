@@ -76,7 +76,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
-    instruments()->hypercall(cmd, slot);
+    // instruments()->hypercall(cmd, slot);
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
@@ -158,6 +158,53 @@ int context::a3_call(const command& cmd, slot_t* slot) {
             // CAUTION: inverted (pgt1 & pgt0)
             pgd->write32(0x8 * index + 0x0, pgt1 ? (0x00000001 | (pgt1->address() >> 8)) : 0);
             pgd->write32(0x8 * index + 0x4, pgt0 ? (0x00000001 | (pgt0->address() >> 8)) : 0);
+        }
+        return 0;
+
+    case NOUVEAU_PV_OP_MAP_PGT_BATCH: {
+            pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
+            if (!pgd) {
+                A3_LOG("INVALID...\n");
+                return -EINVAL;
+            }
+
+            if (pgd == pv_bar1_pgd_ || pgd == pv_bar3_pgd_) {
+                std::abort();
+            }
+
+            const uint32_t index = slot->u32[2];
+            const uint32_t count = slot->u32[3];
+            if ((0x8 * (index + 1)) > pgd->size() || (0x8 * (index + count + 1)) > pgd->size()) {
+                A3_LOG("INVALID...\n");
+                return -ERANGE;
+            }
+
+            for (uint32_t i = 0; i < count; ++i) {
+                pv_page* pgt0 = NULL;
+                const uint32_t pgt0i = 4 + i * 2;
+                if (slot->u32[pgt0i]) {
+                    pgt0 = lookup_by_pv_id(slot->u32[pgt0i]);
+                    if (!pgt0) {
+                        A3_LOG("INVALID...\n");
+                        return -EINVAL;
+                    }
+                    assert(pgt0);
+                }
+
+                pv_page* pgt1 = NULL;
+                const uint32_t pgt1i = 5 + i * 2;
+                if (slot->u32[pgt1i]) {
+                    pgt1 = lookup_by_pv_id(slot->u32[pgt1i]);
+                    if (!pgt1) {
+                        A3_LOG("INVALID...\n");
+                        return -EINVAL;
+                    }
+                    assert(pgt1);
+                }
+                // CAUTION: inverted (pgt1 & pgt0)
+                pgd->write32(0x8 * (index + count) + 0x0, pgt1 ? (0x00000001 | (pgt1->address() >> 8)) : 0);
+                pgd->write32(0x8 * (index + count) + 0x4, pgt0 ? (0x00000001 | (pgt0->address() >> 8)) : 0);
+            }
         }
         return 0;
 

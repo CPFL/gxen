@@ -41,6 +41,7 @@
     V(NOUVEAU_PV_OP_MEM_ALLOC)\
     V(NOUVEAU_PV_OP_MEM_FREE)\
     V(NOUVEAU_PV_OP_BAR3_PGT)\
+    V(NOUVEAU_PV_OP_MAP_PGT_BATCH)\
 
 #endif  // A3_CONFIG_H_
 /* vim: set sw=4 ts=4 et tw=80 : */
