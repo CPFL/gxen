@@ -1515,18 +1515,17 @@ int xc_domain_set_virq_handler(xc_interface *xch, uint32_t domid, int virq)
 }
 
 
-int xc_domain_gfn_to_mfn(xc_interface *xch, uint32_t domid, unsigned long gfn, unsigned long* mfn)
+int xc_domain_gfn_to_mfn(xc_interface *xch, uint32_t domid, uint32_t nr_entries, uint32_t* entries)
 {
     DECLARE_DOMCTL;
     int rc;
 
     domctl.cmd = XEN_DOMCTL_gfn_to_mfn;
     domctl.domain = domid;
-    domctl.u.gfn_to_mfn.gfn = gfn;
+    domctl.u.gfn_to_mfn.nr_entries = nr_entries;
+    memcpy(domctl.u.gfn_to_mfn.entries, entries, sizeof(uint32_t) * nr_entries);
     rc = do_domctl(xch, &domctl);
-
-    *mfn = domctl.u.gfn_to_mfn.mfn;
-
+    memcpy(entries, domctl.u.gfn_to_mfn.entries, sizeof(uint32_t) * nr_entries);
     return rc;
 }
 

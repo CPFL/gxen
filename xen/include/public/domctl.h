@@ -815,8 +815,8 @@ typedef struct xen_domctl_set_virq_handler xen_domctl_set_virq_handler_t;
 DEFINE_XEN_GUEST_HANDLE(xen_domctl_set_virq_handler_t);
 
 struct xen_domctl_gfn_to_mfn {
-    uint64_t gfn;
-    uint64_t mfn;
+    uint32_t nr_entries;
+    uint32_t entries[30];  /* gfn */
 };
 typedef struct xen_domctl_gfn_to_mfn xen_domctl_gfn_to_mfn_t;
 DEFINE_XEN_GUEST_HANDLE(xen_domctl_gfn_to_mfn_t);

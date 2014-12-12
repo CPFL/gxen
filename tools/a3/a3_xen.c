@@ -45,13 +45,8 @@ void* a3_xen_map_foreign_range(libxl_ctx* ctx, int domid, int size, int prot, un
     return xc_map_foreign_range(libxl_ctx_xch(ctx), domid, size, prot, mfn);
 }
 
-unsigned long a3_xen_gfn_to_mfn(libxl_ctx* ctx, int domid, unsigned long gfn) {
-    unsigned long mfn;
-    const int ret = xc_domain_gfn_to_mfn(libxl_ctx_xch(ctx), domid, gfn, &mfn);
-    if (ret != 0) {
-        return 0;
-    }
-    return mfn;
+int a3_xen_gfn_to_mfn(libxl_ctx* ctx, int domid, unsigned long nr_entries, uint32_t* entries) {
+    return xc_domain_gfn_to_mfn(libxl_ctx_xch(ctx), domid, nr_entries, entries);
 }
 
 /* vim: set sw=4 ts=4 et tw=80 : */

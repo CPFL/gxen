@@ -1530,21 +1530,23 @@ long arch_do_domctl(
         d = rcu_lock_domain_by_id(domctl->domain);
         if ( d != NULL )
         {
-	    struct page_info* page;
-	    unsigned long gfn = domctl->u.gfn_to_mfn.gfn;
-	    page = get_page_from_gfn(d, gfn, NULL, P2M_ALLOC);
-
-	    ret = -ENOMEM;
-	    if (!page)
-	    {
-		rcu_unlock_domain(d);
-	    }
-
-	    ret = 0;
-	    domctl->u.gfn_to_mfn.mfn = page_to_mfn(page);
-	    put_page(page);
+            unsigned long nr_entries = domctl->u.gfn_to_mfn.nr_entries;
+            for (unsigned long i = 0; i < nr_entries; ++i) {
+                struct page_info* page;
+                unsigned long gfn = domctl->u.gfn_to_mfn.entries[i];
+                page = get_page_from_gfn(d, gfn, NULL, P2M_ALLOC);
+                if (!page)
+                {
+                    ret = -ENOMEM;
+                    goto gfn_to_mfn_end;
+                }
+                domctl->u.gfn_to_mfn.entries[i] = page_to_mfn(page);
+                put_page(page);
+            }
+            ret = 0;
+gfn_to_mfn_end:
             rcu_unlock_domain(d);
-	    copy_to_guest(u_domctl, domctl, 1);
+            copy_to_guest(u_domctl, domctl, 1);
         }
     }
     break;

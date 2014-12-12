@@ -9,7 +9,7 @@ extern "C" {
 int a3_xen_add_memory_mapping(libxl_ctx* ctx, int domid, unsigned long first_gfn, unsigned long first_mfn, unsigned long nr_mfns);
 int a3_xen_remove_memory_mapping(libxl_ctx* ctx, int domid, unsigned long first_gfn, unsigned long first_mfn, unsigned long nr_mfns);
 void* a3_xen_map_foreign_range(libxl_ctx* ctx, int domid, int size, int prot, unsigned long mfn);
-unsigned long a3_xen_gfn_to_mfn(libxl_ctx* ctx, int domid, unsigned long gfn);
+int a3_xen_gfn_to_mfn(libxl_ctx* ctx, int domid, unsigned long nr_entries, uint32_t* entries);
 
 #ifdef __cplusplus
 }

@@ -326,7 +326,9 @@ struct page_entry context::guest_to_host(const struct page_entry& entry) {
             const uint32_t gfn = (uint32_t)(result.address);
             uint32_t mfn = 0;
             A3_SYNCHRONIZED(device::instance()->mutex()) {
-                mfn = a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), gfn);
+                uint32_t entries = gfn;
+                a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), domid(), 1, &entries);
+                mfn = entries;
             }
             // const uint64_t h_address = ctx->get_phys_address(g_address);
             result.address = (uint32_t)(mfn);

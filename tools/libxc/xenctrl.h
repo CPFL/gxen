@@ -788,7 +788,7 @@ int xc_domain_set_virq_handler(xc_interface *xch, uint32_t domid, int virq);
  * @parm gfn guest frame number
  * return mfn on success, 0 on failure
  */
-int xc_domain_gfn_to_mfn(xc_interface *xch, uint32_t domid, unsigned long gfn, unsigned long* mfn);
+int xc_domain_gfn_to_mfn(xc_interface *xch, uint32_t domid, uint32_t nr_entries, uint32_t* entries);
 
 /*
  * CPUPOOL MANAGEMENT FUNCTIONS
