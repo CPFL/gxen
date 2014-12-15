@@ -10,6 +10,7 @@
 #include <boost/intrusive/list_hook.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include "a3.h"
+#include "a3_fire.h"
 #include "a3_lock.h"
 #include "a3_channel.h"
 #include "a3_bar1_channel.h"
@@ -97,8 +98,8 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     instruments_t* instruments() const { return instruments_.get(); }
 
     // BAND
-    bool enqueue(const command& cmd);
-    bool dequeue(command* cmd);
+    bool enqueue(const fire_t& cmd);
+    bool dequeue(fire_t* cmd);
     bool is_suspended();
     boost::posix_time::time_duration budget() const { return budget_; }
     boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
@@ -167,7 +168,7 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration bandwidth_used_;
     boost::posix_time::time_duration sampling_bandwidth_used_;
-    std::queue<command> suspended_;
+    std::queue<fire_t> suspended_;
 };
 
 }  // namespace a3

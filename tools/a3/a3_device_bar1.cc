@@ -116,6 +116,10 @@ void device_bar1::flush() {
     }
 }
 
+void device_bar1::submit(const fire_t& cmd) {
+    device::instance()->write(1, cmd.offset(), cmd.cmd().value, cmd.cmd().size());
+}
+
 void device_bar1::write(context* ctx, const command& cmd) {
     uint64_t offset = cmd.offset - ctx->poll_area();
     offset += 0x1000ULL * ctx->id() * A3_DOMAIN_CHANNELS;

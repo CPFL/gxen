@@ -275,7 +275,7 @@ bool device::is_active(context* ctx) {
     return registers::read32(0x400700);
 }
 
-void device::fire(context* ctx, const command& cmd) {
+void device::enqueue(context* ctx, const command& cmd) {
     scheduler_->enqueue(ctx, cmd);
 }
 

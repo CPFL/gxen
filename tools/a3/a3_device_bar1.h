@@ -28,6 +28,8 @@ class device_bar1 : private boost::noncopyable {
     void pv_scan(context* ctx);
     void pv_reflect_entry(context* ctx, bool big, uint32_t index, uint64_t entry);
 
+    void submit(const fire_t& cmd);
+
  private:
     void map(uint64_t virt, const struct page_entry& entry);
 
