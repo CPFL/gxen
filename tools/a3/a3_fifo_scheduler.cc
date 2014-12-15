@@ -106,7 +106,7 @@ void fifo_scheduler_t::replenish() {
 void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
-        queue_.push(fire_t(ctx, cmd));
+        queue_.push(execution_t(ctx, fire_t(ctx, cmd)));
     }
     cond_.notify_one();
 }
@@ -115,7 +115,7 @@ void fifo_scheduler_t::run() {
     boost::condition_variable_any cond;
     boost::unique_lock<boost::mutex> lock(mutex_);
     while (true) {
-        fire_t handle;
+        execution_t handle;
         while (queue_.empty()) {
             cond_.wait(lock);
         }
@@ -125,9 +125,7 @@ void fifo_scheduler_t::run() {
         lock.unlock();
         utilization_.start();
 
-        A3_SYNCHRONIZED(device::instance()->mutex()) {
-            device::instance()->bar1()->write(handle.first, handle.second);
-        }
+        device::instance()->bar1()->submit(handle.second);
 
         lock.lock();
 

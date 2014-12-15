@@ -29,7 +29,6 @@ class band_scheduler_t : public scheduler_t {
     virtual void enqueue(context* ctx, const command& cmd);
 
  private:
-    typedef std::pair<context*, command> fire_t;
     void run();
     void replenish();
     void sampling();

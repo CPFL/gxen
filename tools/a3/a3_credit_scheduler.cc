@@ -25,6 +25,7 @@
 #include "a3.h"
 #include "a3_credit_scheduler.h"
 #include "a3_context.h"
+#include "a3_fire.h"
 #include "a3_registers.h"
 #include "a3_device.h"
 #include "a3_device_bar1.h"
@@ -89,7 +90,7 @@ void credit_scheduler_t::stop() {
 
 void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
     // on arrival
-    ctx->enqueue(cmd);
+    ctx->enqueue(fire_t(ctx, cmd));
     counter_.fetch_add(1);
     cond_.notify_one();
 }
@@ -186,15 +187,13 @@ context* credit_scheduler_t::select_next_context(bool idle) {
 
 void credit_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
-    command cmd;
+    fire_t cmd;
 
     counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
     utilization_.start();
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->bar1()->write(ctx, cmd);
-    }
+    device::instance()->bar1()->submit(cmd);
 
     while (device::instance()->is_active(ctx)) {
         boost::this_thread::yield();

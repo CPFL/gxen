@@ -55,7 +55,7 @@ class device : private boost::noncopyable {
     // VT-d
     int domid() const { return domid_; }
     bool is_active(context* ctx);
-    void fire(context* ctx, const command& cmd);
+    void enqueue(context* ctx, const command& cmd);
 
     void playlist_update(context* ctx, uint32_t address, uint32_t cmd);
 

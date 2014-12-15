@@ -25,14 +25,13 @@
 #include "a3.h"
 #include "a3_direct_scheduler.h"
 #include "a3_context.h"
+#include "a3_fire.h"
 #include "a3_device.h"
 #include "a3_device_bar1.h"
 namespace a3 {
 
 void direct_scheduler_t::enqueue(context* ctx, const command& cmd) {
-    A3_SYNCHRONIZED(device::instance()->mutex()) {
-        device::instance()->bar1()->write(ctx, cmd);
-    }
+    device::instance()->bar1()->submit(fire_t(ctx, cmd));
 }
 
 }  // namespace a3

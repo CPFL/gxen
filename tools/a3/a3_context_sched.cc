@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "a3.h"
 #include "a3_context.h"
+#include "a3_fire.h"
 #include "a3_registers.h"
 #include "a3_barrier.h"
 #include "a3_bit_mask.h"
@@ -37,7 +38,7 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-bool context::enqueue(const command& cmd) {
+bool context::enqueue(const fire_t& cmd) {
     A3_SYNCHRONIZED(band_mutex()) {
         const bool ret = suspended_.empty();
         suspended_.push(cmd);
@@ -46,7 +47,7 @@ bool context::enqueue(const command& cmd) {
     return false;
 }
 
-bool context::dequeue(command* cmd) {
+bool context::dequeue(fire_t* cmd) {
     A3_SYNCHRONIZED(band_mutex()) {
         if (suspended_.empty()) {
             return false;

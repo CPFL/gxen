@@ -8,6 +8,7 @@
 #include <boost/intrusive/list.hpp>
 #include "a3.h"
 #include "a3_lock.h"
+#include "a3_fire.h"
 #include "a3_scheduler.h"
 #include "a3_timer.h"
 #include "a3_context.h"
@@ -26,7 +27,7 @@ class fifo_scheduler_t : public scheduler_t {
     virtual void unregister_context(context* ctx);
 
  private:
-    typedef std::pair<context*, command> fire_t;
+    typedef std::pair<context*, fire_t> execution_t;
     void run();
     void replenish();
     void sampling();
@@ -40,7 +41,7 @@ class fifo_scheduler_t : public scheduler_t {
     boost::scoped_ptr<boost::thread> sampler_;
     boost::mutex mutex_;
     boost::condition_variable cond_;
-    std::queue<fire_t> queue_;
+    std::queue<execution_t> queue_;
     timer_t utilization_;
     contexts_t contexts_;
     boost::posix_time::time_duration bandwidth_;
