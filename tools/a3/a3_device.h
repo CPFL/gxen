@@ -42,6 +42,10 @@ class device : private boost::noncopyable {
     void write(int bar, uint32_t offset, uint32_t val, std::size_t size);
     uint32_t read_pmem(uint64_t addr, std::size_t size);
     void write_pmem(uint64_t addr, uint32_t val, std::size_t size);
+    uint32_t read_pmem_locked(uint64_t addr, std::size_t size);
+    void write_pmem_locked(uint64_t addr, uint32_t val, std::size_t size);
+    void read_pages_pmem_locked(void* ptr, uint64_t addr, std::size_t n);
+    void write_pages_pmem_locked(const void* ptr, uint64_t addr, std::size_t n);
     uint32_t pmem() const { return pmem_; }
     void set_pmem(uint32_t pmem) { pmem_ = pmem; }
     device_bar1* bar1() { return bar1_.get(); }

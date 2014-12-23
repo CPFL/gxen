@@ -816,7 +816,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_domctl_set_virq_handler_t);
 
 struct xen_domctl_gfn_to_mfn {
     uint32_t nr_entries;
-    uint32_t entries[30];  /* gfn */
+    uint32_t entries[128];  /* gfn */
 };
 typedef struct xen_domctl_gfn_to_mfn xen_domctl_gfn_to_mfn_t;
 DEFINE_XEN_GUEST_HANDLE(xen_domctl_gfn_to_mfn_t);
@@ -981,7 +981,7 @@ struct xen_domctl {
         struct xen_domctl_gdbsx_memio       gdbsx_guest_memio;
         struct xen_domctl_gdbsx_pauseunp_vcpu gdbsx_pauseunp_vcpu;
         struct xen_domctl_gdbsx_domstatus   gdbsx_domstatus;
-        uint8_t                             pad[128];
+        uint8_t                             pad[1024];
     } u;
 };
 typedef struct xen_domctl xen_domctl_t;

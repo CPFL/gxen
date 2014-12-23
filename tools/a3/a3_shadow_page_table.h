@@ -12,6 +12,8 @@ namespace a3 {
 class context;
 class page;
 
+class shadow_page_table_refresher;
+
 class shadow_page_table {
  public:
     shadow_page_table(uint32_t channel_id);
@@ -31,7 +33,7 @@ class shadow_page_table {
     uint64_t shadow_address() const { return phys() ? phys()->address() : 0; }
 
  private:
-    struct page_directory refresh_directory(context* ctx, pmem::accessor* pmem, const struct page_directory& dir);
+    struct page_directory refresh_directory(context* ctx, shadow_page_table_refresher* refresher, const struct page_directory& dir);
     inline struct page_entry refresh_entry(context* ctx, pmem::accessor* pmem, const struct page_entry& entry);
     static uint64_t round_up(uint64_t x, uint64_t y) {
         return (((x) + (y - 1)) & ~(y - 1));
@@ -55,6 +57,10 @@ class shadow_page_table {
     boost::ptr_vector<page> small_pages_pool_;
     std::size_t large_pages_pool_cursor_;
     std::size_t small_pages_pool_cursor_;
+
+    // System memory cache.
+    std::vector<struct page_directory> top_;
+    std::vector<struct page_directory> spare_;
 };
 
 }  // namespace a3

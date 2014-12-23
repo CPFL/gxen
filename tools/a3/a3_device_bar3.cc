@@ -37,7 +37,8 @@
 namespace a3 {
 
 device_bar3::device_bar3(device::bar_t bar)
-    : address_(bar.base_addr)
+    : bar3_(bar)
+    , address_(bar.base_addr)
     , size_(bar.size)
     , ramin_(1)
     , directory_(8)
@@ -109,6 +110,23 @@ void device_bar3::map(uint64_t index, const struct page_entry& entry) {
     entries_.write32(0x8 * index + 0x4, entry.word1);
     const uint64_t addr = static_cast<uint64_t>(entry.address) << 12;
     software_[index] = (entry.present) ? addr : 0ULL;
+}
+
+void* device_bar3::find_bar3_address(context* ctx, uint64_t phys)
+{
+    for (uint64_t address = 0; address < A3_BAR3_ARENA_SIZE; address += kPAGE_SIZE) {
+        // const uint64_t virt = ctx->id() * A3_BAR3_ARENA_SIZE + address;
+        // const uint64_t index = virt / kPAGE_SIZE;
+        struct software_page_entry entry;
+        const uint64_t gphys = resolve(ctx, address, &entry);
+        if (gphys != UINT64_MAX) {
+            const uint64_t translated = static_cast<uint64_t>(entry.phys().address) << 12;
+            if (translated == phys) {
+                return reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(bar3_.addr) + ctx->id() * A3_BAR3_ARENA_SIZE + address);
+            }
+        }
+    }
+    return nullptr;
 }
 
 void device_bar3::shadow(context* ctx, uint64_t phys) {

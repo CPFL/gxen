@@ -39,6 +39,9 @@ class accessor : private boost::noncopyable {
         write(addr, val, sizeof(uint8_t));
     }
 
+    void read_pages(void* ptr, uint64_t addr, size_t n);
+    void write_pages(const void* ptr, uint64_t addr, size_t n);
+
  private:
     mutex_t::scoped_lock lock_;
 };

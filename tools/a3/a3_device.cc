@@ -31,6 +31,7 @@
 #include <boost/pool/detail/singleton.hpp>
 #include <pciaccess.h>
 #include "a3.h"
+#include "a3_bench.h"
 #include "a3_xen.h"
 #include "a3_device.h"
 #include "a3_vram.h"
@@ -98,7 +99,7 @@ device::device()
     // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
     // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
     // BAND
-    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
+    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(0), boost::posix_time::microseconds(500), boost::posix_time::milliseconds(16), boost::posix_time::milliseconds(100)));
     // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
     // Credit
     // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
@@ -287,26 +288,116 @@ void device::playlist_update(context* ctx, uint32_t address, uint32_t cmd) {
 
 uint32_t device::read_pmem(uint64_t addr, std::size_t size) {
     A3_SYNCHRONIZED(mutex()) {
-        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
-        if (shifted != pmem_) {
-            // change pmem
-            pmem_ = shifted;
-            write(0, 0x1700, shifted, sizeof(uint32_t));
-        }
-        return read(0, 0x700000 + (addr & 0x000000fffffULL), size);
+        return read_pmem_locked(addr, size);
     }
     return 0;  // make compiler happy
 }
 
 void device::write_pmem(uint64_t addr, uint32_t val, std::size_t size) {
     A3_SYNCHRONIZED(mutex()) {
+        write_pmem_locked(addr, val, size);
+    }
+}
+
+uint32_t device::read_pmem_locked(uint64_t addr, std::size_t size) {
+    const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+    if (shifted != pmem_) {
+        // change pmem
+        pmem_ = shifted;
+        write(0, 0x1700, shifted, sizeof(uint32_t));
+    }
+    return read(0, 0x700000 + (addr & 0x000000fffffULL), size);
+}
+
+void device::write_pmem_locked(uint64_t addr, uint32_t val, std::size_t size) {
+    const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+    if (shifted != pmem_) {
+        // change pmem
+        pmem_ = shifted;
+        write(0, 0x1700, shifted, sizeof(uint32_t));
+    }
+    write(0, 0x700000 + (addr & 0x000000fffffULL), val, size);
+}
+
+void device::read_pages_pmem_locked(void* ptr, uint64_t addr, std::size_t n) {
+    assert(addr % 0x1000 == 0);  // page aligned.
+    uint8_t* dst = reinterpret_cast<uint8_t*>(ptr);
+
+    {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        const uint64_t offset = (addr & 0x000000fffffULL);
+        if (offset) {
+            if (shifted != pmem_) {
+                // change pmem
+                pmem_ = shifted;
+                write(0, 0x1700, shifted, sizeof(uint32_t));
+            }
+
+            if ((n + (offset / 0x1000)) <= 256) {
+                mmio::memcpy(dst, static_cast<uint8_t*>(bars_[0].addr) + 0x700000 + offset, n * 0x1000);
+                return;
+            }
+
+            const std::size_t once = 256 - (offset / 0x1000);
+            mmio::memcpy(dst, static_cast<uint8_t*>(bars_[0].addr) + 0x700000 + offset, once * 0x1000);
+            dst += once * 0x1000;
+            addr += once * 0x1000;
+            n -= once;
+        }
+        assert((addr  & 0x000000fffffULL) == 0);
+    }
+
+
+    for (std::size_t i = 0; i < n; i += 256, dst += (0x1000 * 256), addr += (0x1000 * 256)) {
         const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
         if (shifted != pmem_) {
             // change pmem
             pmem_ = shifted;
             write(0, 0x1700, shifted, sizeof(uint32_t));
         }
-        write(0, 0x700000 + (addr & 0x000000fffffULL), val, size);
+        const std::size_t once = std::min<std::size_t>(256, n - i);
+        mmio::memcpy(dst, static_cast<uint8_t*>(bars_[0].addr) + 0x700000, once * 0x1000);
+    }
+}
+
+void device::write_pages_pmem_locked(const void* ptr, uint64_t addr, std::size_t n) {
+    assert(addr % 0x1000 == 0);  // page aligned.
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(ptr);
+
+    {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        const uint64_t offset = (addr & 0x000000fffffULL);
+        if (offset) {
+            if (shifted != pmem_) {
+                // change pmem
+                pmem_ = shifted;
+                write(0, 0x1700, shifted, sizeof(uint32_t));
+            }
+
+            if ((n + (offset / 0x1000)) <= 256) {
+                mmio::memcpy(static_cast<uint8_t*>(bars_[0].addr) + 0x700000 + offset, src, n * 0x1000);
+                return;
+            }
+
+            const std::size_t once = 256 - (offset / 0x1000);
+            mmio::memcpy(static_cast<uint8_t*>(bars_[0].addr) + 0x700000 + offset, src, once * 0x1000);
+            src += once * 0x1000;
+            addr += once * 0x1000;
+            n -= once;
+        }
+        assert((addr  & 0x000000fffffULL) == 0);
+    }
+
+
+    for (std::size_t i = 0; i < n; i += 256, src += (0x1000 * 256), addr += (0x1000 * 256)) {
+        const uint64_t shifted = ((addr & 0xffffff00000ULL) >> 16);
+        if (shifted != pmem_) {
+            // change pmem
+            pmem_ = shifted;
+            write(0, 0x1700, shifted, sizeof(uint32_t));
+        }
+        const std::size_t once = std::min<std::size_t>(256, n - i);
+        mmio::memcpy(static_cast<uint8_t*>(bars_[0].addr) + 0x700000, src, once * 0x1000);
     }
 }
 
