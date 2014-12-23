@@ -94,6 +94,15 @@ bool shadow_page_table::refresh(context* ctx, uint64_t page_directory_address, u
     return result;
 }
 
+template<typename T>
+static inline T round_up(T value, T unit) {
+    auto res = value % unit;
+    if (res == 0) {
+        return value;
+    }
+    return value - res + unit;
+}
+
 typedef std::vector<std::tuple<page*, uint64_t, struct page_entry>> deferred_t;
 
 class shadow_page_table_refresher {
@@ -108,6 +117,45 @@ class shadow_page_table_refresher {
     pmem::accessor* pmem() const { return pmem_; }
     std::vector<struct page_entry>& entries() { return entries_; }
     const std::vector<struct page_entry>& entries() const { return entries_; }
+    deferred_t* deferred() { return &deferred_; }
+
+    void process_deferred(context* ctx)
+    {
+        const size_t kMAX_PER = 128;
+        if (!deferred_.empty()) {
+            const auto larger = round_up<size_t>(deferred_.size(), kMAX_PER);
+            for (size_t i = 0; i < larger; i += kMAX_PER) {
+                const size_t start = i;
+                const size_t end = std::min<size_t>(deferred_.size(), start + kMAX_PER);
+                const size_t nr = end - start;
+
+                std::array<uint32_t, kMAX_PER> entries = { };
+
+                // rewrite address
+                for (size_t j = 0; j < nr; ++j) {
+                    const auto result = std::get<2>(deferred_[start + j]);
+                    const uint32_t gfn = (uint32_t)(result.address);
+                    entries[j] = gfn;
+                }
+                A3_SYNCHRONIZED(device::instance()->mutex()) {
+                    a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), ctx->domid(), nr, entries.data());
+                }
+                // const uint64_t h_address = ctx->get_phys_address(g_address);
+                // TODO(Yusuke Suzuki): Validate host physical address in Xen side
+                A3_LOG("  changing to sys addr %u\n", (unsigned)nr);
+                for (size_t j = 0; j < nr; ++j) {
+                    page* page = std::get<0>(deferred_[start + j]);
+                    const uint64_t offset = std::get<1>(deferred_[start + j]);
+                    auto result = std::get<2>(deferred_[start + j]);
+
+                    result.address = (uint32_t)(entries[j]);
+                    page->write32(pmem_, offset, result.word0);
+                    page->write32(pmem_, offset + 0x4, result.word1);
+                }
+            }
+        }
+        deferred_.clear();
+    }
 
     pmem::accessor* pmem_;
     std::vector<struct page_entry> entries_;
@@ -177,6 +225,7 @@ void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address)
                     }
                 // }
         }
+        refresher.process_deferred(ctx);
         std::swap(top_, spare_);
     }
 #endif
@@ -272,56 +321,8 @@ static void guest_to_host(context* ctx, pmem::accessor* pmem, deferred_t* deferr
     }
 }
 
-template<typename T>
-static inline T round_up(T value, T unit) {
-    auto res = value % unit;
-    if (res == 0) {
-        return value;
-    }
-    return value - res + unit;
-}
-
-static const size_t kMAX_PER = 128;
-
-static void process_deferred(context* ctx, pmem::accessor* pmem, const deferred_t& deferred) {
-    if (!deferred.empty()) {
-        const auto larger = round_up<size_t>(deferred.size(), kMAX_PER);
-        for (size_t i = 0; i < larger; i += kMAX_PER) {
-            const size_t start = i;
-            const size_t end = std::min<size_t>(deferred.size(), start + kMAX_PER);
-            const size_t nr = end - start;
-
-            std::array<uint32_t, kMAX_PER> entries = { };
-
-            // rewrite address
-            for (size_t j = 0; j < nr; ++j) {
-                const auto result = std::get<2>(deferred[start + j]);
-                const uint32_t gfn = (uint32_t)(result.address);
-                entries[j] = gfn;
-            }
-            A3_SYNCHRONIZED(device::instance()->mutex()) {
-                a3_xen_gfn_to_mfn(device::instance()->xl_ctx(), ctx->domid(), nr, entries.data());
-            }
-            // const uint64_t h_address = ctx->get_phys_address(g_address);
-            // TODO(Yusuke Suzuki): Validate host physical address in Xen side
-            A3_LOG("  changing to sys addr %u\n", (unsigned)nr);
-            for (size_t j = 0; j < nr; ++j) {
-                page* page = std::get<0>(deferred[start + j]);
-                const uint64_t offset = std::get<1>(deferred[start + j]);
-                auto result = std::get<2>(deferred[start + j]);
-
-                result.address = (uint32_t)(entries[j]);
-                page->write32(pmem, offset, result.word0);
-                page->write32(pmem, offset + 0x4, result.word1);
-            }
-        }
-    }
-}
-
 struct page_directory shadow_page_table::refresh_directory(context* ctx, shadow_page_table_refresher* refresher, const struct page_directory& dir) {
     struct page_directory result(dir);
-
-    deferred_t deferred;
 
     if (dir.large_page_table_present) {
         const uint64_t address = ctx->get_phys_address(static_cast<uint64_t>(dir.large_page_table_address) << 12);
@@ -333,7 +334,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, shadow_
             const uint64_t item = 0x8 * i;
             struct page_entry entry = refresher->entries()[i];
             if (entry.present) {
-                guest_to_host(ctx, refresher->pmem(), &deferred, large_page, item, entry);
+                guest_to_host(ctx, refresher->pmem(), refresher->deferred(), large_page, item, entry);
             } else {
                 large_page->write32(refresher->pmem(), item, 0);
             }
@@ -360,7 +361,7 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, shadow_
             const uint64_t item = 0x8 * i;
             struct page_entry entry = refresher->entries()[i];
             if (entry.present) {
-                guest_to_host(ctx, refresher->pmem(), &deferred, small_page, item, entry);
+                guest_to_host(ctx, refresher->pmem(), refresher->deferred(), small_page, item, entry);
             } else {
                 small_page->write32(refresher->pmem(), item, 0);
             }
@@ -376,8 +377,6 @@ struct page_directory shadow_page_table::refresh_directory(context* ctx, shadow_
     } else {
         result.word1 = 0;
     }
-
-    process_deferred(ctx, refresher->pmem(), deferred);
 
     return result;
 }
