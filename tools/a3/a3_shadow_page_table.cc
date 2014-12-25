@@ -164,6 +164,8 @@ class shadow_page_table_refresher {
 
 static void read_pages(context* ctx, pmem::accessor* pmem, void* dst, uint64_t src, std::size_t pages)
 {
+    pmem->read_pages(dst, src, pages);
+#if 0
     for (std::size_t i = 0; i < pages; ++i) {
         const uint64_t target = src + i * 0x1000;
         void* to = reinterpret_cast<uint8_t*>(dst) + i * 0x1000;
@@ -177,6 +179,7 @@ static void read_pages(context* ctx, pmem::accessor* pmem, void* dst, uint64_t s
             pmem->read_pages(to, target, 1);
         }
     }
+#endif
 }
 
 void shadow_page_table::refresh_page_directories(context* ctx, uint64_t address) {
