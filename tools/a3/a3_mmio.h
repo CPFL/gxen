@@ -5,6 +5,29 @@
 namespace a3 {
 namespace mmio {
 
+/* this ensures that SSE is not applied to memcpy. */
+inline void* memcpy(void* s1, const void* s2, size_t n)
+{
+    if ((n % sizeof(uint32_t)) == 0 &&
+            (reinterpret_cast<uintptr_t>(s1) % sizeof(uint32_t)) == 0 &&
+            (reinterpret_cast<uintptr_t>(s2) % sizeof(uint32_t)) == 0) {
+        volatile uint32_t* out = (volatile uint32_t*)s1;
+        const volatile uint32_t* in = (const volatile uint32_t*)s2;
+        size_t i, iz;
+        for (i = 0, iz = n / sizeof(uint32_t); i < iz; ++i) {
+            out[i] = in[i];
+        }
+    } else {
+        volatile char* out = (volatile char*)s1;
+        const volatile char* in = (const volatile char*)s2;
+        size_t i;
+        for (i = 0; i < n; ++i) {
+            out[i] = in[i];
+        }
+    }
+    return s1;
+}
+
 inline uint8_t read8(const volatile void *addr) {
     return *(const volatile uint8_t*) addr;
 }

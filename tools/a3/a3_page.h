@@ -3,6 +3,7 @@
 #include <boost/noncopyable.hpp>
 #include "a3.h"
 #include "a3_vram.h"
+#include "a3_pmem.h"
 namespace a3 {
 
 class page : private boost::noncopyable {
@@ -13,6 +14,8 @@ class page : private boost::noncopyable {
     uint64_t address() const { return vram_->address(); }
     void write32(uint64_t offset, uint32_t value);
     uint32_t read32(uint64_t offset);
+    void write32(pmem::accessor* pmem, uint64_t offset, uint32_t value);
+    uint32_t read32(pmem::accessor* pmem, uint64_t offset);
     void write(uint64_t offset, uint32_t value, std::size_t s);
     uint32_t read(uint64_t offset, std::size_t s);
     std::size_t page_size() const;

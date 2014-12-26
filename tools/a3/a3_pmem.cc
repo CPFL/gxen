@@ -28,11 +28,19 @@ namespace a3 {
 namespace pmem {
 
 uint32_t accessor::read(uint64_t addr, std::size_t size) {
-    return device::instance()->read_pmem(addr, size);
+    return device::instance()->read_pmem_locked(addr, size);
 }
 
 void accessor::write(uint64_t addr, uint32_t val, std::size_t size) {
-    device::instance()->write_pmem(addr, val, size);
+    device::instance()->write_pmem_locked(addr, val, size);
+}
+
+void accessor::read_pages(void* ptr, uint64_t addr, size_t n) {
+    device::instance()->read_pages_pmem_locked(ptr, addr, n);
+}
+
+void accessor::write_pages(const void* ptr, uint64_t addr, size_t n) {
+    device::instance()->write_pages_pmem_locked(ptr, addr, n);
 }
 
 } }  // namespace a3::pmem

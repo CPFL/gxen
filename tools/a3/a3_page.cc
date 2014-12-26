@@ -59,6 +59,16 @@ uint32_t page::read32(uint64_t offset) {
     return pmem::read32(address() + offset);
 }
 
+void page::write32(pmem::accessor* pmem, uint64_t offset, uint32_t value) {
+    assert(offset < size());
+    pmem->write32(address() + offset, value);
+}
+
+uint32_t page::read32(pmem::accessor* pmem, uint64_t offset) {
+    assert(offset < size());
+    return pmem->read32(address() + offset);
+}
+
 void page::write(uint64_t offset, uint32_t value, std::size_t s) {
     assert(offset < size());
     pmem::accessor pmem;
