@@ -293,7 +293,7 @@ void context::flush_tlb(uint32_t vspace, uint32_t trigger) {
                     channel->table()->allocate_shadow_address();
                     already = channel->table()->shadow_address();
                     reuse = channel->generate_original();
-                    buffer()->check_tlb();
+                    // instrument_maybe_shadowing();
                     if (!a3::flags::lazy_shadowing) {
                         channel->flush(this);
                     }
@@ -344,17 +344,19 @@ struct page_entry context::guest_to_host(const struct page_entry& entry) {
 
 void context::instrument_bar3_count() {
     ++bar3_access_count_;
-    A3_LOG("BAR3 count %" PRIu64 "\n", bar3_access_count_);
+    // A3_LOG("BAR3 count %" PRIu64 "\n", bar3_access_count_);
 }
 
 void context::instrument_shadowing() {
     ++shw_access_count_;
-    buffer()->check_shadowing();
-    A3_LOG("SHW count %" PRIu64 "\n", shw_access_count_);
+    // buffer()->check_shadowing();
+    buffer()->check_tlb();
+    // A3_LOG("SHW count %" PRIu64 "\n", shw_access_count_);
     shw_pending_ = true;
 }
 
 void context::instrument_maybe_shadowing() {
+    // buffer()->check_tlb();
     if (shw_pending_) {
         buffer()->check_shadowing();
         shw_pending_ = false;
