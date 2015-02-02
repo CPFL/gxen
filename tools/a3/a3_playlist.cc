@@ -58,7 +58,9 @@ void playlist_t::update(context* ctx, uint64_t address, uint32_t cmd) {
 
     for (uint32_t i = 0; i < count; ++i) {
         const uint32_t cid = ctx->get_phys_channel_id(pmem.read32(address + i * 0x8));
-        channels_.set(cid, 1);
+        if (cid < A3_CHANNELS) {
+            channels_.set(cid, 1);
+        }
     }
 
     uint32_t phys_count = 0;
