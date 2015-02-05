@@ -41,6 +41,9 @@ context::context(nvc0_state_t* state, uint64_t memory_size)
     , socket_mutex_()
     , req_queue_()
     , res_queue_()
+    , mmio_bar0_()
+    , mmio_bar1_()
+    , mmio_bar3_()
 {
 
     // initialize connection
@@ -141,7 +144,19 @@ void context::notify_bar3_change() {
 
 void context::instrument(bool tlb, bool shadowing) {
     mmio_counter_ += 1;
-    std::printf("LOG %010" PRIu64 ":TLB:%d SHW:%d\n",  mmio_counter_, tlb ? 1 : 0, shadowing ? 1 : 0);
+    // std::printf("LOG %010" PRIu64 ":TLB:%d SHW:%d\n",  mmio_counter_, tlb ? 1 : 0, shadowing ? 1 : 0);
+    // std::fflush(stdout);
+}
+
+void context::instrument_bar(int bar) {
+    if (bar == 0) {
+        mmio_bar0_ += 1;
+    } else if (bar == 1) {
+        mmio_bar1_ += 1;
+    } else if (bar == 3) {
+        mmio_bar3_ += 1;
+    }
+    std::printf("BAR BAR0:(%llu),BAR1:(%llu),BAR3:(%llu)\n",  mmio_bar0_, mmio_bar1_, mmio_bar3_);
     std::fflush(stdout);
 }
 

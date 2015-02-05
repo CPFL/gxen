@@ -71,6 +71,7 @@ extern "C" void nvc0_init_bar0(nvc0_state_t* state) {
 extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->instrument_bar(0);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     const a3::command cmd = {
         a3::command::TYPE_READ,
@@ -88,6 +89,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readb(void *opaque, target_phys_addr_t addr) 
 extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->instrument_bar(0);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     const a3::command cmd = {
         a3::command::TYPE_READ,
@@ -105,6 +107,7 @@ extern "C" uint32_t nvc0_mmio_bar0_readw(void *opaque, target_phys_addr_t addr) 
 extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->instrument_bar(0);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
@@ -123,6 +126,7 @@ extern "C" void nvc0_mmio_bar0_writeb(void *opaque, target_phys_addr_t addr, uin
 extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->instrument_bar(0);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
@@ -141,6 +145,7 @@ extern "C" void nvc0_mmio_bar0_writew(void *opaque, target_phys_addr_t addr, uin
 extern "C" uint32_t nvc0_mmio_bar0_readd(void *opaque, target_phys_addr_t addr) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->instrument_bar(0);
     uint32_t ret = 0;
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
@@ -195,6 +200,7 @@ end:
 extern "C" void nvc0_mmio_bar0_writed(void *opaque, target_phys_addr_t addr, uint32_t val) {
     nvc0_state_t* state = nvc0_state(opaque);
     nvc0::context* ctx = nvc0::context::extract(state);
+    ctx->instrument_bar(0);
     const target_phys_addr_t offset = addr - state->bar[0].addr;
 
     NVC0_LOG(state, "write 0x%"PRIx64" <= 0x%"PRIx64"\n", (uint64_t)offset, (uint64_t)val);

@@ -11,6 +11,7 @@ namespace nvc0 {
 template<std::size_t N>
 uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
+    ctx->instrument_bar(1);
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0,
@@ -23,6 +24,7 @@ uint32_t vm_bar1_read(nvc0_state_t* state, target_phys_addr_t offset) {
 template<std::size_t N>
 void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
+    ctx->instrument_bar(1);
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         value,
@@ -35,6 +37,7 @@ void vm_bar1_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t valu
 template<std::size_t N>
 uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
     context* ctx = context::extract(state);
+    ctx->instrument_bar(3);
     const a3::command cmd = {
         a3::command::TYPE_READ,
         0,
@@ -47,6 +50,7 @@ uint32_t vm_bar3_read(nvc0_state_t* state, target_phys_addr_t offset) {
 template<std::size_t N>
 void vm_bar3_write(nvc0_state_t* state, target_phys_addr_t offset, uint32_t value) {
     context* ctx = context::extract(state);
+    ctx->instrument_bar(3);
     const a3::command cmd = {
         a3::command::TYPE_WRITE,
         value,

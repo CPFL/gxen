@@ -22,6 +22,8 @@ class context {
     static context* extract(nvc0_state_t* state);
     void instrument(bool is_tlb, bool is_shadowing);
 
+    void instrument_bar(int bar);
+
  private:
     // socket based
     a3::command send(const a3::command& cmd);
@@ -31,6 +33,10 @@ class context {
     uint64_t pramin_;  // 16bit shifted
 
     uint64_t mmio_counter_;
+
+    unsigned long long mmio_bar0_;
+    unsigned long long mmio_bar1_;
+    unsigned long long mmio_bar3_;
 
     // ASIO
     boost::asio::io_service io_service_;
