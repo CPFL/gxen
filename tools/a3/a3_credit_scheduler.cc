@@ -233,13 +233,13 @@ void credit_scheduler_t::sampling() {
                         }
                         ctx.clear_sampling_bandwidth_used(points);
                     }
+                    if (points % 5 == 4) {
+                        sampling_bandwidth_ = boost::posix_time::microseconds(0);
+                    }
                     ++count;
                     points = (points + 1) % 5;
                 }
                 sampling_bandwidth_100_ = boost::posix_time::microseconds(0);
-                if (points % 5 == 4) {
-                    sampling_bandwidth_ = boost::posix_time::microseconds(0);
-                }
             }
         }
         boost::this_thread::sleep(sample_);
