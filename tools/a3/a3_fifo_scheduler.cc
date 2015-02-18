@@ -90,7 +90,7 @@ void fifo_scheduler_t::replenish() {
                 if (period != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx: contexts_) {
-                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
+                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0), false);
                     }
                     // ++count;
                 }
@@ -149,10 +149,7 @@ void fifo_scheduler_t::sampling() {
             if (!contexts_.empty()) {
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                    for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
-                        ctx.clear_sampling_bandwidth_used();
-                    }
+                    show_utilization(contexts_, sampling_bandwidth_);
                     ++count;
                 }
                 sampling_bandwidth_ = boost::posix_time::microseconds(0);

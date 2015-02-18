@@ -32,7 +32,6 @@ class credit_scheduler_t : public scheduler_t {
     void run();
     void replenish();
     void sampling();
-    bool utilization_over_bandwidth(context* ctx) const;
     context* current() const { return current_; }
     context* select_next_context(bool idle);
     void submit(context* ctx);

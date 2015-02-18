@@ -110,7 +110,7 @@ void credit_scheduler_t::replenish() {
                 if (period != boost::posix_time::microseconds(0)) {
                     const auto budget = period / contexts_.size();
                     for (context& ctx : contexts_) {
-                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0));
+                        ctx.replenish(budget, period_ * 2, defaults, bandwidth_ == boost::posix_time::microseconds(0), false);
                     }
                     // ++count;
                 }
@@ -123,16 +123,6 @@ void credit_scheduler_t::replenish() {
     }
 }
 
-bool credit_scheduler_t::utilization_over_bandwidth(context* ctx) const {
-    if (bandwidth_ == boost::posix_time::microseconds(0)) {
-        return true;
-    }
-    if (ctx->bandwidth_used() > (previous_bandwidth_ / contexts_.size())) {
-        return true;
-    }
-    return (ctx->bandwidth_used().total_microseconds() / static_cast<double>(bandwidth_.total_microseconds())) > (1.0 / contexts_.size());
-}
-
 context* credit_scheduler_t::select_next_context(bool idle) {
     boost::unique_lock<boost::mutex> lock(sched_mutex_);
 
@@ -141,7 +131,6 @@ context* credit_scheduler_t::select_next_context(bool idle) {
     }
 
     if (current()) {
-        // lowering priority
         context* ctx = current();
         contexts_.erase(contexts_t::s_iterator_to(*ctx));
         contexts_.push_back(*ctx);
@@ -207,10 +196,7 @@ void credit_scheduler_t::sampling() {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
-                    for (context& ctx : contexts_) {
-                        A3_FATAL(stdout, "UTIL: %d => %f\n", ctx.id(), (static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth_.total_microseconds()));
-                        ctx.clear_sampling_bandwidth_used();
-                    }
+                    show_utilization(contexts_, sampling_bandwidth_);
                     ++count;
                 }
                 sampling_bandwidth_ = boost::posix_time::microseconds(0);

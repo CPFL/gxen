@@ -2,19 +2,25 @@
 #define A3_SCHEDULER_H_
 #include <queue>
 #include <boost/noncopyable.hpp>
+#include <boost/intrusive/list.hpp>
 #include "a3.h"
+#include "a3_context.h"
 namespace a3 {
 
 class context;
 
 class scheduler_t : private boost::noncopyable {
  public:
+    typedef boost::intrusive::list<context> contexts_t;
+
     virtual ~scheduler_t() { }
     virtual void start() { }
     virtual void stop() { }
     virtual void enqueue(context* ctx, const command& cmd) = 0;
     virtual void register_context(context* ctx) { }
     virtual void unregister_context(context* ctx) { }
+
+    static void show_utilization(contexts_t& contexts, const boost::posix_time::time_duration& sampling_bandwidth);
 };
 
 }  // namespace a3

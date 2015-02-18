@@ -22,11 +22,25 @@
  * THE SOFTWARE.
  */
 #include <stdint.h>
+#include <map>
+#include <utility>
 #include "a3.h"
 #include "a3_scheduler.h"
 #include "a3_context.h"
 #include "a3_registers.h"
 namespace a3 {
+
+void scheduler_t::show_utilization(contexts_t& contexts, const boost::posix_time::time_duration& sampling_bandwidth)
+{
+    std::map<int, std::pair<double, double>> results;
+    for (context& ctx : contexts) {
+        results.insert(std::make_pair(ctx.id(), std::make_pair(static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / sampling_bandwidth.total_microseconds(), static_cast<double>(ctx.budget().total_microseconds()) / 1000.0)));
+        ctx.clear_sampling_bandwidth_used();
+    }
+    for (const auto& pair : results) {
+        A3_FATAL(stdout, "UTIL: %d => %f (budget: %f)\n", pair.first, pair.second.first, pair.second.second);
+    }
+}
 
 }  // namespace a3
 /* vim: set sw=4 ts=4 et tw=80 : */

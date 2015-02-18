@@ -105,10 +105,12 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     boost::posix_time::time_duration bandwidth() const { return bandwidth_; }
     boost::posix_time::time_duration bandwidth_used() const { return bandwidth_used_; }
     boost::posix_time::time_duration sampling_bandwidth_used() const { return sampling_bandwidth_used_; }
-    void replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle);
+    void replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle, bool bandwidth_clear_timing);
     void clear_sampling_bandwidth_used();
     mutex_t& band_mutex() { return band_mutex_; }
     void update_budget(const boost::posix_time::time_duration& credit);
+    void adjust_with_scale(double scale);
+    void adjust_with_credit(const boost::posix_time::time_duration& credit);
 
  private:
     void initialize(int domid, bool para);
