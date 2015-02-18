@@ -143,8 +143,10 @@ void fifo_scheduler_t::run() {
                 {
                     boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
                     device::instance()->bar1()->submit(cmd);
-
-                    while (device::instance()->is_active(ctx));
+                    boost::this_thread::sleep(boost::posix_time::microseconds(500));
+                    while (device::instance()->is_active(ctx)) {
+                        boost::this_thread::yield();
+                    }
                 }
                 const auto duration = utilization_.elapsed();
                 duration_ += duration;

@@ -96,14 +96,14 @@ device::device()
     // scheduler_.reset(new direct_scheduler_t());
 
     // FIFO
-#if 1
+#if 0
     scheduler_.reset(new fifo_scheduler_t(
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(1000)));
 #endif
 
     // BAND
-#if 0
+#if 1
     scheduler_.reset(new band_scheduler_t(
                 boost::posix_time::microseconds(50),
                 boost::posix_time::milliseconds(30),
@@ -291,8 +291,37 @@ void device::free(vram_memory* mem) {
 }
 
 bool device::is_active(context* ctx) {
-    // Without lock.
-    return read(0, 0x400700, sizeof(uint32_t));
+    A3_SYNCHRONIZED(mutex()) {
+        registers::accessor regs;
+        // this is status register of pgraph
+        if (regs.read32(0x400700)) {
+            return true;
+        }
+        // PGRAPH register shows idle, but probably there's working channels
+        if (!ctx) {
+            return false;
+        }
+        for (uint32_t pid = 0; pid < A3_DOMAIN_CHANNELS; ++pid) {
+            const uint32_t offset = 0x3000 + 0x8 * ((ctx->id() * A3_DOMAIN_CHANNELS) + pid) + 0x4;
+            const uint32_t status = regs.read32(offset);
+            if (status & 0x1UL) {
+                // 0b10000000110110000000100010000
+                //   10000000000000001000000000001
+                //             1000001000000000001
+                //                   1000000000001
+                // 0b10000000111110000000100010000
+                if (status & 270205200UL) {
+                    // A3_LOG("active by chan %" PRIu32 " 0x%" PRIx32 "\n", pid, status);
+                    return true;
+                } else {
+                    // A3_LOG("chan %" PRIu32 " is runnable but not active 0x%" PRIx32 "\n", pid, status);
+                }
+            }
+        }
+        // Fermi PGRAPH STATE is idle or not.
+        return regs.read32(0x4044a0) != 0x0000000f;
+    }
+    return false;
 }
 
 void device::enqueue(context* ctx, const command& cmd) {

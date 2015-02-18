@@ -210,12 +210,15 @@ void band_scheduler_t::submit(context* ctx) {
     counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
+    while (device::instance()->is_active(ctx));
     utilization_.start();
     {
         boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
-        device::instance()->bar1()->submit(cmd);
-
         while (device::instance()->is_active(ctx));
+        device::instance()->bar1()->submit(cmd);
+        while (device::instance()->is_active(ctx)) {
+            boost::this_thread::yield();
+        }
     }
     const auto duration = utilization_.elapsed();
     duration_ += duration;

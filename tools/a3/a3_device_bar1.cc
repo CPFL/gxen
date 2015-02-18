@@ -118,6 +118,13 @@ void device_bar1::flush() {
 
 void device_bar1::submit(const fire_t& cmd) {
     device::instance()->write(1, cmd.offset(), cmd.cmd().value, cmd.cmd().size());
+    // Stop while commands are submitted.
+    while (true) {
+        uint32_t ib_get = device::instance()->read(1, (cmd.offset() - 0x8c + 0x88), cmd.cmd().size());
+        if (ib_get == cmd.cmd().value) {
+            break;
+        }
+    }
 }
 
 void device_bar1::write(context* ctx, const command& cmd) {
