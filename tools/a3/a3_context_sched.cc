@@ -81,7 +81,7 @@ void context::replenish(const boost::posix_time::time_duration& credit, const bo
             budget_ = bandwidth;
         } else {
             if (budget_ > threshold) {
-                budget_ = threshold / 2;
+                budget_ /= 2;
                 // budget_ = boost::posix_time::microseconds(0);
                 A3_FATAL(stdout, "burning budget %d\n", id());
             }
@@ -100,14 +100,6 @@ void context::replenish(const boost::posix_time::time_duration& credit, const bo
 
 void context::clear_sampling_bandwidth_used() {
     sampling_bandwidth_used_ = boost::posix_time::microseconds(0);
-}
-
-void context::adjust_with_scale(double scale) {
-    budget_ *= scale;
-}
-
-void context::adjust_with_credit(const boost::posix_time::time_duration& credit) {
-    budget_ = credit;
 }
 
 }  // namespace a3

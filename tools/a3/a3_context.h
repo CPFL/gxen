@@ -109,8 +109,6 @@ class context : private boost::noncopyable, public boost::intrusive::list_base_h
     void clear_sampling_bandwidth_used();
     mutex_t& band_mutex() { return band_mutex_; }
     void update_budget(const boost::posix_time::time_duration& credit);
-    void adjust_with_scale(double scale);
-    void adjust_with_credit(const boost::posix_time::time_duration& credit);
 
  private:
     void initialize(int domid, bool para);

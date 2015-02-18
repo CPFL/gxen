@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 #include <stdint.h>
+#include "boost_reverse_lock.hpp"
 #include "a3.h"
 #include "a3_fifo_scheduler.h"
 #include "a3_context.h"
@@ -31,14 +32,15 @@
 #include "a3_ignore_unused_variable_warning.h"
 namespace a3 {
 
-fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
-    : wait_(wait)
-    , period_(period)
+fifo_scheduler_t::fifo_scheduler_t(const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample)
+    : period_(period)
     , sample_(sample)
     , thread_()
-    , mutex_()
     , cond_()
     , queue_()
+    , duration_()
+    , bandwidth_()
+    , sampling_bandwidth_()
 {
 }
 
@@ -47,15 +49,13 @@ fifo_scheduler_t::~fifo_scheduler_t() {
 }
 
 void fifo_scheduler_t::register_context(context* ctx) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::unique_lock<boost::mutex> lock(sched_mutex_);
     contexts_.push_back(*ctx);
 }
 
 void fifo_scheduler_t::unregister_context(context* ctx) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    contexts_.remove_if([ctx](const context& target) {
-        return &target == ctx;
-    });
+    boost::unique_lock<boost::mutex> lock(sched_mutex_);
+    contexts_.erase(contexts_t::s_iterator_to(*ctx));
 }
 
 void fifo_scheduler_t::start() {
@@ -79,31 +79,43 @@ void fifo_scheduler_t::stop() {
 }
 
 void fifo_scheduler_t::replenish() {
-    // uint64_t count = 0;
+    uint64_t count = 0;
+    const boost::posix_time::time_duration bandwidth_period = boost::posix_time::microseconds(1000000);
+    const uint64_t bandwidth_counter = bandwidth_period.total_microseconds() / period_.total_microseconds();
+    A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
     while (true) {
         // replenish
         {
-            boost::unique_lock<boost::mutex> lock(mutex_);
-            if (contexts_.size()) {
-                boost::posix_time::time_duration period = bandwidth_ + gpu_idle_;
+            boost::unique_lock<boost::mutex> lock(sched_mutex_);
+            if (!contexts_.empty()) {
+                boost::unique_lock<boost::mutex> lock(fire_mutex_);
+                bool bandwidth_clear_timing = (count % bandwidth_counter) == 0;
                 boost::posix_time::time_duration defaults = period_ / contexts_.size();
-                if (period != boost::posix_time::microseconds(0)) {
-                    const auto budget = period / contexts_.size();
-                    for (context& ctx: contexts_) {
-                        ctx.replenish(budget, period_, defaults, bandwidth_ == boost::posix_time::microseconds(0), false);
+                // boost::posix_time::time_duration period = bandwidth_;
+                if (duration_ != boost::posix_time::microseconds(0)) {
+                    A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
+                    const auto budget = (period_ - gpu_idle_) / contexts_.size();
+                    for (context& ctx : contexts_) {
+                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0), bandwidth_clear_timing);
                     }
-                    // ++count;
                 }
-                bandwidth_ = boost::posix_time::microseconds(0);
+                if (bandwidth_clear_timing) {
+                    previous_bandwidth_ = bandwidth_;
+                    bandwidth_ = boost::posix_time::microseconds(0);
+                } else {
+                    bandwidth_ += duration_;
+                }
+                duration_ = boost::posix_time::microseconds(0);
                 gpu_idle_ = boost::posix_time::microseconds(0);
+                ++count;
             }
         }
         boost::this_thread::sleep(period_);
-        boost::this_thread::yield();
     }
 }
 
 void fifo_scheduler_t::enqueue(context* ctx, const command& cmd) {
+    // on arrival
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
         queue_.push(execution_t(ctx, fire_t(ctx, cmd)));
@@ -121,45 +133,52 @@ void fifo_scheduler_t::run() {
         }
         handle = queue_.front();
         queue_.pop();
+        {
+            context* ctx = handle.first;
+            fire_t cmd = handle.second;
+            boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
+            {
+                boost::unique_lock<boost::mutex> lock(fire_mutex_);
+                utilization_.start();
+                {
+                    boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
+                    device::instance()->bar1()->submit(cmd);
 
-        lock.unlock();
-        utilization_.start();
-
-        device::instance()->bar1()->submit(handle.second);
-
-        lock.lock();
-
-        while (device::instance()->is_active(handle.first)) {
-            cond.timed_wait(lock, wait_);
+                    while (device::instance()->is_active(ctx));
+                }
+                const auto duration = utilization_.elapsed();
+                duration_ += duration;
+                sampling_bandwidth_ += duration;
+                ctx->update_budget(duration);
+            }
         }
-
-        const auto duration = utilization_.elapsed();
-        bandwidth_ += duration;
-        sampling_bandwidth_ += duration;
-        handle.first->update_budget(duration);
     }
 }
 
 void fifo_scheduler_t::sampling() {
     uint64_t count = 0;
+    timer_t waiting;
     while (true) {
         // sampling
+        waiting.start();
         {
-            boost::unique_lock<boost::mutex> lock(mutex_);
+            boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
+                boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
-                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 "\n", count);
+                    A3_FATAL(stdout, "UTIL: LOG %" PRIu64 " %f\n", count, static_cast<double>(sampling_bandwidth_.total_microseconds()) / 1000.0);
                     show_utilization(contexts_, sampling_bandwidth_);
                     ++count;
                 }
                 sampling_bandwidth_ = boost::posix_time::microseconds(0);
             }
         }
-        // boost::this_thread::sleep(boost::posix_time::microseconds(500));
-        // boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-        // boost::this_thread::sleep(boost::posix_time::microseconds(1000));
-        boost::this_thread::sleep(sample_);
-        boost::this_thread::yield();
+        const auto next_sleep_time = sample_ - waiting.elapsed();
+        if (next_sleep_time >= boost::posix_time::microseconds(0)) {
+            boost::this_thread::sleep(next_sleep_time);
+        } else {
+            boost::this_thread::yield();
+        }
     }
 }
 

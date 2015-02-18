@@ -94,16 +94,34 @@ device::device()
 
     // Direct
     // scheduler_.reset(new direct_scheduler_t());
+
     // FIFO
-    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
-    // scheduler_.reset(new fifo_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(500)));
+#if 1
+    scheduler_.reset(new fifo_scheduler_t(
+                boost::posix_time::milliseconds(30),
+                boost::posix_time::milliseconds(1000)));
+#endif
+
     // BAND
-    scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::milliseconds(30), boost::posix_time::milliseconds(1000)));
-    // scheduler_.reset(new band_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
+#if 0
+    scheduler_.reset(new band_scheduler_t(
+                boost::posix_time::microseconds(50),
+                boost::posix_time::milliseconds(30),
+                boost::posix_time::milliseconds(1000)));
+#endif
+#if 0
+    scheduler_.reset(new band_scheduler_t(
+                boost::posix_time::microseconds(50),
+                boost::posix_time::milliseconds(30),
+                boost::posix_time::milliseconds(1000)));
+#endif
+
     // Credit
-    // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(100), boost::posix_time::milliseconds(500)));
-    // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(30), boost::posix_time::milliseconds(500)));
-    // scheduler_.reset(new credit_scheduler_t(boost::posix_time::microseconds(50), boost::posix_time::microseconds(50), boost::posix_time::milliseconds(500), boost::posix_time::milliseconds(100)));
+#if 0
+    scheduler_.reset(new credit_scheduler_t(
+                boost::posix_time::milliseconds(30),
+                boost::posix_time::milliseconds(1000)));
+#endif
 
     scheduler_->start();
     A3_LOG("device environment setup\n");
@@ -273,7 +291,8 @@ void device::free(vram_memory* mem) {
 }
 
 bool device::is_active(context* ctx) {
-    return registers::read32(0x400700);
+    // Without lock.
+    return read(0, 0x400700, sizeof(uint32_t));
 }
 
 void device::enqueue(context* ctx, const command& cmd) {

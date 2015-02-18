@@ -20,7 +20,7 @@ class credit_scheduler_t : public scheduler_t {
  public:
     typedef boost::intrusive::list<context> contexts_t;
 
-    credit_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& designed, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
+    credit_scheduler_t(const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~credit_scheduler_t();
     virtual void start();
     virtual void stop();
@@ -33,7 +33,7 @@ class credit_scheduler_t : public scheduler_t {
     void replenish();
     void sampling();
     context* current() const { return current_; }
-    context* select_next_context(bool idle);
+    context* select_next_context();
     void submit(context* ctx);
 
     boost::posix_time::time_duration wait_;
@@ -56,6 +56,7 @@ class credit_scheduler_t : public scheduler_t {
     context* current_;
     timer_t utilization_;
     timer_t gpu_idle_timer_;
+    boost::posix_time::time_duration duration_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration sampling_bandwidth_;
     boost::posix_time::time_duration previous_bandwidth_;

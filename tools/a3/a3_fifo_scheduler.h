@@ -18,7 +18,7 @@ class fifo_scheduler_t : public scheduler_t {
  public:
     typedef boost::intrusive::list<context> contexts_t;
 
-    fifo_scheduler_t(const boost::posix_time::time_duration& wait, const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
+    fifo_scheduler_t(const boost::posix_time::time_duration& period, const boost::posix_time::time_duration& sample);
     virtual ~fifo_scheduler_t();
     virtual void start();
     virtual void stop();
@@ -40,12 +40,16 @@ class fifo_scheduler_t : public scheduler_t {
     boost::scoped_ptr<boost::thread> replenisher_;
     boost::scoped_ptr<boost::thread> sampler_;
     boost::mutex mutex_;
+    boost::mutex fire_mutex_;
+    boost::mutex sched_mutex_;
     boost::condition_variable cond_;
     std::queue<execution_t> queue_;
     timer_t utilization_;
     contexts_t contexts_;
+    boost::posix_time::time_duration duration_;
     boost::posix_time::time_duration bandwidth_;
     boost::posix_time::time_duration sampling_bandwidth_;
+    boost::posix_time::time_duration previous_bandwidth_;
 };
 
 }  // namespace a3

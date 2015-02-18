@@ -34,7 +34,7 @@ class band_scheduler_t : public scheduler_t {
     void sampling();
     bool utilization_over_bandwidth(context* ctx) const;
     context* current() const { return current_; }
-    context* select_next_context(bool idle);
+    context* select_next_context();
     void submit(context* ctx);
 
     boost::posix_time::time_duration wait_;
