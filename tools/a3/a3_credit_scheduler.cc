@@ -143,46 +143,24 @@ context* credit_scheduler_t::select_next_context(bool idle) {
     if (current()) {
         // lowering priority
         context* ctx = current();
-        if (ctx->budget() < boost::posix_time::microseconds(0) && utilization_over_bandwidth(ctx)) {
-            contexts_.erase(contexts_t::s_iterator_to(*ctx));
-            contexts_.push_back(*ctx);
-        }
+        contexts_.erase(contexts_t::s_iterator_to(*ctx));
+        contexts_.push_back(*ctx);
     }
 
-    context* band = NULL;
-    context* under = NULL;
     context* over = NULL;
-    context* next = NULL;
     for (context& ctx : contexts_) {
         if (ctx.is_suspended()) {
             if (ctx.budget() < boost::posix_time::microseconds(0)) {
                 if (!over) {
                     over = &ctx;
                 }
-            } else if (utilization_over_bandwidth(&ctx)) {
-                if (!band) {
-                    band = &ctx;
-                }
             } else {
-                if (!under) {
-                    under = &ctx;
-                }
-            }
-            if (over && under && band) {
-                break;
+                return &ctx;
             }
         }
     }
 
-    if (under) {
-        next = under;
-    } else if (band) {
-        next = band;
-    } else {
-        next = over;
-    }
-
-    return next;
+    return over;
 }
 
 void credit_scheduler_t::submit(context* ctx) {
