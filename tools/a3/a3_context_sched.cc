@@ -98,6 +98,13 @@ void context::replenish(const boost::posix_time::time_duration& credit, const bo
     }
 }
 
+void context::reset_budget(const boost::posix_time::time_duration& credit) {
+    A3_SYNCHRONIZED(band_mutex()) {
+        budget_ = credit;
+        bandwidth_used_ = boost::posix_time::microseconds(0);
+    }
+}
+
 void context::clear_sampling_bandwidth_used() {
     sampling_bandwidth_used_ = boost::posix_time::microseconds(0);
 }

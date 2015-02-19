@@ -97,6 +97,7 @@ void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
 
 void credit_scheduler_t::replenish() {
     uint64_t count = 0;
+    uint64_t idle_count = 0;
     const boost::posix_time::time_duration bandwidth_period = boost::posix_time::microseconds(1000000);
     const uint64_t bandwidth_counter = bandwidth_period.total_microseconds() / period_.total_microseconds();
     A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
@@ -107,13 +108,23 @@ void credit_scheduler_t::replenish() {
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 bool bandwidth_clear_timing = (count % bandwidth_counter) == 0;
-                boost::posix_time::time_duration defaults = period_ / contexts_.size();
+                const boost::posix_time::time_duration defaults = period_ / contexts_.size();
                 // boost::posix_time::time_duration period = bandwidth_;
                 if (duration_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
                     const auto budget = (period_ - gpu_idle_) / contexts_.size();
                     for (context& ctx : contexts_) {
                         ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0), bandwidth_clear_timing);
+                    }
+                    idle_count = 0;
+                } else {
+                    ++idle_count;
+                    if (idle_count > 100) {
+                        A3_FATAL(stdout, "IDLE\n");
+                        for (context& ctx : contexts_) {
+                            ctx.reset_budget(defaults);
+                        }
+                        idle_count = 0;
                     }
                 }
                 if (bandwidth_clear_timing) {

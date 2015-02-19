@@ -107,7 +107,7 @@ device::device()
     scheduler_.reset(new band_scheduler_t(
                 boost::posix_time::microseconds(50),
                 boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(1000)));
+                boost::posix_time::milliseconds(500)));
 #endif
 #if 0
     scheduler_.reset(new band_scheduler_t(
@@ -120,7 +120,7 @@ device::device()
 #if 0
     scheduler_.reset(new credit_scheduler_t(
                 boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(1000)));
+                boost::posix_time::milliseconds(500)));
 #endif
 
     scheduler_->start();
