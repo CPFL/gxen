@@ -100,19 +100,21 @@ void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
 void credit_scheduler_t::replenish() {
     uint64_t count = 0;
     uint64_t idle_count = 0;
-    const uint64_t bandwidth_counter = bandwidth_period_.total_microseconds() / period_.total_microseconds();
-    A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
+    // A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
     while (true) {
         // replenish
         {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
+                // Bandwidth reset counter is affected by context numbers,
+                // since each context can non-preemptive task.
+                const uint64_t bandwidth_counter = contexts_.size() + 1;
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 bool bandwidth_clear_timing = (count % bandwidth_counter) == 0;
                 const boost::posix_time::time_duration defaults = period_ / contexts_.size();
-                // boost::posix_time::time_duration period = bandwidth_;
+
                 if (duration_ != boost::posix_time::microseconds(0)) {
-                    A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
+                    // A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
                     const auto budget = (period_ - gpu_idle_) / contexts_.size();
                     for (context& ctx : contexts_) {
                         ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0));
@@ -129,6 +131,20 @@ void credit_scheduler_t::replenish() {
                     }
                 }
                 if (bandwidth_clear_timing) {
+                    boost::posix_time::time_duration total_bandwidth = boost::posix_time::microseconds(0);
+                    for (context& ctx : contexts_) {
+                        if (ctx.bandwidth_used() < (-(period_ * (bandwidth_counter * 2)))) {
+                            // waste.
+                            ctx.burn_bandwidth(ctx.bandwidth_used());
+                            // ctx.burn_bandwidth((ctx.bandwidth_used() + period_ * bandwidth_counter));
+                        }
+                        total_bandwidth += ctx.bandwidth_used();
+                    }
+                    for (context& ctx : contexts_) {
+                        ctx.burn_bandwidth(total_bandwidth / contexts_.size());
+                        // ctx.burn_bandwidth(ctx.bandwidth_used());
+                        // A3_FATAL(stdout, "BAND %d %f\n", ctx.id(), static_cast<double>(ctx.bandwidth_used().total_microseconds()) / 1000.0);
+                    }
                     previous_bandwidth_ = bandwidth_;
                     bandwidth_ = boost::posix_time::microseconds(0);
                     bandwidth_idle_ = boost::posix_time::microseconds(0);
@@ -217,6 +233,7 @@ void credit_scheduler_t::sampling() {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 " %f\n", count, static_cast<double>(sampling_bandwidth_.total_microseconds()) / 1000.0);
+                    std::fflush(stdout);
                     show_utilization(contexts_, sampling_bandwidth_);
                     ++count;
                 }
@@ -224,6 +241,12 @@ void credit_scheduler_t::sampling() {
             }
         }
         boost::this_thread::sleep(sample_);
+        // const auto next_sleep_time = sample_ - waiting.elapsed();
+        // if (next_sleep_time > boost::posix_time::microseconds(0)) {
+        //     boost::this_thread::sleep(next_sleep_time);
+        // } else {
+        //     boost::this_thread::yield();
+        // }
     }
 }
 

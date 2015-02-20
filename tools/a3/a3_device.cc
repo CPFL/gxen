@@ -96,7 +96,7 @@ device::device()
     // scheduler_.reset(new direct_scheduler_t());
 
     // FIFO
-#if 1
+#if 0
     scheduler_.reset(new fifo_scheduler_t(
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(500)));
@@ -117,7 +117,7 @@ device::device()
 #endif
 
     // Credit
-#if 0
+#if 1
     scheduler_.reset(new credit_scheduler_t(
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(500)));
