@@ -190,6 +190,21 @@ void credit_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
     fire_t cmd;
 
+    // dump status
+#if 0
+    A3_FATAL(stdout, "DUMP: VM%d\n", current_->id());
+    for (auto& ctx : contexts_) {
+        A3_FATAL(stdout, "DUMP: VM%d band:(%f),over:(%d),budget:(%f),sample:(%f),active(%d)\n",
+                ctx.id(),
+                static_cast<double>(ctx.bandwidth_used().total_microseconds()) / 1000.0,
+                0,
+                static_cast<double>(ctx.budget().total_microseconds()) / 1000.0,
+                static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / 1000.0,
+                ctx.is_suspended()
+                );
+    }
+#endif
+
     counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
