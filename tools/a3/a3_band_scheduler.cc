@@ -48,7 +48,7 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
     , current_()
     , utilization_()
     , duration_()
-    , bandwidth_period_(boost::posix_time::microseconds(100000))
+    , bandwidth_period_(boost::posix_time::microseconds(120000))
     , bandwidth_()
     , bandwidth_idle_()
     , sampling_bandwidth_()
@@ -105,24 +105,24 @@ void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
 void band_scheduler_t::replenish() {
     uint64_t count = 0;
     uint64_t idle_count = 0;
-    const uint64_t bandwidth_counter = bandwidth_period_.total_microseconds() / period_.total_microseconds();
-    A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
+    // A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
     while (true) {
         // replenish
         {
             boost::unique_lock<boost::mutex> lock(sched_mutex_);
             if (!contexts_.empty()) {
+                // Bandwidth reset counter is affected by context numbers,
+                // since each context can non-preemptive task.
+                const uint64_t bandwidth_counter = contexts_.size() + 1;
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 bool bandwidth_clear_timing = (count % bandwidth_counter) == 0;
                 const boost::posix_time::time_duration defaults = period_ / contexts_.size();
-                boost::posix_time::time_duration total_bandwidth = boost::posix_time::microseconds(0);
 
                 if (duration_ != boost::posix_time::microseconds(0)) {
-                    A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
+                    // A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
                     const auto budget = (period_ - gpu_idle_) / contexts_.size();
                     for (context& ctx : contexts_) {
                         ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0));
-                        total_bandwidth += ctx.bandwidth_used();
                     }
                     idle_count = 0;
                 } else {
@@ -136,9 +136,18 @@ void band_scheduler_t::replenish() {
                     }
                 }
                 if (bandwidth_clear_timing) {
+                    boost::posix_time::time_duration total_bandwidth = boost::posix_time::microseconds(0);
                     for (context& ctx : contexts_) {
-                        // ctx.burn_bandwidth(ctx.bandwidth_used());
+                        if (ctx.bandwidth_used() < (-(period_ * (bandwidth_counter * 2)))) {
+                            // waste.
+                            ctx.burn_bandwidth(ctx.bandwidth_used());
+                            // ctx.burn_bandwidth((ctx.bandwidth_used() + period_ * bandwidth_counter));
+                        }
+                        total_bandwidth += ctx.bandwidth_used();
+                    }
+                    for (context& ctx : contexts_) {
                         ctx.burn_bandwidth(total_bandwidth / contexts_.size());
+                        // ctx.burn_bandwidth(ctx.bandwidth_used());
                         // A3_FATAL(stdout, "BAND %d %f\n", ctx.id(), static_cast<double>(ctx.bandwidth_used().total_microseconds()) / 1000.0);
                     }
                     previous_bandwidth_ = bandwidth_;
@@ -208,12 +217,12 @@ context* band_scheduler_t::select_next_context() {
 
     if (next && next != current() && utilization_over_bandwidth(next) && utilization_over_bandwidth(current(), true)) {
         if (current()->is_suspended()) {
-            A3_FATAL(stdout, "YIELD SUCCESS 1\n");
+            // A3_FATAL(stdout, "YIELD SUCCESS 1\n");
             return current();
         }
         yield_chance(boost::posix_time::microseconds(500));
         if (current()->is_suspended()) {
-            A3_FATAL(stdout, "YIELD SUCCESS 2\n");
+            // A3_FATAL(stdout, "YIELD SUCCESS 2\n");
             return current();
         }
     }
@@ -226,7 +235,7 @@ void band_scheduler_t::submit(context* ctx) {
     fire_t cmd;
 
     // dump status
-#if 1
+#if 0
     A3_FATAL(stdout, "DUMP: VM%d\n", current_->id());
     for (auto& ctx : contexts_) {
         A3_FATAL(stdout, "DUMP: VM%d band:(%f),over:(%d),budget:(%f),sample:(%f),active(%d)\n",

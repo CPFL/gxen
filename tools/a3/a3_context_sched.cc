@@ -85,13 +85,13 @@ void context::replenish(const boost::posix_time::time_duration& credit, const bo
             if (budget_ > threshold) {
                 budget_ /= 2;
                 // budget_ = boost::posix_time::microseconds(0);
-                A3_FATAL(stdout, "burning budget %d\n", id());
+                // A3_FATAL(stdout, "burning budget %d\n", id());
             }
 
             if (budget_ < (-threshold)) {
                 budget_ = -threshold;
                 // budget_ = boost::posix_time::microseconds(0);
-                A3_FATAL(stdout, "recovering budget %d\n", id());
+                // A3_FATAL(stdout, "recovering budget %d\n", id());
             }
         }
     }
