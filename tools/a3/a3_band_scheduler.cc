@@ -48,7 +48,9 @@ band_scheduler_t::band_scheduler_t(const boost::posix_time::time_duration& wait,
     , current_()
     , utilization_()
     , duration_()
+    , bandwidth_period_(boost::posix_time::microseconds(100000))
     , bandwidth_()
+    , bandwidth_idle_()
     , sampling_bandwidth_()
     , counter2_()
 {
@@ -90,12 +92,7 @@ void band_scheduler_t::stop() {
 }
 
 static void yield_chance(const boost::posix_time::time_duration& duration) {
-    auto now = boost::posix_time::microsec_clock::local_time();
-    const auto wait = now + duration;
-    while (now < wait) {
-        // boost::this_thread::yield();
-        now = boost::posix_time::microsec_clock::local_time();
-    }
+    boost::this_thread::sleep(duration);
 }
 
 void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
@@ -108,8 +105,7 @@ void band_scheduler_t::enqueue(context* ctx, const command& cmd) {
 void band_scheduler_t::replenish() {
     uint64_t count = 0;
     uint64_t idle_count = 0;
-    const boost::posix_time::time_duration bandwidth_period = boost::posix_time::microseconds(1000000);
-    const uint64_t bandwidth_counter = bandwidth_period.total_microseconds() / period_.total_microseconds();
+    const uint64_t bandwidth_counter = bandwidth_period_.total_microseconds() / period_.total_microseconds();
     A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
     while (true) {
         // replenish
@@ -118,13 +114,15 @@ void band_scheduler_t::replenish() {
             if (!contexts_.empty()) {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 bool bandwidth_clear_timing = (count % bandwidth_counter) == 0;
-                boost::posix_time::time_duration defaults = period_ / contexts_.size();
-                // boost::posix_time::time_duration period = bandwidth_;
+                const boost::posix_time::time_duration defaults = period_ / contexts_.size();
+                boost::posix_time::time_duration total_bandwidth = boost::posix_time::microseconds(0);
+
                 if (duration_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
                     const auto budget = (period_ - gpu_idle_) / contexts_.size();
                     for (context& ctx : contexts_) {
-                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0), bandwidth_clear_timing);
+                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0));
+                        total_bandwidth += ctx.bandwidth_used();
                     }
                     idle_count = 0;
                 } else {
@@ -132,17 +130,23 @@ void band_scheduler_t::replenish() {
                     if (idle_count > 100) {
                         A3_FATAL(stdout, "IDLE\n");
                         for (context& ctx : contexts_) {
-                            ctx.reset_budget(period_ / contexts_.size());
-                            A3_FATAL(stdout, "%d: %f\n", ctx.id(), static_cast<double>(ctx.budget().total_microseconds()) / 1000.0);
+                            ctx.reset_budget(defaults);
                         }
                         idle_count = 0;
                     }
                 }
                 if (bandwidth_clear_timing) {
+                    for (context& ctx : contexts_) {
+                        // ctx.burn_bandwidth(ctx.bandwidth_used());
+                        ctx.burn_bandwidth(total_bandwidth / contexts_.size());
+                        // A3_FATAL(stdout, "BAND %d %f\n", ctx.id(), static_cast<double>(ctx.bandwidth_used().total_microseconds()) / 1000.0);
+                    }
                     previous_bandwidth_ = bandwidth_;
                     bandwidth_ = boost::posix_time::microseconds(0);
+                    bandwidth_idle_ = boost::posix_time::microseconds(0);
                 } else {
                     bandwidth_ += duration_;
+                    bandwidth_idle_ += gpu_idle_;
                 }
                 duration_ = boost::posix_time::microseconds(0);
                 gpu_idle_ = boost::posix_time::microseconds(0);
@@ -153,15 +157,19 @@ void band_scheduler_t::replenish() {
     }
 }
 
-bool band_scheduler_t::utilization_over_bandwidth(context* ctx) const {
+bool band_scheduler_t::utilization_over_bandwidth(context* ctx, bool inverse = false) const {
     if (bandwidth_ == boost::posix_time::microseconds(0)) {
         return false;
     }
+    bool result = false;
     if (ctx->bandwidth_used() > (bandwidth_ / contexts_.size())) {
     // if (ctx->bandwidth_used() > (previous_bandwidth_ / contexts_.size())) {
-        return true;
+        result = true;
     }
-    return false;
+    if (inverse) {
+        return !result;
+    }
+    return result;
     // return (ctx->bandwidth_used() > (previous_bandwidth_ / contexts_.size()));
 }
 
@@ -198,16 +206,14 @@ context* band_scheduler_t::select_next_context() {
         return next;
     }
 
-    if (next && next != current() && utilization_over_bandwidth(next) && !utilization_over_bandwidth(current())) {
+    if (next && next != current() && utilization_over_bandwidth(next) && utilization_over_bandwidth(current(), true)) {
         if (current()->is_suspended()) {
+            A3_FATAL(stdout, "YIELD SUCCESS 1\n");
             return current();
         }
-        {
-            boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
-            yield_chance(wait_);
-        }
+        yield_chance(boost::posix_time::microseconds(500));
         if (current()->is_suspended()) {
-            A3_FATAL(stdout, "YIELD SUCCESS\n");
+            A3_FATAL(stdout, "YIELD SUCCESS 2\n");
             return current();
         }
     }
@@ -219,6 +225,22 @@ void band_scheduler_t::submit(context* ctx) {
     boost::unique_lock<boost::mutex> lock(fire_mutex_);
     fire_t cmd;
 
+    // dump status
+#if 1
+    A3_FATAL(stdout, "DUMP: VM%d\n", current_->id());
+    for (auto& ctx : contexts_) {
+        A3_FATAL(stdout, "DUMP: VM%d band:(%f),over:(%d),budget:(%f),sample:(%f),active(%d)\n",
+                ctx.id(),
+                static_cast<double>(ctx.bandwidth_used().total_microseconds()) / 1000.0,
+                utilization_over_bandwidth(&ctx),
+                static_cast<double>(ctx.budget().total_microseconds()) / 1000.0,
+                static_cast<double>(ctx.sampling_bandwidth_used().total_microseconds()) / 1000.0,
+                ctx.is_suspended()
+                );
+    }
+#endif
+
+
     counter_.fetch_sub(1);
     ctx->dequeue(&cmd);
 
@@ -226,7 +248,6 @@ void band_scheduler_t::submit(context* ctx) {
     utilization_.start();
     {
         boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
-        while (device::instance()->is_active(ctx));
         device::instance()->bar1()->submit(cmd);
         while (device::instance()->is_active(ctx)) {
             boost::this_thread::yield();
@@ -263,18 +284,20 @@ void band_scheduler_t::sampling() {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
                 if (sampling_bandwidth_ != boost::posix_time::microseconds(0)) {
                     A3_FATAL(stdout, "UTIL: LOG %" PRIu64 " %f\n", count, static_cast<double>(sampling_bandwidth_.total_microseconds()) / 1000.0);
+                    std::fflush(stdout);
                     show_utilization(contexts_, sampling_bandwidth_);
                     ++count;
                 }
                 sampling_bandwidth_ = boost::posix_time::microseconds(0);
             }
         }
-        const auto next_sleep_time = sample_ - waiting.elapsed();
-        if (next_sleep_time >= boost::posix_time::microseconds(0)) {
-            boost::this_thread::sleep(next_sleep_time);
-        } else {
-            boost::this_thread::yield();
-        }
+        boost::this_thread::sleep(sample_);
+        // const auto next_sleep_time = sample_ - waiting.elapsed();
+        // if (next_sleep_time > boost::posix_time::microseconds(0)) {
+        //     boost::this_thread::sleep(next_sleep_time);
+        // } else {
+        //     boost::this_thread::yield();
+        // }
     }
 }
 

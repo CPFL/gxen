@@ -32,7 +32,7 @@ class band_scheduler_t : public scheduler_t {
     void run();
     void replenish();
     void sampling();
-    bool utilization_over_bandwidth(context* ctx) const;
+    bool utilization_over_bandwidth(context* ctx, bool inverse) const;
     context* current() const { return current_; }
     context* select_next_context();
     void submit(context* ctx);
@@ -57,7 +57,9 @@ class band_scheduler_t : public scheduler_t {
     timer_t utilization_;
     timer_t gpu_idle_timer_;
     boost::posix_time::time_duration duration_;
+    boost::posix_time::time_duration bandwidth_period_;
     boost::posix_time::time_duration bandwidth_;
+    boost::posix_time::time_duration bandwidth_idle_;
     boost::posix_time::time_duration sampling_bandwidth_;
     boost::posix_time::time_duration previous_bandwidth_;
     std::atomic_uintmax_t counter_;

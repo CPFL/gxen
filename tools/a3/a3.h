@@ -14,13 +14,13 @@ namespace a3 {
 #else
     #define A3_FPRINTF(stream, fmt, args...) do {\
             std::fprintf(stream, "[A3] %s:%d - " fmt, __func__, __LINE__, ##args);\
-            std::fflush(stream);\
+            /* std::fflush(stream); */\
         } while (0)
 #endif
 
 #define A3_FATAL(stream, fmt, args...) do {\
         std::fprintf(stream, "[A3] %s:%d - " fmt, __func__, __LINE__, ##args);\
-        std::fflush(stream);\
+        /* std::fflush(stream); */\
     } while (0)
 
 #define A3_LOG(fmt, args...) A3_FPRINTF(stdout, fmt, ##args)

@@ -47,7 +47,9 @@ credit_scheduler_t::credit_scheduler_t(const boost::posix_time::time_duration& p
     , current_()
     , utilization_()
     , duration_()
+    , bandwidth_period_(boost::posix_time::microseconds(100000))
     , bandwidth_()
+    , bandwidth_idle_()
     , sampling_bandwidth_()
     , counter2_()
 {
@@ -98,8 +100,7 @@ void credit_scheduler_t::enqueue(context* ctx, const command& cmd) {
 void credit_scheduler_t::replenish() {
     uint64_t count = 0;
     uint64_t idle_count = 0;
-    const boost::posix_time::time_duration bandwidth_period = boost::posix_time::microseconds(1000000);
-    const uint64_t bandwidth_counter = bandwidth_period.total_microseconds() / period_.total_microseconds();
+    const uint64_t bandwidth_counter = bandwidth_period_.total_microseconds() / period_.total_microseconds();
     A3_FATAL(stderr, "log::: %" PRIu64 "\n", bandwidth_counter);
     while (true) {
         // replenish
@@ -114,7 +115,7 @@ void credit_scheduler_t::replenish() {
                     A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
                     const auto budget = (period_ - gpu_idle_) / contexts_.size();
                     for (context& ctx : contexts_) {
-                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0), bandwidth_clear_timing);
+                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0));
                     }
                     idle_count = 0;
                 } else {
@@ -130,8 +131,10 @@ void credit_scheduler_t::replenish() {
                 if (bandwidth_clear_timing) {
                     previous_bandwidth_ = bandwidth_;
                     bandwidth_ = boost::posix_time::microseconds(0);
+                    bandwidth_idle_ = boost::posix_time::microseconds(0);
                 } else {
                     bandwidth_ += duration_;
+                    bandwidth_idle_ += gpu_idle_;
                 }
                 duration_ = boost::posix_time::microseconds(0);
                 gpu_idle_ = boost::posix_time::microseconds(0);
@@ -178,7 +181,6 @@ void credit_scheduler_t::submit(context* ctx) {
     utilization_.start();
     {
         boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
-        while (device::instance()->is_active(ctx));
         device::instance()->bar1()->submit(cmd);
         while (device::instance()->is_active(ctx)) {
             boost::this_thread::yield();
@@ -221,12 +223,7 @@ void credit_scheduler_t::sampling() {
                 sampling_bandwidth_ = boost::posix_time::microseconds(0);
             }
         }
-        const auto next_sleep_time = sample_ - waiting.elapsed();
-        if (next_sleep_time >= boost::posix_time::microseconds(0)) {
-            boost::this_thread::sleep(next_sleep_time);
-        } else {
-            boost::this_thread::yield();
-        }
+        boost::this_thread::sleep(sample_);
     }
 }
 

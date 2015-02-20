@@ -68,12 +68,14 @@ bool context::is_suspended() {
 
 
 void context::update_budget(const boost::posix_time::time_duration& credit) {
-    budget_ -= credit;
-    bandwidth_used_ += credit;
-    sampling_bandwidth_used_ += credit;
+    A3_SYNCHRONIZED(band_mutex()) {
+        budget_ -= credit;
+        bandwidth_used_ += credit;
+        sampling_bandwidth_used_ += credit;
+    }
 }
 
-void context::replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle, bool bandwidth_clear_timing) {
+void context::replenish(const boost::posix_time::time_duration& credit, const boost::posix_time::time_duration& threshold, const boost::posix_time::time_duration& bandwidth, bool idle) {
     A3_SYNCHRONIZED(band_mutex()) {
         budget_ += credit;
 
@@ -92,9 +94,6 @@ void context::replenish(const boost::posix_time::time_duration& credit, const bo
                 A3_FATAL(stdout, "recovering budget %d\n", id());
             }
         }
-        if (bandwidth_clear_timing) {
-            bandwidth_used_ = boost::posix_time::microseconds(0);
-        }
     }
 }
 
@@ -106,7 +105,15 @@ void context::reset_budget(const boost::posix_time::time_duration& credit) {
 }
 
 void context::clear_sampling_bandwidth_used() {
-    sampling_bandwidth_used_ = boost::posix_time::microseconds(0);
+    A3_SYNCHRONIZED(band_mutex()) {
+        sampling_bandwidth_used_ = boost::posix_time::microseconds(0);
+    }
+}
+
+void context::burn_bandwidth(const boost::posix_time::time_duration& burn) {
+    A3_SYNCHRONIZED(band_mutex()) {
+        bandwidth_used_ -= burn;
+    }
 }
 
 }  // namespace a3

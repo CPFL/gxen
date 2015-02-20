@@ -96,7 +96,7 @@ void fifo_scheduler_t::replenish() {
                     A3_FATAL(stdout, "PREVIOUS => %f\n", static_cast<double>(duration_.total_microseconds()) / 1000.0);
                     const auto budget = (period_ - gpu_idle_) / contexts_.size();
                     for (context& ctx : contexts_) {
-                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0), bandwidth_clear_timing);
+                        ctx.replenish(budget, period_, defaults, duration_ == boost::posix_time::microseconds(0));
                     }
                 }
                 if (bandwidth_clear_timing) {
@@ -139,11 +139,11 @@ void fifo_scheduler_t::run() {
             boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
             {
                 boost::unique_lock<boost::mutex> lock(fire_mutex_);
+                while (device::instance()->is_active(ctx));
                 utilization_.start();
                 {
                     boost::reverse_lock<boost::unique_lock<boost::mutex>> unlock(lock);
                     device::instance()->bar1()->submit(cmd);
-                    boost::this_thread::sleep(boost::posix_time::microseconds(500));
                     while (device::instance()->is_active(ctx)) {
                         boost::this_thread::yield();
                     }
