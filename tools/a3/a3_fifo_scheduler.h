@@ -48,6 +48,7 @@ class fifo_scheduler_t : public scheduler_t {
     contexts_t contexts_;
     boost::posix_time::time_duration duration_;
     boost::posix_time::time_duration bandwidth_;
+    boost::posix_time::time_duration bandwidth_idle_;
     boost::posix_time::time_duration sampling_bandwidth_;
     boost::posix_time::time_duration previous_bandwidth_;
 };

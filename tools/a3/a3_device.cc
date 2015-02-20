@@ -96,10 +96,10 @@ device::device()
     // scheduler_.reset(new direct_scheduler_t());
 
     // FIFO
-#if 0
+#if 1
     scheduler_.reset(new fifo_scheduler_t(
                 boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(1000)));
+                boost::posix_time::milliseconds(500)));
 #endif
 
     // BAND
@@ -109,7 +109,7 @@ device::device()
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(500)));
 #endif
-#if 1
+#if 0
     scheduler_.reset(new band_scheduler_t(
                 boost::posix_time::microseconds(500),
                 boost::posix_time::milliseconds(30),
