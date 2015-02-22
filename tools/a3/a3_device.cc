@@ -101,11 +101,16 @@ device::device()
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(500)));
 #endif
+#if 0
+    scheduler_.reset(new fifo_scheduler_t(
+                boost::posix_time::milliseconds(30),
+                boost::posix_time::milliseconds(100)));
+#endif
 
     // BAND
-#if 0
+#if 1
     scheduler_.reset(new band_scheduler_t(
-                boost::posix_time::microseconds(50),
+                boost::posix_time::microseconds(500),
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(500)));
 #endif
@@ -113,14 +118,19 @@ device::device()
     scheduler_.reset(new band_scheduler_t(
                 boost::posix_time::microseconds(500),
                 boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(500)));
+                boost::posix_time::milliseconds(100)));
 #endif
 
     // Credit
-#if 1
+#if 0
     scheduler_.reset(new credit_scheduler_t(
                 boost::posix_time::milliseconds(30),
                 boost::posix_time::milliseconds(500)));
+#endif
+#if 0
+    scheduler_.reset(new credit_scheduler_t(
+                boost::posix_time::milliseconds(30),
+                boost::posix_time::milliseconds(100)));
 #endif
 
     scheduler_->start();
