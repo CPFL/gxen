@@ -93,7 +93,9 @@ device::device()
     }
 
     // Direct
-    // scheduler_.reset(new direct_scheduler_t());
+#if 1
+    scheduler_.reset(new direct_scheduler_t());
+#endif
 
     // FIFO
 #if 0
@@ -108,7 +110,7 @@ device::device()
 #endif
 
     // BAND
-#if 1
+#if 0
     scheduler_.reset(new band_scheduler_t(
                 boost::posix_time::microseconds(500),
                 boost::posix_time::milliseconds(30),

@@ -79,7 +79,7 @@ int context::pv_map(pv_page* pgt, uint32_t index, uint64_t guest, uint64_t host)
 }
 
 int context::a3_call(const command& cmd, slot_t* slot) {
-    // instruments()->hypercall(cmd, slot);
+    instruments()->hypercall(cmd, slot);
     switch (slot->u8[0]) {
     case NOUVEAU_PV_OP_SET_PGD: {
             pv_page* pgd = lookup_by_pv_id(slot->u32[1]);
