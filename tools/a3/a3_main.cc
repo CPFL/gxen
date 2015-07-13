@@ -30,6 +30,7 @@
 #include "a3_context.h"
 #include "a3_device.h"
 #include "a3_cmdline.h"
+#include "a3_scheduler.h"
 namespace a3 {
 
 class server {
@@ -77,6 +78,7 @@ int main(int argc, char** argv) {
     cmd.Add("through", "through", 't', "through I/O");
     cmd.Add("lazy-shadowing", "lazy-shadowing", 0, "Enable lazy shadowing");
     cmd.Add("bar3-remapping", "bar3-remapping", 0, "Enable BAR3 remapping");
+    cmd.Add<std::string>("scheduler", "scheduler", 0, "scheduler", false, "fifo");
     cmd.set_footer("[program_file] [arguments]");
 
     if (!cmd.Parse(argc, argv)) {
@@ -110,7 +112,21 @@ int main(int argc, char** argv) {
     a3::flags::lazy_shadowing = cmd.Exist("lazy-shadowing");
     a3::flags::bar3_remapping = cmd.Exist("bar3-remapping");
 
-    c::device::instance()->initialize(bdf);
+    a3::scheduler_type_t scheduler_type = a3::scheduler_type_t::FIFO;
+    if (cmd.Exist("scheduler")) {
+        const std::string value = cmd.Get<std::string>("scheduler");
+        if (value == "fifo") {
+            scheduler_type = a3::scheduler_type_t::FIFO;
+        } else if (value == "credit") {
+            scheduler_type = a3::scheduler_type_t::CREDIT;
+        } else if (value == "band") {
+            scheduler_type = a3::scheduler_type_t::BAND;
+        } else if (value == "direct") {
+            scheduler_type = a3::scheduler_type_t::DIRECT;
+        }
+    }
+
+    c::device::instance()->initialize(bdf, scheduler_type);
 
     ::unlink(A3_ENDPOINT);
     try {

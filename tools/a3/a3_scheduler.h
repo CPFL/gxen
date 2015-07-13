@@ -4,10 +4,16 @@
 #include <boost/noncopyable.hpp>
 #include <boost/intrusive/list.hpp>
 #include "a3.h"
-#include "a3_context.h"
 namespace a3 {
 
 class context;
+
+enum class scheduler_type_t {
+    FIFO,
+    CREDIT,
+    BAND,
+    DIRECT
+};
 
 class scheduler_t : private boost::noncopyable {
  public:

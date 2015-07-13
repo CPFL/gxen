@@ -9,6 +9,7 @@
 #include "a3_xen.h"
 #include "a3_lock.h"
 #include "a3_session.h"
+#include "a3_scheduler.h"
 namespace a3 {
 
 class device_bar1;
@@ -32,7 +33,7 @@ class device : private boost::noncopyable {
 
     device();
     ~device();
-    void initialize(const bdf& bdf);
+    void initialize(const bdf& bdf, scheduler_type_t scheduler);
     static device* instance();
     bool initialized() const { return device_; }
     uint32_t acquire_virt(context* ctx);

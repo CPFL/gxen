@@ -92,48 +92,6 @@ device::device()
         std::exit(1);
     }
 
-    // Direct
-    // scheduler_.reset(new direct_scheduler_t());
-
-    // FIFO
-#if 0
-    scheduler_.reset(new fifo_scheduler_t(
-                boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(500)));
-#endif
-#if 0
-    scheduler_.reset(new fifo_scheduler_t(
-                boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(100)));
-#endif
-
-    // BAND
-#if 1
-    scheduler_.reset(new band_scheduler_t(
-                boost::posix_time::microseconds(500),
-                boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(500)));
-#endif
-#if 0
-    scheduler_.reset(new band_scheduler_t(
-                boost::posix_time::microseconds(500),
-                boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(100)));
-#endif
-
-    // Credit
-#if 0
-    scheduler_.reset(new credit_scheduler_t(
-                boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(500)));
-#endif
-#if 0
-    scheduler_.reset(new credit_scheduler_t(
-                boost::posix_time::milliseconds(30),
-                boost::posix_time::milliseconds(100)));
-#endif
-
-    scheduler_->start();
     A3_LOG("device environment setup\n");
 }
 
@@ -150,7 +108,7 @@ device::~device() {
 }
 
 // not thread safe
-void device::initialize(const bdf& bdf) {
+void device::initialize(const bdf& bdf, scheduler_type_t scheduler_type) {
     struct pci_id_match nvc0_match = {
         NVC0_VENDOR,
         PCI_MATCH_ANY,
@@ -209,6 +167,61 @@ void device::initialize(const bdf& bdf) {
         pci_system_cleanup();
         return;
     }
+
+    switch (scheduler_type) {
+    case scheduler_type_t::FIFO:
+        printf("FIFO scheduler\n");
+#if 1
+        scheduler_.reset(new fifo_scheduler_t(
+                    boost::posix_time::milliseconds(30),
+                    boost::posix_time::milliseconds(500)));
+#endif
+#if 0
+        scheduler_.reset(new fifo_scheduler_t(
+                    boost::posix_time::milliseconds(30),
+                    boost::posix_time::milliseconds(100)));
+#endif
+        break;
+
+    case scheduler_type_t::CREDIT:
+        printf("CREDIT scheduler\n");
+#if 1
+        scheduler_.reset(new credit_scheduler_t(
+                    boost::posix_time::milliseconds(30),
+                    boost::posix_time::milliseconds(500)));
+#endif
+#if 0
+        scheduler_.reset(new credit_scheduler_t(
+                    boost::posix_time::milliseconds(30),
+                    boost::posix_time::milliseconds(100)));
+#endif
+        break;
+
+    case scheduler_type_t::BAND:
+        printf("BAND scheduler\n");
+#if 1
+        scheduler_.reset(new band_scheduler_t(
+                    boost::posix_time::microseconds(500),
+                    boost::posix_time::milliseconds(30),
+                    boost::posix_time::milliseconds(500)));
+#endif
+#if 0
+        scheduler_.reset(new band_scheduler_t(
+                    boost::posix_time::microseconds(500),
+                    boost::posix_time::milliseconds(30),
+                    boost::posix_time::milliseconds(100)));
+#endif
+        break;
+
+    case scheduler_type_t::DIRECT:
+        printf("DIRECT scheduler\n");
+#if 1
+        scheduler_.reset(new direct_scheduler_t());
+#endif
+        break;
+    }
+    scheduler_->start();
+
 
     A3_LOG("PCI device catch\n");
 
