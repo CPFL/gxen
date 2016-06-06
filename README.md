@@ -12,7 +12,7 @@ We tested & evaluated on the following environments.
 + Linux 3.6.5 kernel
     + PV version & FV version is available
     + https://github.com/Constellation/linux-3.6.5
-    + `gdev-latest` is the branch that already includes the gdev module side patches.
+    + `gdev-latest` is the branch that already includes the [gdev module side patches](https://github.com/CPFL/gdev/blob/605e69e70ce7b4c505be91696612e98649ec383f/mod/linux/patches/gdev-nouveau-3.6.patch).
 + NVIDIA Quadro6000 GPU
     + We tested with NVIDIA Quadro6000 nvc0 GPU
 + Kernel mode gdev
